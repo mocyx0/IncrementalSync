@@ -41,6 +41,8 @@ public class Server {
     public static void main(String[] args) throws InterruptedException {
         initProperties();
 
+        printInput(args);
+
         schema = args[0];
         JSONObject jsonObject = JSONObject.parseObject(args[1]);
         tableNamePkMap = JSONObject.parseObject(jsonObject.toJSONString());
@@ -58,6 +60,23 @@ public class Server {
         logger.info("com.alibaba.middleware.race.sync.Server is running....");
 
         server.startServer(5527);
+    }
+
+    /**
+     * 打印赛题输入 赛题输入格式： schemaName tableName startPkId endPkId，例如输入： middleware student 100 200
+     * 上面表示，查询的schema为middleware，查询的表为student,主键的查询范围是(100,200)，注意是开区间 对应DB的SQL为： select * from middleware.student where
+     * id>100 and id<200
+     */
+    private static void printInput(String[] args) {
+        // 第一个参数是Schema Name
+        System.out.println("Schema:" + args[0]);
+        // 第二个参数是Schema Name
+        System.out.println("table:" + args[1]);
+        // 第三个参数是start pk Id
+        System.out.println("start:" + args[2]);
+        // 第四个参数是end pk Id
+        System.out.println("end:" + args[3]);
+
     }
 
     /**
