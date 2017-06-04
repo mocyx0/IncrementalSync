@@ -14,10 +14,20 @@ public class MServer {
                 String scheme = args[0];
                 String table = args[1];
                 int startId = Integer.parseInt(args[2]);
-                int end = Integer.parseInt(args[3]);
+                int endId = Integer.parseInt(args[3]);
                 LogParser parser = new LogParser();
-                parser.parseLog();
-                List<Record> data = parser.getResult();
+
+                LogIndex data = parser.parseLog();
+
+                QueryData query = new QueryData();
+                query.scheme = scheme;
+                query.table = table;
+                query.start = startId;
+                query.end = endId;
+
+                LogRebuilder rebuider=new LogRebuilder(data);
+                rebuider.getResult(query);
+
 
             } else {
                 System.out.println("参数错误");

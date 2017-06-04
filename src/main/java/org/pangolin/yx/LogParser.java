@@ -3,10 +3,8 @@ package org.pangolin.yx;
 import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
 import javafx.beans.binding.ObjectExpression;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.RandomAccessFile;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -57,22 +55,31 @@ class LogBlock {
     }
 }
 
+class LogIndex {
+    HashMap<String, TableInfo> tableInfos = new HashMap<>();
+    HashMap<String, LogBlock> logInfos = new HashMap<>();
+}
 
 class LogInfo {
-    public int preId;
     public String opType;
+    public int preId;
     public int id;
+    //file info
     public long offset;
     public String logPath;
+    public int length;
+    //只有在rebuild时才会有数据
+    public ArrayList<ParserColumnInfo> columns = null;
 }
 
 public class LogParser {
+    LogIndex logIndex = new LogIndex();
 
-    private HashMap<String, TableInfo> tableInfos = new HashMap<>();
-    private HashMap<String, LogBlock> logInfos = new HashMap<>();
     private int insertCount = 0;
     private int updateCount = 0;
     private int deleteCount = 0;
+
+    LineReader lineReader;
 
     private String getNextToken(StringParser parser, char delimit) {
         int s = parser.off;
@@ -101,7 +108,9 @@ public class LogParser {
         return info;
     }
 
-    private void parseLine(String line, long fileOff) throws Exception {
+    private void parseLine(ReadLineInfo lineInfo) throws Exception {
+        String line = lineInfo.line;
+
         StringParser parser = new StringParser(line, 0);
         String uid = getNextToken(parser, '|');
         String time = getNextToken(parser, '|');
@@ -110,7 +119,7 @@ public class LogParser {
         String op = getNextToken(parser, '|');
         String hashKey = scheme + " " + table;
         //table的第一条insert记录包含所有列, 我们记录下元信息
-        if (!tableInfos.containsKey(hashKey)) {
+        if (!logIndex.tableInfos.containsKey(hashKey)) {
             int off = parser.off;
             TableInfo info = new TableInfo();
             info.scheme = scheme;
@@ -123,11 +132,11 @@ public class LogParser {
                 }
                 cinfo = getNextColumnInfo(parser);
             }
-            tableInfos.put(hashKey, info);
+            logIndex.tableInfos.put(hashKey, info);
             parser.off = off;
         }
-        if (!logInfos.containsKey(hashKey)) {
-            logInfos.put(hashKey, new LogBlock());
+        if (!logIndex.logInfos.containsKey(hashKey)) {
+            logIndex.logInfos.put(hashKey, new LogBlock());
         }
 
 
@@ -153,13 +162,14 @@ public class LogParser {
         }
 
 
-        logInfos.get(hashKey).checkKey(pkId);
-        LinkedList<LogInfo> logs = logInfos.get(hashKey).idToLogs.get(pkId);
+        logIndex.logInfos.get(hashKey).checkKey(pkId);
+        LinkedList<LogInfo> logs = logIndex.logInfos.get(hashKey).idToLogs.get(pkId);
 
         LogInfo linfo = new LogInfo();
         linfo.opType = op;
         linfo.logPath = "";
-        linfo.offset = fileOff;
+        linfo.offset = lineInfo.off;
+        linfo.length = lineInfo.length;
         if (op.equals("U")) {
             linfo.id = Integer.parseInt(cinfo.newValue);
             linfo.preId = Integer.parseInt(cinfo.oldValue);
@@ -168,6 +178,7 @@ public class LogParser {
             linfo.id = Integer.parseInt(cinfo.newValue);
             insertCount++;
         } else if (op.equals("D")) {
+            linfo.id = Integer.parseInt(cinfo.oldValue);
             deleteCount++;
         } else {
             throw new Exception("非法的操作类型");
@@ -175,19 +186,16 @@ public class LogParser {
         logs.add(linfo);
     }
 
-    public void parseLog() throws Exception {
+    public LogIndex parseLog() throws Exception {
         String logPath = Config.DATA_HOME + "/canal.log";
-        RandomAccessFile raf = new RandomAccessFile(logPath, "r");
-        BufferedReader fr = new BufferedReader(new FileReader(raf.getFD()));
+        File f1 = new File(logPath);
+        lineReader = new LineReader(logPath, 0, f1.length());
 
-        String line = fr.readLine();
-        while (line != null) {
-            parseLine(line, 0);
-            line = fr.readLine();
+        ReadLineInfo line = lineReader.readLine();
+        while (line.line != null) {
+            parseLine(line);
+            line = lineReader.readLine();
         }
-    }
-
-    public List<Record> getResult() {
-        return null;
+        return logIndex;
     }
 }
