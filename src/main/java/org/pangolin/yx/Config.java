@@ -28,6 +28,7 @@ public class Config {
     public static String DATA_HOME = "D:/tmp/amimid/log";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
+    public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "wanshao_test";
     // 日志级别

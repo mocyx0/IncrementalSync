@@ -16,18 +16,20 @@ public class MServer {
                 int startId = Integer.parseInt(args[2]);
                 int endId = Integer.parseInt(args[3]);
                 LogParser parser = new LogParser();
-
+                //read log
                 LogIndex data = parser.parseLog();
-
+                //build query
                 QueryData query = new QueryData();
                 query.scheme = scheme;
                 query.table = table;
                 query.start = startId;
                 query.end = endId;
-
-                LogRebuilder rebuider=new LogRebuilder(data);
-                rebuider.getResult(query);
-
+                //get log info
+                LogRebuilder rebuider = new LogRebuilder(data);
+                //rebuild data
+                RebuildResult result = rebuider.getResult(query);
+                //write to file
+                ResultWriter.writeToFile(result);
 
             } else {
                 System.out.println("参数错误");

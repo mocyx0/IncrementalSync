@@ -81,42 +81,16 @@ public class LogParser {
 
     LineReader lineReader;
 
-    private String getNextToken(StringParser parser, char delimit) {
-        int s = parser.off;
-        while (s < parser.str.length() && parser.str.charAt(s) == delimit) {
-            s++;
-        }
-        int e = s;
-        while (e < parser.str.length() && parser.str.charAt(e) != delimit) {
-            e++;
-        }
-        parser.off = e + 1;
-        return parser.str.substring(s, e);
-
-    }
-
-    private ParserColumnInfo getNextColumnInfo(StringParser parser) {
-        if (parser.end()) {
-            return null;
-        }
-        ParserColumnInfo info = new ParserColumnInfo();
-        info.name = getNextToken(parser, ':');
-        info.type = Integer.parseInt(getNextToken(parser, ':'));
-        info.isPk = Integer.parseInt(getNextToken(parser, '|'));
-        info.oldValue = getNextToken(parser, '|');
-        info.newValue = getNextToken(parser, '|');
-        return info;
-    }
 
     private void parseLine(ReadLineInfo lineInfo) throws Exception {
         String line = lineInfo.line;
 
         StringParser parser = new StringParser(line, 0);
-        String uid = getNextToken(parser, '|');
-        String time = getNextToken(parser, '|');
-        String scheme = getNextToken(parser, '|');
-        String table = getNextToken(parser, '|');
-        String op = getNextToken(parser, '|');
+        String uid = Util.getNextToken(parser, '|');
+        String time = Util.getNextToken(parser, '|');
+        String scheme = Util.getNextToken(parser, '|');
+        String table = Util.getNextToken(parser, '|');
+        String op = Util.getNextToken(parser, '|');
         String hashKey = scheme + " " + table;
         //table的第一条insert记录包含所有列, 我们记录下元信息
         if (!logIndex.tableInfos.containsKey(hashKey)) {
@@ -124,13 +98,13 @@ public class LogParser {
             TableInfo info = new TableInfo();
             info.scheme = scheme;
             info.table = table;
-            ParserColumnInfo cinfo = getNextColumnInfo(parser);
+            ParserColumnInfo cinfo = Util.getNextColumnInfo(parser);
             while (cinfo != null) {
                 info.columns.add(cinfo.name);
                 if (cinfo.isPk == 1) {
                     info.pk = cinfo.name;
                 }
-                cinfo = getNextColumnInfo(parser);
+                cinfo = Util.getNextColumnInfo(parser);
             }
             logIndex.tableInfos.put(hashKey, info);
             parser.off = off;
@@ -141,15 +115,15 @@ public class LogParser {
 
 
         //解析到主键为止
-        ParserColumnInfo cinfo = getNextColumnInfo(parser);
+        ParserColumnInfo cinfo = Util.getNextColumnInfo(parser);
         while (cinfo != null) {
             if (cinfo.isPk == 1) {
                 break;
             }
-            cinfo = getNextColumnInfo(parser);
+            cinfo = Util.getNextColumnInfo(parser);
         }
         if (cinfo == null) {
-            System.out.print(1);
+            throw new Exception("no pk");
         }
         Long pkId = null;
         //根据操作的不同  获取对应的主键id
@@ -167,7 +141,7 @@ public class LogParser {
 
         LogInfo linfo = new LogInfo();
         linfo.opType = op;
-        linfo.logPath = "";
+        linfo.logPath = logPath;
         linfo.offset = lineInfo.off;
         linfo.length = lineInfo.length;
         if (op.equals("U")) {
@@ -183,11 +157,14 @@ public class LogParser {
         } else {
             throw new Exception("非法的操作类型");
         }
-        logs.add(linfo);
+        //as a queue
+        logs.push(linfo);
     }
 
+    String logPath;
+
     public LogIndex parseLog() throws Exception {
-        String logPath = Config.DATA_HOME + "/canal.log";
+        logPath = Config.DATA_HOME + "/canal.log";
         File f1 = new File(logPath);
         lineReader = new LineReader(logPath, 0, f1.length());
 
