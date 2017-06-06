@@ -42,13 +42,56 @@ class StringParser {
 }
 
 class LogOfTable {
-    HashMap<Long, LinkedList<LogRecord>> idToLogs = new HashMap<>();
-
+    //    HashMap<Long, LinkedList<LogRecord>> idToLogs = new HashMap<>();
+/*
     public void checkKey(Long id) {
         if (!idToLogs.containsKey(id)) {
             idToLogs.put(id, new LinkedList<LogRecord>());
         }
     }
+*/
+    private ArrayList<LogRecord> logArray = new ArrayList<>();//log链表
+    private HashMap<Long, Integer> logPos = new HashMap<>();//当前的id对应的上一条log索引
+
+
+    public LogRecord getLog(int index) {
+        return logArray.get(index);
+    }
+
+    public LogRecord getLogById(Long id) {
+        if (logPos.containsKey(id)) {
+            return logArray.get(logPos.get(id));
+        } else {
+            return null;
+        }
+    }
+
+    public void putLog(LogRecord record) {
+        if (record.preId != null) {
+            record.preLogIndex = getPreLogIndex(record.preId);
+        }
+        //主键update
+        if (record.opType.equals("U") && !record.preId.equals(record.id)) {
+            //delete old
+            logPos.remove(record.preId);
+        }
+        if (record.id != null) {
+            logArray.add(record);
+            logPos.put(record.id, logArray.size() - 1);
+        } else {
+            //delete op
+            logPos.remove(record.preId);
+        }
+    }
+
+    public int getPreLogIndex(Long id) {
+        if (logPos.containsKey(id)) {
+            return logPos.get(id);
+        } else {
+            return -1;
+        }
+    }
+
 }
 
 class AliLogData {
@@ -72,14 +115,17 @@ class FileBlock {
 class LogRecord {
     //
     public String opType;
-    public int preId;
-    public int id;
+    public Long preId;
+    public Long id;
     //file info
     public long offset;
     public String logPath;
     public int length;
+    //上一条关联日志在记录中的索引
+    public int preLogIndex = -1;
     //只有在rebuild时才会有数据
     public ArrayList<LogColumnInfo> columns = null;
+
 }
 
 
@@ -158,52 +204,36 @@ public class LogParser {
             }
             cinfo = Util.getNextColumnInfo(parser);
         }
+
         if (cinfo == null) {
             throw new Exception("no pk");
         }
-        Long pkId = null;
-        //根据操作的不同  获取对应的主键id
-        if (op.equals("I")) {
-            pkId = Long.parseLong(cinfo.newValue);
-        } else if (op.equals("D")) {
-            pkId = Long.parseLong(cinfo.oldValue);
-        } else if (op.equals("U")) {
-            pkId = Long.parseLong(cinfo.newValue);
-        }
-
-
-        blockLog.logInfos.get(hashKey).checkKey(pkId);
-        LinkedList<LogRecord> logs = blockLog.logInfos.get(hashKey).idToLogs.get(pkId);
-
+        //build logRecord
         LogRecord linfo = new LogRecord();
         linfo.opType = op;
         linfo.logPath = blockLog.fileBlock.path;
         linfo.offset = lineInfo.off;
         linfo.length = lineInfo.length;
         if (op.equals("U")) {
-            linfo.id = Integer.parseInt(cinfo.newValue);
-            linfo.preId = Integer.parseInt(cinfo.oldValue);
+            linfo.id = Long.parseLong(cinfo.newValue);
+            linfo.preId = Long.parseLong(cinfo.oldValue);
             updateCount.incrementAndGet();
         } else if (op.equals("I")) {
-            linfo.id = Integer.parseInt(cinfo.newValue);
+            linfo.id = Long.parseLong(cinfo.newValue);
             insertCount.incrementAndGet();
         } else if (op.equals("D")) {
-            linfo.id = Integer.parseInt(cinfo.oldValue);
+            linfo.preId = Long.parseLong(cinfo.oldValue);
             deleteCount.incrementAndGet();
         } else {
             throw new Exception("非法的操作类型");
         }
-        //as a queue
-        logs.push(linfo);
+        LogOfTable logOfTable = blockLog.logInfos.get(hashKey);
+        logOfTable.putLog(linfo);
     }
-
-    String logPath;
-
 
     private static class Worker implements Runnable {
         @Override
         public void run() {
-
             try {
                 while (true) {
                     FileBlock block = fileBlocks.poll();

@@ -37,7 +37,6 @@ public class LineReader {
         raf = new RandomAccessFile(path, "r");
         raf.seek(curFilePos);
         initForward();
-
     }
 
     //ignore one line

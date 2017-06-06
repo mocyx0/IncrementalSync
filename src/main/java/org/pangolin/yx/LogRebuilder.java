@@ -38,7 +38,11 @@ public class LogRebuilder {
             System.out.print(1);
         }
 
+        Long targetId = id;
         while (true) {
+            if (targetId == null) {
+                break;
+            }
             if (blockIndex < 0) {
                 break;
             }
@@ -46,6 +50,17 @@ public class LogRebuilder {
             BlockLog blockLog = aliLogData.blockLogs.get(blockIndex);
             if (blockLog.logInfos.containsKey(hashKey)) {
                 LogOfTable logOfTable = blockLog.logInfos.get(hashKey);
+                LogRecord lastLog = logOfTable.getLogById(targetId);
+                while (lastLog != null) {
+                    re.add(lastLog);
+                    if (lastLog.preLogIndex != -1) {
+                        lastLog = logOfTable.getLog(lastLog.preLogIndex);
+                    } else {
+                        targetId = lastLog.preId;
+                        break;
+                    }
+                }
+                /*
                 while (true) {
                     if (!logOfTable.idToLogs.containsKey(id)) {
                         break;
@@ -73,6 +88,7 @@ public class LogRebuilder {
                     }
 
                 }
+                */
             }
             blockIndex--;
         }
