@@ -58,6 +58,15 @@ class LogOfTable {
         return logArray.get(index);
     }
 
+
+    public boolean isDeleted(long id) {
+        if (logPos.containsKey(id) && logPos.get(id) == -1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     public LogRecord getLogById(Long id) {
         if (logPos.containsKey(id)) {
             return logArray.get(logPos.get(id));
@@ -73,14 +82,16 @@ class LogOfTable {
         //主键update
         if (record.opType.equals("U") && !record.preId.equals(record.id)) {
             //delete old
-            logPos.remove(record.preId);
+            //logPos.remove(record.preId);
+            logPos.put(record.preId, -1);
         }
         if (record.id != null) {
             logArray.add(record);
             logPos.put(record.id, logArray.size() - 1);
         } else {
             //delete op
-            logPos.remove(record.preId);
+            //logPos.remove(record.preId);
+            logPos.put(record.preId, -1);
         }
     }
 

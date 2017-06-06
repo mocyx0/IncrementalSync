@@ -30,11 +30,14 @@ public class LogRebuilder {
 
     //根据id在blocks上找出对应的日志记录
     ArrayList<LogRecord> getLogs(QueryData queryData, long id) throws Exception {
+
+
+
         ArrayList<LogRecord> re = new ArrayList<>();
         String hashKey = queryData.scheme + " " + queryData.table;
 
         int blockIndex = aliLogData.blockLogs.size() - 1;
-        if (id == 3) {
+        if (id == 4) {
             System.out.print(1);
         }
 
@@ -50,7 +53,13 @@ public class LogRebuilder {
             BlockLog blockLog = aliLogData.blockLogs.get(blockIndex);
             if (blockLog.logInfos.containsKey(hashKey)) {
                 LogOfTable logOfTable = blockLog.logInfos.get(hashKey);
+
+                //
+                if(logOfTable.isDeleted(targetId)){
+                    return re;
+                }
                 LogRecord lastLog = logOfTable.getLogById(targetId);
+                //
                 while (lastLog != null) {
                     re.add(lastLog);
                     if (lastLog.preLogIndex != -1) {
@@ -148,7 +157,6 @@ public class LogRebuilder {
     //读取
     private RebuildResult rebuildData(QueryData query) throws Exception {
         RebuildResult re = new RebuildResult();
-
         for (Map.Entry<Long, ArrayList<LogRecord>> kv : logRebuild.entrySet()) {
             Long id = kv.getKey();
             ArrayList<LogRecord> logs = kv.getValue();
@@ -157,9 +165,6 @@ public class LogRebuilder {
             int dataCount = tinfo.columns.size();
             HashMap<String, String> values = new HashMap<>();
             //read log
-            if (id == 70) {
-                System.out.print(1);
-            }
             for (LogRecord v : logs) {
                 if (values.size() != dataCount) {
                     //这里应该只会出现update->update->insert的结构,所以每个newvalue都是有意义的
