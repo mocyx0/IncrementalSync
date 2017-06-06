@@ -28,9 +28,9 @@ public class LineReader {
     long curFilePos;
     RandomAccessFile raf;
 
-    public LineReader(String path, long fileOff, long maxOff) throws Exception {
+    public LineReader(String path, long fileOff, long lenth) throws Exception {
         buffer = new byte[BUFFER_SZIE];
-        this.maxOff = maxOff;
+        this.maxOff = fileOff + lenth;
         this.fileOff = fileOff;
         curFilePos = fileOff;
         pos = 0;

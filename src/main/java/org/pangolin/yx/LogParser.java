@@ -1,14 +1,10 @@
 package org.pangolin.yx;
 
-import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
-import javafx.beans.binding.ObjectExpression;
-
 import java.io.*;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yangxiao on 2017/6/4.
@@ -23,7 +19,7 @@ class TableInfo {
     ArrayList<String> columns = new ArrayList<>();
 }
 
-class ParserColumnInfo {
+class LogColumnInfo {
     String name;
     int type;
     String oldValue;
@@ -45,22 +41,36 @@ class StringParser {
     }
 }
 
-class LogBlock {
-    HashMap<Long, LinkedList<LogInfo>> idToLogs = new HashMap<>();
+class LogOfTable {
+    HashMap<Long, LinkedList<LogRecord>> idToLogs = new HashMap<>();
 
     public void checkKey(Long id) {
         if (!idToLogs.containsKey(id)) {
-            idToLogs.put(id, new LinkedList<LogInfo>());
+            idToLogs.put(id, new LinkedList<LogRecord>());
         }
     }
 }
 
-class LogIndex {
+class AliLogData {
     HashMap<String, TableInfo> tableInfos = new HashMap<>();
-    HashMap<String, LogBlock> logInfos = new HashMap<>();
+    ArrayList<BlockLog> blockLogs = new ArrayList<>();
 }
 
-class LogInfo {
+class BlockLog {
+    HashMap<String, TableInfo> tableInfos = new HashMap<>();
+    HashMap<String, LogOfTable> logInfos = new HashMap<>();
+    FileBlock fileBlock;
+}
+
+class FileBlock {
+    String path;
+    int index;
+    long offset;
+    int length;
+}
+
+class LogRecord {
+    //
     public String opType;
     public int preId;
     public int id;
@@ -69,20 +79,43 @@ class LogInfo {
     public String logPath;
     public int length;
     //只有在rebuild时才会有数据
-    public ArrayList<ParserColumnInfo> columns = null;
+    public ArrayList<LogColumnInfo> columns = null;
 }
 
+
 public class LogParser {
-    LogIndex logIndex = new LogIndex();
 
-    private int insertCount = 0;
-    private int updateCount = 0;
-    private int deleteCount = 0;
+    private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
+    private static final AliLogData aliLogData = new AliLogData();
+    private static AtomicInteger insertCount = new AtomicInteger();
+    private static AtomicInteger updateCount = new AtomicInteger();
+    private static AtomicInteger deleteCount = new AtomicInteger();
 
-    LineReader lineReader;
+    private static void splitLogFile() {
+        int fileIndex = 1;
+        int blockIndex = 0;
+        while (true) {
+            String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
+            File file = new File(path);
+            if (file.exists()) {
+                long off = 0;
+                while (off < file.length()) {
+                    FileBlock newBlock = new FileBlock();
+                    newBlock.path = path;
+                    newBlock.index = blockIndex++;
+                    newBlock.length = (int) Math.min(Config.BLOCK_SIZE, file.length() - off);
+                    newBlock.offset = off;
+                    off += Config.BLOCK_SIZE;
+                    fileBlocks.add(newBlock);
+                }
+                fileIndex++;
+            } else {
+                break;
+            }
+        }
+    }
 
-
-    private void parseLine(ReadLineInfo lineInfo) throws Exception {
+    private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog) throws Exception {
         String line = lineInfo.line;
 
         StringParser parser = new StringParser(line, 0);
@@ -91,31 +124,34 @@ public class LogParser {
         String scheme = Util.getNextToken(parser, '|');
         String table = Util.getNextToken(parser, '|');
         String op = Util.getNextToken(parser, '|');
+
         String hashKey = scheme + " " + table;
         //table的第一条insert记录包含所有列, 我们记录下元信息
-        if (!logIndex.tableInfos.containsKey(hashKey)) {
-            int off = parser.off;
-            TableInfo info = new TableInfo();
-            info.scheme = scheme;
-            info.table = table;
-            ParserColumnInfo cinfo = Util.getNextColumnInfo(parser);
-            while (cinfo != null) {
-                info.columns.add(cinfo.name);
-                if (cinfo.isPk == 1) {
-                    info.pk = cinfo.name;
+        if (op.equals("I")) {
+            if (!blockLog.tableInfos.containsKey(hashKey)) {
+                int off = parser.off;
+                TableInfo info = new TableInfo();
+                info.scheme = scheme;
+                info.table = table;
+                LogColumnInfo cinfo = Util.getNextColumnInfo(parser);
+                while (cinfo != null) {
+                    info.columns.add(cinfo.name);
+                    if (cinfo.isPk == 1) {
+                        info.pk = cinfo.name;
+                    }
+                    cinfo = Util.getNextColumnInfo(parser);
                 }
-                cinfo = Util.getNextColumnInfo(parser);
+                blockLog.tableInfos.put(hashKey, info);
+                parser.off = off;
             }
-            logIndex.tableInfos.put(hashKey, info);
-            parser.off = off;
-        }
-        if (!logIndex.logInfos.containsKey(hashKey)) {
-            logIndex.logInfos.put(hashKey, new LogBlock());
-        }
 
+        }
+        if (!blockLog.logInfos.containsKey(hashKey)) {
+            blockLog.logInfos.put(hashKey, new LogOfTable());
+        }
 
         //解析到主键为止
-        ParserColumnInfo cinfo = Util.getNextColumnInfo(parser);
+        LogColumnInfo cinfo = Util.getNextColumnInfo(parser);
         while (cinfo != null) {
             if (cinfo.isPk == 1) {
                 break;
@@ -136,24 +172,24 @@ public class LogParser {
         }
 
 
-        logIndex.logInfos.get(hashKey).checkKey(pkId);
-        LinkedList<LogInfo> logs = logIndex.logInfos.get(hashKey).idToLogs.get(pkId);
+        blockLog.logInfos.get(hashKey).checkKey(pkId);
+        LinkedList<LogRecord> logs = blockLog.logInfos.get(hashKey).idToLogs.get(pkId);
 
-        LogInfo linfo = new LogInfo();
+        LogRecord linfo = new LogRecord();
         linfo.opType = op;
-        linfo.logPath = logPath;
+        linfo.logPath = blockLog.fileBlock.path;
         linfo.offset = lineInfo.off;
         linfo.length = lineInfo.length;
         if (op.equals("U")) {
             linfo.id = Integer.parseInt(cinfo.newValue);
             linfo.preId = Integer.parseInt(cinfo.oldValue);
-            updateCount++;
+            updateCount.incrementAndGet();
         } else if (op.equals("I")) {
             linfo.id = Integer.parseInt(cinfo.newValue);
-            insertCount++;
+            insertCount.incrementAndGet();
         } else if (op.equals("D")) {
             linfo.id = Integer.parseInt(cinfo.oldValue);
-            deleteCount++;
+            deleteCount.incrementAndGet();
         } else {
             throw new Exception("非法的操作类型");
         }
@@ -163,16 +199,88 @@ public class LogParser {
 
     String logPath;
 
-    public LogIndex parseLog() throws Exception {
-        logPath = Config.DATA_HOME + "/canal.log";
-        File f1 = new File(logPath);
-        lineReader = new LineReader(logPath, 0, f1.length());
 
-        ReadLineInfo line = lineReader.readLine();
-        while (line.line != null) {
-            parseLine(line);
-            line = lineReader.readLine();
+    private static class Worker implements Runnable {
+        @Override
+        public void run() {
+
+            try {
+                while (true) {
+                    FileBlock block = fileBlocks.poll();
+                    if (block == null) {
+                        break;
+                    } else {
+                        BlockLog blockLog = parseLogBlock(block);
+                        synchronized (aliLogData) {
+                            aliLogData.blockLogs.add(blockLog);
+                        }
+                        latch.countDown();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(0);
+            }
         }
-        return logIndex;
+    }
+
+    private static CountDownLatch latch;
+
+
+    private static BlockLog parseLogBlock(FileBlock block) throws Exception {
+        BlockLog blockLog = new BlockLog();
+        blockLog.fileBlock = block;
+        LineReader lineReader = new LineReader(block.path, block.offset, block.length);
+        ReadLineInfo line = lineReader.readLine();
+        int lineIndex = 1;
+        while (line.line != null) {
+            parseLine(line, blockLog);
+            line = lineReader.readLine();
+            lineIndex++;
+        }
+        return blockLog;
+    }
+
+    private static void sortBlock() {
+        //merge table Info
+        for (BlockLog blockLog : aliLogData.blockLogs) {
+            for (Map.Entry<String, TableInfo> entry : blockLog.tableInfos.entrySet()) {
+                String k = entry.getKey();
+                TableInfo v = entry.getValue();
+                if (!aliLogData.tableInfos.containsKey(k)) {
+                    aliLogData.tableInfos.put(k, v);
+                }
+            }
+        }
+        //sort by index
+        Collections.sort(aliLogData.blockLogs, new Comparator<BlockLog>() {
+            @Override
+            public int compare(BlockLog o1, BlockLog o2) {
+                return o1.fileBlock.index - o2.fileBlock.index;
+            }
+        });
+
+    }
+
+    public static AliLogData parseLog() throws Exception {
+
+        splitLogFile();
+        latch = new CountDownLatch(fileBlocks.size());
+        int cpu = Runtime.getRuntime().availableProcessors();
+        cpu = 1;
+        for (int i = 0; i < cpu; i++) {
+            Thread th = new Thread(new Worker());
+            th.start();
+        }
+        latch.await();
+        sortBlock();
+        //
+
+        return aliLogData;
+//        logPath = Config.DATA_HOME + "/1.txt";
+//        File f1 = new File(logPath);
+//        lineReader = new LineReader(logPath, 0, f1.length());
+
+
     }
 }

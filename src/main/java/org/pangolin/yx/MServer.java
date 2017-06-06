@@ -1,7 +1,5 @@
 package org.pangolin.yx;
 
-import java.util.List;
-
 /**
  * Created by yangxiao on 2017/6/4.
  */
@@ -17,7 +15,7 @@ public class MServer {
                 int endId = Integer.parseInt(args[3]);
                 LogParser parser = new LogParser();
                 //read log
-                LogIndex data = parser.parseLog();
+                AliLogData data = parser.parseLog();
                 //build query
                 QueryData query = new QueryData();
                 query.scheme = scheme;
@@ -30,7 +28,6 @@ public class MServer {
                 RebuildResult result = rebuider.getResult(query);
                 //write to file
                 ResultWriter.writeToFile(result);
-
             } else {
                 System.out.println("参数错误");
             }
