@@ -31,13 +31,29 @@ public class Worker extends Thread {
 //			return o2.compareTo(o1);
 //		}	
 //	});
-    
+    String schema = "middleware3";
+    String table = "student";
+    long beginId = 5000;
+    long endId = 10000;
+    byte[] schemaByte = schema.getBytes();
+    int schemaByteLen = schemaByte.length;
+    byte[] tableByte = table.getBytes();
+    int tableByteLen = tableByte.length;
     public static final Map<Long, TreeMap<Long,String>> firstScan = new ConcurrentHashMap<>();
     private BlockingQueue<Block> buffers;
     private static AtomicInteger workerNum = new AtomicInteger(0);
     public Worker() {
         super("Worker" + workerNum.incrementAndGet());
         this.buffers = new ArrayBlockingQueue<Block>(20, true);
+
+//    	try {
+//    		String str = new String(bytes, 0, len+1, "utf-8");
+//    		System.out.println(str);
+//    		return;
+//    	} catch (UnsupportedEncodingException e) {
+//			// TODO: handle exception
+//		}
+
     }
 
     public void appendBuffer(ByteBuffer buffer, long pos) throws InterruptedException {
@@ -119,23 +135,8 @@ public class Worker extends Thread {
 		}
 	}
     private void process(byte[] bytes, int fileNo, long currentPos, int len) {
-    	String schema = "middleware3";
-    	String table = "student";
-    	long beginId = 5000;
-    	long endId = 10000;
-//    	try {
-//    		String str = new String(bytes, 0, len+1, "utf-8");
-//    		System.out.println(str);
-//    		return;
-//    	} catch (UnsupportedEncodingException e) {
-//			// TODO: handle exception
-//		}
-    	ByteBuffer bytebuffer = ByteBuffer.wrap(bytes, 0, len);
-    	byte[] schemaByte = schema.getBytes();
-    	int schemaByteLen = schemaByte.length;
-    	byte[] tableByte = table.getBytes();
-    	int tableByteLen = tableByte.length; 
-    	
+
+        ByteBuffer bytebuffer = ByteBuffer.wrap(bytes, 0, len);
     	bytebuffer.get();
     	findNext(bytebuffer);
     	
