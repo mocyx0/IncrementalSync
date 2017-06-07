@@ -1,8 +1,12 @@
 package org.pangolin.yx;
 
+import com.alibaba.middleware.race.sync.Constants;
+import org.pangolin.xuzhe.test.IOPerfTest;
+import org.pangolin.xuzhe.test.ReadingThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -45,8 +49,22 @@ public class MServer {
     private static ByteBuffer doTest() {
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
+        try {
+            IOPerfTest.positiveOrderReadByFileChannel(Constants.DATA_HOME + "/1.txt");
+            // 不读同一个文件，避免从pagecache读
+            IOPerfTest.reverseOrderReadByFileChannel(Constants.DATA_HOME + "/2.txt");
+            String[] fileNameArray = new String[10];
+            for(int i = 1; i <= 10; i++) {
+                fileNameArray[i-1] = String.format("%s/%d.txt", Constants.DATA_HOME, i);
+            }
+            ReadingThread readingThread = new ReadingThread(fileNameArray);
+            readingThread.start();
+            readingThread.join();
+        } catch (IOException e) {
+            logger.info("{}", e);
+        } catch (InterruptedException e) {
 
-
+        }
 
 
 
