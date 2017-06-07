@@ -42,17 +42,8 @@ class StringParser {
 }
 
 class LogOfTable {
-    //    HashMap<Long, LinkedList<LogRecord>> idToLogs = new HashMap<>();
-/*
-    public void checkKey(Long id) {
-        if (!idToLogs.containsKey(id)) {
-            idToLogs.put(id, new LinkedList<LogRecord>());
-        }
-    }
-*/
     private ArrayList<LogRecord> logArray = new ArrayList<>();//log链表
     private HashMap<Long, Integer> logPos = new HashMap<>();//当前的id对应的上一条log索引
-
 
     public LogRecord getLog(int index) {
         return logArray.get(index);
@@ -76,16 +67,38 @@ class LogOfTable {
     }
 
     public void putLog(LogRecord record) {
-        if (record.preId != null) {
+        if (record.preId == 4996) {
+            System.out.print(1);
+        }
+        if (record.opType == Config.OP_TYPE_UPDATE) {
+            record.preLogIndex = getPreLogIndex(record.preId);
+            if (record.preId != record.id) {
+                logPos.put(record.preId, -1);
+            }
+            logArray.add(record);
+            logPos.put(record.id, logArray.size() - 1);
+
+
+        } else if (record.opType == Config.OP_TYPE_INSERT) {
+            logArray.add(record);
+            logPos.put(record.id, logArray.size() - 1);
+        } else if (record.opType == Config.OP_TYPE_DELETE) {
+            logPos.put(record.preId, -1);
+        }
+/*
+
+        if (record.opType != Config.OP_TYPE_INSERT) {
             record.preLogIndex = getPreLogIndex(record.preId);
         }
         //主键update
-        if (record.opType.equals("U") && !record.preId.equals(record.id)) {
+        if (record.opType == Config.OP_TYPE_UPDATE && (record.preId != record.id)) {
             //delete old
             //logPos.remove(record.preId);
             logPos.put(record.preId, -1);
         }
-        if (record.id != null) {
+
+        if (record.opType != Config.OP_TYPE_DELETE) {
+            record.preLogIndex = getPreLogIndex(record.preId);
             logArray.add(record);
             logPos.put(record.id, logArray.size() - 1);
         } else {
@@ -93,6 +106,7 @@ class LogOfTable {
             //logPos.remove(record.preId);
             logPos.put(record.preId, -1);
         }
+        */
     }
 
     public int getPreLogIndex(Long id) {
@@ -106,13 +120,16 @@ class LogOfTable {
 }
 
 class AliLogData {
-    HashMap<String, TableInfo> tableInfos = new HashMap<>();
+    //HashMap<String, TableInfo> tableInfos = new HashMap<>();
+    TableInfo tableInfo;
     ArrayList<BlockLog> blockLogs = new ArrayList<>();
 }
 
 class BlockLog {
-    HashMap<String, TableInfo> tableInfos = new HashMap<>();
-    HashMap<String, LogOfTable> logInfos = new HashMap<>();
+    //HashMap<String, TableInfo> tableInfos = new HashMap<>();
+    TableInfo tableInfo = null;
+    //HashMap<String, LogOfTable> logInfos = new HashMap<>();
+    LogOfTable logOfTable = new LogOfTable();
     FileBlock fileBlock;
 }
 
@@ -125,9 +142,10 @@ class FileBlock {
 
 class LogRecord {
     //
-    public String opType;
-    public Long preId;
-    public Long id;
+    //public String opType;
+    public byte opType;
+    public long preId = -2;
+    public long id = -2;
     //file info
     public long offset;
     public String logPath;
@@ -171,20 +189,42 @@ public class LogParser {
         }
     }
 
+    private static byte stringToOp(String s) throws Exception {
+
+        if (s.equals("U")) {
+            return Config.OP_TYPE_UPDATE;
+        } else if (s.equals("I")) {
+            return Config.OP_TYPE_INSERT;
+        } else if (s.equals("D")) {
+            return Config.OP_TYPE_DELETE;
+        } else {
+            throw new Exception("unknown op " + s);
+        }
+
+    }
+
     private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog) throws Exception {
         String line = lineInfo.line;
+
 
         StringParser parser = new StringParser(line, 0);
         String uid = Util.getNextToken(parser, '|');
         String time = Util.getNextToken(parser, '|');
         String scheme = Util.getNextToken(parser, '|');
         String table = Util.getNextToken(parser, '|');
+        if (!scheme.equals(Config.queryData.scheme)) {
+            return;
+        }
+
+        if (!table.equals(Config.queryData.table)) {
+            return;
+        }
+
         String op = Util.getNextToken(parser, '|');
 
-        String hashKey = scheme + " " + table;
         //table的第一条insert记录包含所有列, 我们记录下元信息
         if (op.equals("I")) {
-            if (!blockLog.tableInfos.containsKey(hashKey)) {
+            if (blockLog.tableInfo == null) {
                 int off = parser.off;
                 TableInfo info = new TableInfo();
                 info.scheme = scheme;
@@ -197,13 +237,9 @@ public class LogParser {
                     }
                     cinfo = Util.getNextColumnInfo(parser);
                 }
-                blockLog.tableInfos.put(hashKey, info);
+                blockLog.tableInfo = info;
                 parser.off = off;
             }
-
-        }
-        if (!blockLog.logInfos.containsKey(hashKey)) {
-            blockLog.logInfos.put(hashKey, new LogOfTable());
         }
 
         //解析到主键为止
@@ -220,7 +256,8 @@ public class LogParser {
         }
         //build logRecord
         LogRecord linfo = new LogRecord();
-        linfo.opType = op;
+
+        linfo.opType = stringToOp(op);
         linfo.logPath = blockLog.fileBlock.path;
         linfo.offset = lineInfo.off;
         linfo.length = lineInfo.length;
@@ -237,8 +274,7 @@ public class LogParser {
         } else {
             throw new Exception("非法的操作类型");
         }
-        LogOfTable logOfTable = blockLog.logInfos.get(hashKey);
-        logOfTable.putLog(linfo);
+        blockLog.logOfTable.putLog(linfo);
     }
 
     private static class Worker implements Runnable {
@@ -282,14 +318,11 @@ public class LogParser {
     }
 
     private static void sortBlock() {
-        //merge table Info
+        //get table Info
         for (BlockLog blockLog : aliLogData.blockLogs) {
-            for (Map.Entry<String, TableInfo> entry : blockLog.tableInfos.entrySet()) {
-                String k = entry.getKey();
-                TableInfo v = entry.getValue();
-                if (!aliLogData.tableInfos.containsKey(k)) {
-                    aliLogData.tableInfos.put(k, v);
-                }
+            TableInfo v = blockLog.tableInfo;
+            if (v != null) {
+                aliLogData.tableInfo = v;
             }
         }
         //sort by index
@@ -299,7 +332,6 @@ public class LogParser {
                 return o1.fileBlock.index - o2.fileBlock.index;
             }
         });
-
     }
 
     public static AliLogData parseLog() throws Exception {

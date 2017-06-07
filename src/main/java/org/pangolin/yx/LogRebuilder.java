@@ -29,12 +29,11 @@ public class LogRebuilder {
     }
 
     //根据id在blocks上找出对应的日志记录
-    ArrayList<LogRecord> getLogs(QueryData queryData, long id) throws Exception {
-
+    ArrayList<LogRecord> getLogs(long id) throws Exception {
 
 
         ArrayList<LogRecord> re = new ArrayList<>();
-        String hashKey = queryData.scheme + " " + queryData.table;
+        //String hashKey = queryData.scheme + " " + queryData.table;
 
         int blockIndex = aliLogData.blockLogs.size() - 1;
         if (id == 4) {
@@ -51,85 +50,32 @@ public class LogRebuilder {
             }
             //反向遍历
             BlockLog blockLog = aliLogData.blockLogs.get(blockIndex);
-            if (blockLog.logInfos.containsKey(hashKey)) {
-                LogOfTable logOfTable = blockLog.logInfos.get(hashKey);
-
-                //
-                if(logOfTable.isDeleted(targetId)){
-                    return re;
+            LogOfTable logOfTable = blockLog.logOfTable;
+            if (logOfTable.isDeleted(targetId)) {
+                return re;
+            }
+            LogRecord lastLog = logOfTable.getLogById(targetId);
+            //
+            while (lastLog != null) {
+                re.add(lastLog);
+                if (lastLog.preLogIndex != -1) {
+                    lastLog = logOfTable.getLog(lastLog.preLogIndex);
+                } else {
+                    targetId = lastLog.preId;
+                    break;
                 }
-                LogRecord lastLog = logOfTable.getLogById(targetId);
-                //
-                while (lastLog != null) {
-                    re.add(lastLog);
-                    if (lastLog.preLogIndex != -1) {
-                        lastLog = logOfTable.getLog(lastLog.preLogIndex);
-                    } else {
-                        targetId = lastLog.preId;
-                        break;
-                    }
-                }
-                /*
-                while (true) {
-                    if (!logOfTable.idToLogs.containsKey(id)) {
-                        break;
-                    } else {
-                        //获取队列
-                        LinkedList<LogRecord> logs = logOfTable.idToLogs.get(id);
-                        if (logs.size() == 0) {
-                            break;
-                        } else {
-                            //从后向前分析
-                            LogRecord info = logs.poll();
-                            if (info.opType.equals("U")) {
-                                //主键update
-                                id = info.preId;
-                                re.add(info);
-                            } else if (info.opType.equals("I")) {
-                                //意味着这是第一条记录
-                                re.add(info);
-                                return re;
-                            } else if (info.opType.equals("D")) {
-                                //记录被删除
-                                return re;
-                            }
-                        }
-                    }
-
-                }
-                */
             }
             blockIndex--;
         }
         return re;
     }
 
-    TableInfo getTableInfo(QueryData query) {
-        String hashStr = query.scheme + " " + query.table;
-        TableInfo block = null;
-        if (aliLogData.tableInfos.containsKey(hashStr)) {
-            block = aliLogData.tableInfos.get(hashStr);
-        }
-        return block;
-    }
-
-
     //搜集log信息  id对应一个log记录
-    private void getLogInfo(QueryData query) throws Exception {
-        String hashStr = query.scheme + " " + query.table;
-        for (long i = query.start + 1; i < query.end; i++) {
-            ArrayList<LogRecord> infos = getLogs(query, i);
+    private void getLogInfo() throws Exception {
+        for (long i = Config.queryData.start + 1; i < Config.queryData.end; i++) {
+            ArrayList<LogRecord> infos = getLogs(i);
             logRebuild.put(i, infos);
         }
-
-        /*
-        LogOfTable block = getLogBlock(query);
-        if (block == null) {
-            return;
-        } else {
-
-        }
-        */
     }
 
     HashMap<String, RandomAccessFile> rafs = new HashMap<>();
@@ -155,13 +101,13 @@ public class LogRebuilder {
     }
 
     //读取
-    private RebuildResult rebuildData(QueryData query) throws Exception {
+    private RebuildResult rebuildData() throws Exception {
         RebuildResult re = new RebuildResult();
         for (Map.Entry<Long, ArrayList<LogRecord>> kv : logRebuild.entrySet()) {
             Long id = kv.getKey();
             ArrayList<LogRecord> logs = kv.getValue();
             //get table meta
-            TableInfo tinfo = getTableInfo(query);
+            TableInfo tinfo = aliLogData.tableInfo;
             int dataCount = tinfo.columns.size();
             HashMap<String, String> values = new HashMap<>();
             //read log
@@ -192,9 +138,9 @@ public class LogRebuilder {
         return re;
     }
 
-    public RebuildResult getResult(QueryData query) throws Exception {
-        getLogInfo(query);
+    public RebuildResult getResult() throws Exception {
+        getLogInfo();
         getAllLog();
-        return rebuildData(query);
+        return rebuildData();
     }
 }

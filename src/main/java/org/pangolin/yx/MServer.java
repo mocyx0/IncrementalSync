@@ -28,11 +28,17 @@ public class MServer {
         LogRebuilder rebuider = new LogRebuilder(data);
         logger.info("rebuild done");
         //rebuild data
-        RebuildResult result = rebuider.getResult(query);
+        RebuildResult result = rebuider.getResult();
         logger.info("getResult done");
         //write to file
-        ByteBuffer re = ResultWriter.writeToBuffer(result);
-        return re;
+        if (Config.SINGLE) {
+            ResultWriter.writeToFile(result);
+            return null;
+        } else {
+            ByteBuffer re = ResultWriter.writeToBuffer(result);
+            return re;
+        }
+
     }
 
 
@@ -52,11 +58,14 @@ public class MServer {
                 query.table = table;
                 query.start = startId;
                 query.end = endId;
+                Config.queryData = query;
                 ByteBuffer buffer = getResult(query);
-                //ByteBuffer buffer = ByteBuffer.allocate(123);
-                buffer.put("hello hello".getBytes());
-                NetServerHandler.data = buffer;
-                NetServer.start();
+                if (buffer != null) {
+                    //buffer.put("hello hello".getBytes());
+                    NetServerHandler.data = buffer;
+                    NetServer.start();
+                }
+
 
             } else {
                 System.out.println("参数错误");
