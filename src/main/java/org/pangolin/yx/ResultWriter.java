@@ -1,6 +1,5 @@
 package org.pangolin.yx;
 
-import com.sun.xml.internal.fastinfoset.tools.FI_DOM_Or_XML_DOM_SAX_SAXEvent;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 

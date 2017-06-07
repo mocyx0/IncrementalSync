@@ -41,6 +41,12 @@ public class MServer {
 
     }
 
+    private static ByteBuffer doTest() {
+        ByteBuffer buffer = ByteBuffer.allocate(128);
+        buffer.put("hello wprld".getBytes());
+        return buffer;
+    }
+
 
     public static void main(String[] args) {
         initProperties();
@@ -62,8 +68,7 @@ public class MServer {
 
                 ByteBuffer buffer;
                 if (Config.TEST_MODE) {
-                    buffer = ByteBuffer.allocate(128);
-                    buffer.put("hello wprld".getBytes());
+                    buffer = doTest();
 
                 } else {
                     buffer = getResult(query);
