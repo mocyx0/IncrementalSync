@@ -44,7 +44,9 @@ public class Config {
     public static int TYPE_STRING = 2;
 
     public static QueryData queryData;
-    public static boolean SINGLE = true;
+    //单机模式
+    public static boolean SINGLE = false;
+    public static boolean TEST_MODE=true;
 
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;

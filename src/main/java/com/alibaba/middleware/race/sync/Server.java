@@ -3,6 +3,7 @@ package com.alibaba.middleware.race.sync;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.pangolin.yx.MServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,9 @@ public class Server {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        org.pangolin.yx.Config.setRuntime("ali");
+        MServer.main(args);
+        /*
         initProperties();
 
         printInput(args);
@@ -44,6 +48,7 @@ public class Server {
         logger.info("com.alibaba.middleware.race.sync.Server is running....");
 
         server.startServer(5527);
+        */
     }
 
     /**

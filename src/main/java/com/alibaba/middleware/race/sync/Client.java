@@ -1,5 +1,6 @@
 package com.alibaba.middleware.race.sync;
 
+import org.pangolin.yx.MClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +25,9 @@ public class Client {
     private EventLoopGroup loop = new NioEventLoopGroup();
 
     public static void main(String[] args) throws Exception {
+        org.pangolin.yx.Config.setRuntime("ali");
+        MClient.main(args);
+        /*
         initProperties();
         Logger logger = LoggerFactory.getLogger(Client.class);
         logger.info("Welcome");
@@ -31,7 +35,7 @@ public class Client {
         ip = args[0];
         Client client = new Client();
         client.connect(ip, port);
-
+        */
     }
 
     /**

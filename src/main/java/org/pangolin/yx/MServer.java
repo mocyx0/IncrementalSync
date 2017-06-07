@@ -59,14 +59,19 @@ public class MServer {
                 query.start = startId;
                 query.end = endId;
                 Config.queryData = query;
-                ByteBuffer buffer = getResult(query);
+
+                ByteBuffer buffer;
+                if (Config.TEST_MODE) {
+                    buffer = ByteBuffer.allocate(128);
+                    buffer.put("hello wprld".getBytes());
+
+                } else {
+                    buffer = getResult(query);
+                }
                 if (buffer != null) {
-                    //buffer.put("hello hello".getBytes());
                     NetServerHandler.data = buffer;
                     NetServer.start();
                 }
-
-
             } else {
                 System.out.println("参数错误");
             }

@@ -14,7 +14,7 @@ public class MClient {
 
         try {
             initProperties();
-            NetClient.start("127.0.0.1");
+            NetClient.start(args[0]);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(0);

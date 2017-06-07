@@ -17,17 +17,27 @@ import java.nio.ByteBuffer;
  */
 public class NetClientHandler extends ChannelInboundHandlerAdapter {
     private static Logger logger = LoggerFactory.getLogger(NetClientHandler.class);
+    RandomAccessFile raf;
+
+    NetClientHandler() {
+        try {
+            String path = Config.RESULT_HOME + "/" + Config.RESULT_NAME;
+            File f = new File(path);
+            if (f.exists()) {
+                f.delete();
+            }
+            raf = new RandomAccessFile(path, "rw");
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(0);
+        }
+
+    }
 
 
     private void writeToFile(byte[] data) throws Exception {
-        String path = Config.RESULT_HOME + "/" + Config.RESULT_NAME;
-        File f = new File(path);
-        if (f.exists()) {
-            f.delete();
-        }
-        RandomAccessFile raf = new RandomAccessFile(path, "rw");
+
         raf.write(data);
-        raf.close();
     }
 
     // 接收server端的消息，并打印出来
@@ -46,6 +56,8 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
         //ctx.writeAndFlush("I have received your messages and wait for next messages");
         //ctx.write(stringToBuffer("hi!"));
         //ctx.channel().writeAndFlush(stringToBuffer("hi!"));
+
+        //关闭连接
         ctx.channel().close().sync();
         System.exit(0);
     }
