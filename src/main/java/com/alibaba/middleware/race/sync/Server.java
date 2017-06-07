@@ -1,13 +1,10 @@
 package com.alibaba.middleware.race.sync;
 
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.alibaba.fastjson.JSONObject;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -42,23 +39,7 @@ public class Server {
         initProperties();
 
         printInput(args);
-
-        schema = args[0];
         Logger logger = LoggerFactory.getLogger(Client.class);
-        /*
-        JSONObject jsonObject = JSONObject.parseObject(args[1]);
-        tableNamePkMap = JSONObject.parseObject(jsonObject.toJSONString());
-
-
-        logger.info("schema:" + schema);
-        // 打印下输入内容
-        for (Object object : tableNamePkMap.entrySet()) {
-            Entry<String, Long> entry = (Entry<String, Long>) object;
-            logger.info("tableName:" + entry.getKey());
-            logger.info("PrimaryKey:" + entry.getValue());
-
-        }
-        */
         Server server = new Server();
         logger.info("com.alibaba.middleware.race.sync.Server is running....");
 

@@ -42,8 +42,8 @@ d. 列信息
   
 
 e. 列值
- * 主要分为变更前和变更后,<NULL>代表物理值为NULL(空值),(可不考虑字符串本身为"<NULL>"的特殊情况)
- * insert变更,只有变更后列值,其变更前列值为<NULL>,会包含所有的列信息
+ * 主要分为变更前和变更后,NULL代表物理值为NULL(空值),(可不考虑字符串本身为"NULL"的特殊情况)
+ * insert变更,只有变更后列值,其变更前列值为NULL,会包含所有的列信息
  * upadate变更,都会有变更前和后的列值,会包含主键和发生变更列的信息(未发生变更过的列不会给出,不是全列信息)
  * delete变革,只有变更前列值,会包含所有的列信息
 
@@ -51,7 +51,7 @@ e. 列值
  
 
 实际例子:
- * 000001:106|1489133349000|test|user|I|id:1:1|<NULL>|102|name:2:0|<NULL>|ljh|score:1:0|<NULL>|98|
+ * 000001:106|1489133349000|test|user|I|id:1:1|NULL|102|name:2:0|NULL|ljh|score:1:0|<NULL>|98|
  * 000001:106|1489133349000|test|user|U|id:1:1|102|102|score:1:0|98|95|  //执行了变更update score=95 where id=102
 
 
@@ -80,7 +80,7 @@ JAVA
 
 在结果校验100%正确的前提下，按照总耗时进行排名，耗时越少排名越靠前，时间精确到毫秒。
 
-# ================================================== 如何模拟赛题数据  ====================================================
+# ================================ 如何模拟赛题数据  ===================================
 
 1. 从阿里云代码仓库下载[canal(复赛模拟数据版)](https://code.aliyun.com/wanshao/canal.git)。canal是一款开源的mysql实时数据解析工具，在github的地址为[canal(开源版)](https://github.com/alibaba/canal)
 2. 自己安装好mysql，并且建好相关的schema和table
@@ -91,9 +91,122 @@ JAVA
 PS：
 1. 修改默认路径请更改AbstractCanalClientTest.storeChangeToDisk()方法
 2. canal中转化数据的代码请看：analyseEntryAndFlushToFile()方法
+3. canal中解析生成赛题数据时，现在只有int类型换解析成"数字类型"，其他的类型都会解析成"字符串类型"
+4. 生成大量数据的时候请使用canal项目里面的startup.sh里面的JVM参数启动CanalLauncher和SimpleCanalClientTest，避免GC问题
 
 
-# ========================================== 评测程序如何工作 ==============================================================
+为了方便选手测试，也提供了生产好的数据和答案(用的钉钉的网盘)，选手可以下载，其中数据文件可以通过split命令自行分割成10个小文件来测试
+- [测试文件](https://space.dingtalk.com/c/ggHaACQwZmE1ZDc3MC03MzcwLTQ1NjAtYWI4Mi00MTU4YjBlMTQxNDUCzhn0eXw)
+
+另外选手可以使用如下的存储过程来生成数据：
+
+```
+CREATE TABLE student(
+  id INT NOT NULL AUTO_INCREMENT,
+  first_name VARCHAR(10) NOT NULL,
+  last_name VARCHAR(10) NOT NULL,
+  sex VARCHAR(5) NOT NULL,
+  score INT NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+
+/**增加学生数据的存储过程-- **/
+DROP PROCEDURE IF EXISTS add_student;  
+DELIMITER //
+    create PROCEDURE add_student(in num INT)
+    BEGIN
+        DECLARE rowid INT DEFAULT 0;
+        DECLARE firstname CHAR(1);
+        DECLARE name1 CHAR(1);
+        DECLARE name2 CHAR(1);
+        DECLARE lastname VARCHAR(3) DEFAULT '';
+        DECLARE sex CHAR(1);
+        DECLARE score INT DEFAULT 0;
+        DECLARE updateFirstName  CHAR(1);
+        DECLARE updateLastName CHAR(1);
+        DECLARE updateScore INT DEFAULT 0;
+        SET @exedata = "";
+        WHILE rowid < num DO
+            SET firstname = SUBSTRING('赵钱孙李周吴郑王林杨柳刘孙陈江阮侯邹高彭徐',FLOOR(1+21*RAND()),1); 
+            SET name1 = SUBSTRING('一二三四五六七八九十甲乙丙丁静景京晶名明铭敏闵民军君俊骏天田甜兲恬益依成城诚立莉力黎励',floor(1+43*RAND()),1); 
+            SET name2 = SUBSTRING('一二三四五六七八九十甲乙丙丁静景京晶名明铭敏闵民军君俊骏天田甜兲恬益依成城诚立莉力黎励',floor(1+43*RAND()),1); 
+            SET sex=SUBSTRING('男女',floor(1+2*RAND()),1);
+            SET score= FLOOR(40 + (RAND() *60));
+            SET lastname=SUBSTRING('一二三四五六七八九十甲乙丙丁静景京晶名明铭敏闵民军君俊骏天田甜雨恬益依娥我他刚人发上乐',floor(1+43*RAND()),1);
+            SET rowid = rowid + 1;
+            IF ROUND(RAND())=0 THEN 
+            SET lastname =name1;
+            END IF;
+            IF ROUND(RAND())=1 THEN
+            SET lastname = CONCAT(name1,name2);
+            END IF;
+            IF length(@exedata)>0 THEN
+            SET @exedata = CONCAT(@exedata,',');
+            END IF;
+            SET @exedata=concat(@exedata,"('",firstname,"','",lastname,"','",sex,"','",score,"')");
+            IF rowid%10000=0
+            THEN 
+                SET @exesql =concat("insert into student(first_name,last_name,sex,score) values ", @exedata);
+                prepare stmt from @exesql;
+                execute stmt;
+                DEALLOCATE prepare stmt;
+                SET @exedata = "";
+            END IF;
+        END WHILE;
+        
+        
+        IF length(@exedata)>0 
+        THEN
+            SET @exesql =concat("insert into student(first_name,last_name,sex,score) values ", @exedata);
+            prepare stmt from @exesql;
+            execute stmt;
+            DEALLOCATE prepare stmt;
+        END IF; 
+    END //
+DELIMITER ;
+
+
+/**更新学生数据的存储过程-- **/
+DROP PROCEDURE IF EXISTS update_student;  
+DELIMITER //
+    create PROCEDURE update_student(in num INT)
+    BEGIN
+		DECLARE rowid INT DEFAULT 0;
+        DECLARE randomNum INT DEFAULT 0;
+        WHILE rowid < num DO
+			SET randomNum =  FLOOR(10 + (RAND() *1000));
+			SET rowid = rowid + 1;
+			update student set score=randomNum where id>0;
+        END WHILE;
+    END //
+DELIMITER ;
+
+
+/**删除学生数据的存储过程-- **/
+DROP PROCEDURE IF EXISTS delete_student;  
+DELIMITER //
+    create PROCEDURE delete_student(in num INT)
+    BEGIN
+		DECLARE rowid INT DEFAULT 0;
+        WHILE rowid < num DO
+			SET rowid = rowid + 1;
+			delete from student where id mod 2=0;
+        END WHILE;
+    END //
+DELIMITER ;
+
+
+
+/**调用方式 PS:选手可以修改存储过程中的where条件来做不同的变更**/
+call add_student(10);
+call update_student(10);
+call delete_student(10);
+```
+
+
+
+# ========================= 评测程序如何工作 ============================================
 概要说明：评测程序也分为Server和Client，请留意
 
 1. 从天池拉取选手git地址
@@ -105,7 +218,7 @@ PS：
 
 ```
 # 启动选手server，并且传入相关
-java $JAVA_OPS -cp $jarPath com.alibaba.middleware.race.sync.Server $schema $TableNamePkJson
+java $JAVA_OPS -cp $jarPath com.alibaba.middleware.race.sync.Server $schema $tableName $start $end
 # 启动选手client
 java $JAVA_OPS -cp $jarPath com.alibaba.middleware.race.sync.Client
 ```
@@ -113,36 +226,36 @@ java $JAVA_OPS -cp $jarPath com.alibaba.middleware.race.sync.Client
 7. client端评测程序等待client端程序运行结束(退出JVM)后，到指定目录拿选手的最终结果和标准结果进行比对，并且将结果(结果正确、超时、结果错误)返回给server端评测程序
 8. server端评测程序得到结果，如果结果有效，记录结束时间endTime。如果结果无效则直接将相关错误信息之间返回给天池系统。
 10. server端评测程序强制kill选手的server端进程
-11. server端评测程序将最终的间隔finalTime=(endTime-starttime)上报给天池系统，由天池进行排名
+11. server端评测程序将最终的间隔finalTime=(endTime-starttime)上报给天池系统，由天池进行排名。天池上的costTime单位是毫秒
 
 
 注意点：
 1. 选手的server端程序由server端的评测程序来kill
 2. client端的评测程序需要选手自己控制在得到最终结果后停止，否则会有超时问题
 
-# ==================================================== 如何获取评测日志 ===================================================
-1. 超时时间： server端不做超时处理，client端超时时间为10分钟
+
+# ============================= 如何获取评测日志 ===================================
+1. 超时时间： server端不做超时处理，client端超时时间为5分钟
 2. 日志处理：
     - 请将日志写入指定的日志目录：/home/admin/logs/${teamCode}/，这里的teamCode请替换成自己的唯一teamCode，此外请不要透露自己的teamCode给别人哦。
-    - 日志的命名按照如下命名：${test.role}_${teamCode}_custom_WARN.log和${test.role}_${teamCode}_custom_INFO.log。
 3. 如何获取自己运行的日志：
     - 选手每次提交的程序运行的gc日志以及符合上面命名规范的日志，评测程序才会将其反馈给选手。
+    - 日志的命名${logName}按照如下命名：${test.role}-${teamCode}-WARN.log.part和${test.role}-${teamCode}-INFO.log.part。例如client-teamCode-INFO.log.part或者server-teamCode-INFO.log.part。${test.role}可以为client或者server
+    - 如果查看GC日志的话，${logName}则为gc_client.log或者gc_server.log
     - 选手可以通过地址：http://middle2017.oss-cn-shanghai.aliyuncs.com/${teamCode}/${logName} 这样的形式获取自己的日志
-    - ${teamCode}是选手的唯一识别码之一，${logName}的名称可以为gc.log、{test.role}_${teamCode}_custom_INFO.log、{test.role}_${teamCode}_custom_WARN.log和{test.role}_${teamCode}_custom_ERROR.log三者之一.
-4. 如何获取评测日志： 
-    - 选手可以通过地址：http://middle2017.oss-cn-shanghai.aliyuncs.com/${teamCode}/assessment_${teamCode}_INFO.log 这样的形式获取自己的评测日志
-    - 评测日志中${teamCode}替换成自己的teamCode
+    - 日志已经做了上传大小的限制，INFO日志限制10K，WARN和ERROR日志限制大小1K
 
 
 
-# ========================================================== 如何使用Demo ================================================
+
+# ================================= 如何使用Demo ================================
 Demo基于netty实现了简单的客户端和服务端程序。
-1. Server: 负责接收评测系统给其的输入(通过args参数)，并且将解析好的数据交给Client。
+1. Server: 负责接收评测系统给其的输入(通过args参数)，并且将解析好的数据交给Client。每次提交评测会给定4个参数，作为一组输入，保存在main的args对象里
 2. Client: 启动后根据评测系统给其的serverIp来启动，启动后接受Server的信息，并且将最终结果写入到指定结果文件目录
 
 ```
-Server端Program arguments示例（2个参数）：
-middleware {"student":"2","teacher":"1"}
+Server端Program arguments示例（4个参数）：
+middleware student 100 200
 
 Client端Program arguments示例：
 127.0.0.1
@@ -193,7 +306,7 @@ teamcode是识别选手的唯一标示，评测程序会从选手teamcode相关�
 
 
 
-# ============================================================ FAQ ======================================================
+# =========================================== FAQ =========================================
 
 > 环境相关
 
@@ -235,7 +348,11 @@ $sudo time dd if=/dev/sda5  of=/dev/null bs=8k count=1000000
 16000320inputs+0outputs (1major+362minor)pagefaults 0swaps
 ```
 
-3. CPU信息? 答：24核 2.2GHz
+3. CPU信息? 
+```
+2个CPU,12个物理核，24个逻辑核，2.2GHz
+```
+答：24核 2.2GHz
 
 4. 最大文件打开数是多少？
 
@@ -314,3 +431,56 @@ file locks                      (-x) unlimited
 ```
 
 
+7. 物理机内存是多少？
+
+```
+96G
+```
+
+8. 结果输出顺序咋样？
+
+```
+列顺序按照第一次insert时的列顺序，行的顺序按照主键的顺序。如果范围内某主键的记录被删除了，就不用输出。
+```
+
+9. 网络能力咋样？
+
+```
+传输10G的单个大文件，速度在45MB/s
+```
+
+10. 结果中列的顺序怎样？
+
+```
+第一次插入的时候列信息是完整的，按照第一次插入时候的列顺序来输出即可
+```
+
+11. 是否可以针对数据集的特征做优化？
+
+```
+已知公开条件均可以利用，可以利用有限的日志信息做一些数据特征探索。
+```
+
+12. 比赛的输入会换吗?
+
+```
+会的，比赛有多套输入，会随机选择
+```
+
+13. 主键是数字类型确定吗?
+
+```
+确定的，主键是数字类型
+```
+
+14. 预热赛和正式赛有什么区别？
+
+```
+预热赛和正式赛的比赛数据不同。
+```
+
+15. 会不会有原本是查询范围外的主键通过update变成查询范围内的？
+
+```
+会有
+```
