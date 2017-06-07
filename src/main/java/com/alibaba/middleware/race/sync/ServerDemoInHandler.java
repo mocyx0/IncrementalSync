@@ -20,7 +20,6 @@ public class ServerDemoInHandler extends ChannelInboundHandlerAdapter {
 
     /**
      * 根据channel
-     * 
      * @param ctx
      * @return
      */
@@ -60,7 +59,6 @@ public class ServerDemoInHandler extends ChannelInboundHandlerAdapter {
                         logger.info("Server发送消息成功！");
                     }
                 });
-
             }
         }
 

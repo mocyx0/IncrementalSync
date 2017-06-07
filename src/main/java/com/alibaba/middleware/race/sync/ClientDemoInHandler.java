@@ -18,11 +18,11 @@ public class ClientDemoInHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 
-        logger.info("com.alibaba.middleware.race.sync.ClientDemoInHandler.channelRead");
+        logger.info("channelRead");
         ByteBuf result = (ByteBuf) msg;
         byte[] result1 = new byte[result.readableBytes()];
         result.readBytes(result1);
-        System.out.println("com.alibaba.middleware.race.sync.Server said:" + new String(result1));
+        System.out.println("Server said:" + new String(result1));
         result.release();
         ctx.writeAndFlush("I have received your messages and wait for next messages");
     }

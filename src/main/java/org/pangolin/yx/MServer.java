@@ -1,33 +1,63 @@
 package org.pangolin.yx;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+
 /**
  * Created by yangxiao on 2017/6/4.
  */
 public class MServer {
-    public static void main(String[] args) {
+    private static Logger logger = LoggerFactory.getLogger(MServer.class);
 
+    private static void initProperties() {
+        System.setProperty("middleware.test.home", Config.TESTER_HOME);
+        System.setProperty("middleware.teamcode", Config.TEAMCODE);
+        System.setProperty("app.logging.level", Config.LOG_LEVEL);
+    }
+
+
+    private static ByteBuffer getResult(QueryData query) throws Exception {
+
+        LogParser parser = new LogParser();
+        //read log
+        AliLogData data = parser.parseLog();
+        logger.info("parseLog done");
+        //get log info
+        LogRebuilder rebuider = new LogRebuilder(data);
+        logger.info("rebuild done");
+        //rebuild data
+        RebuildResult result = rebuider.getResult(query);
+        logger.info("getResult done");
+        //write to file
+        ByteBuffer re = ResultWriter.writeToBuffer(result);
+        return re;
+    }
+
+
+    public static void main(String[] args) {
+        initProperties();
         try {
             Config.setRuntime("yx");
+
             if (args.length == 4) {
                 String scheme = args[0];
                 String table = args[1];
                 int startId = Integer.parseInt(args[2]);
                 int endId = Integer.parseInt(args[3]);
-                LogParser parser = new LogParser();
-                //read log
-                AliLogData data = parser.parseLog();
                 //build query
                 QueryData query = new QueryData();
                 query.scheme = scheme;
                 query.table = table;
                 query.start = startId;
                 query.end = endId;
-                //get log info
-                LogRebuilder rebuider = new LogRebuilder(data);
-                //rebuild data
-                RebuildResult result = rebuider.getResult(query);
-                //write to file
-                ResultWriter.writeToFile(result);
+                ByteBuffer buffer = getResult(query);
+                //ByteBuffer buffer = ByteBuffer.allocate(123);
+                buffer.put("hello hello".getBytes());
+                NetServerHandler.data = buffer;
+                NetServer.start();
+
             } else {
                 System.out.println("参数错误");
             }

@@ -23,14 +23,14 @@ public class Config {
     }
 
     // 工作主目录
-    public static String TESTER_HOME = "/Users/wanshao/work/middlewareTester";
+    public static String TESTER_HOME = "D:/tmp/testhome";
     // 赛题数据
     public static String DATA_HOME = "D:/tmp/amimid/log";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
-    public static String TEAMCODE = "wanshao_test";
+    public static String TEAMCODE = "yx";
     // 日志级别
     public static String LOG_LEVEL = "INFO";
     // 中间结果目录
@@ -38,8 +38,8 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static int BLOCK_SIZE = 1024 * 1024;
-    
+    public static int BLOCK_SIZE = 1024 * 1024 * 16;
+
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 

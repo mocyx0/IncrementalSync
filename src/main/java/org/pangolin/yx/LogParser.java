@@ -136,7 +136,6 @@ class LogRecord {
     public int preLogIndex = -1;
     //只有在rebuild时才会有数据
     public ArrayList<LogColumnInfo> columns = null;
-
 }
 
 

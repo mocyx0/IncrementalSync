@@ -44,10 +44,12 @@ public class Server {
         printInput(args);
 
         schema = args[0];
+        Logger logger = LoggerFactory.getLogger(Client.class);
+        /*
         JSONObject jsonObject = JSONObject.parseObject(args[1]);
         tableNamePkMap = JSONObject.parseObject(jsonObject.toJSONString());
 
-        Logger logger = LoggerFactory.getLogger(Client.class);
+
         logger.info("schema:" + schema);
         // 打印下输入内容
         for (Object object : tableNamePkMap.entrySet()) {
@@ -56,6 +58,7 @@ public class Server {
             logger.info("PrimaryKey:" + entry.getValue());
 
         }
+        */
         Server server = new Server();
         logger.info("com.alibaba.middleware.race.sync.Server is running....");
 
@@ -95,18 +98,18 @@ public class Server {
         try {
             ServerBootstrap b = new ServerBootstrap();
             b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    .channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
 
-                    @Override
-                    public void initChannel(SocketChannel ch) throws Exception {
-                        // 注册handler
-                        ch.pipeline().addLast(new ServerDemoInHandler());
-                        // ch.pipeline().addLast(new ServerDemoOutHandler());
-                    }
-                })
-                .option(ChannelOption.SO_BACKLOG, 128)
-                .childOption(ChannelOption.SO_KEEPALIVE, true);
+                        @Override
+                        public void initChannel(SocketChannel ch) throws Exception {
+                            // 注册handler
+                            ch.pipeline().addLast(new ServerDemoInHandler());
+                            // ch.pipeline().addLast(new ServerDemoOutHandler());
+                        }
+                    })
+                    .option(ChannelOption.SO_BACKLOG, 128)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             ChannelFuture f = b.bind(port).sync();
 
