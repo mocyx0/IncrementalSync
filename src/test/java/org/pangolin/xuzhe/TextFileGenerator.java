@@ -16,6 +16,7 @@ public class TextFileGenerator {
     private final int FILE_SIZE = 1<<30;
     private final int LINE_LENGTH = 50;
     private final int LINE_LENGTH_WITHOUT_LINE_BREAK = LINE_LENGTH-1;
+    private final static byte[] line = "000001:106|1489133349000|test|user|I|id:1:1|<NULL>|102|name:2:0|<NULL>|ljh|score:1:0|<NULL>|98|\n".getBytes();
     @Test
     public void test() throws IOException {
         File file = new File("data/1.txt");
@@ -37,9 +38,8 @@ public class TextFileGenerator {
 
     private boolean fillOneLine(ByteBuffer buffer) {
         if(buffer.remaining() < 50) return false;
-        for(int j = 0; j < LINE_LENGTH_WITHOUT_LINE_BREAK; j++)
-            buffer.put((byte)('a' + (j%26)));
-        buffer.put((byte)'\n');
+        buffer.put(line);
+
         return true;
     }
 }

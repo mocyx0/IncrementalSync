@@ -19,11 +19,13 @@ public class SingleThreadReadTest {
         File file = new File("data/1.txt");
         if(!file.exists()) Assert.assertFalse(file + "is not exist!", false);
         FileChannel fileChannel = new FileInputStream(file).getChannel();
-        ByteBuffer buffer = ByteBuffer.allocateDirect(1<<20);
         long size = fileChannel.size();
+        ByteBuffer buffer = ByteBuffer.allocateDirect(1<<20);
         while(fileChannel.position() < size) {
             fileChannel.read(buffer);
             buffer.flip();
+//            while(buffer.hasRemaining()) buffer.get();
+//            buffer.flip();
         }
 
     }
