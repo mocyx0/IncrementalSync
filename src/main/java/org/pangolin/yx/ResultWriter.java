@@ -1,12 +1,10 @@
 package org.pangolin.yx;
 
+import com.sun.xml.internal.fastinfoset.tools.FI_DOM_Or_XML_DOM_SAX_SAXEvent;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
@@ -30,7 +28,14 @@ public class ResultWriter {
     }
 
     public static void writeToFile(RebuildResult result) throws Exception {
+
+
         String path = Config.RESULT_HOME + "/" + Config.RESULT_NAME;
+        File f = new File(path);
+        if (f.exists()) {
+            f.delete();
+        }
+
         RandomAccessFile raf = new RandomAccessFile(path, "rw");
         BufferedWriter writer = new BufferedWriter(new FileWriter(raf.getFD()));
         for (ArrayList<String> strs : result.datas) {

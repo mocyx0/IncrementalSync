@@ -1,6 +1,7 @@
 package org.pangolin.yx;
 
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
@@ -41,83 +42,6 @@ class StringParser {
     }
 }
 
-class LogOfTable {
-    private ArrayList<LogRecord> logArray = new ArrayList<>();//log链表
-    private HashMap<Long, Integer> logPos = new HashMap<>();//当前的id对应的上一条log索引
-
-    public LogRecord getLog(int index) {
-        return logArray.get(index);
-    }
-
-
-    public boolean isDeleted(long id) {
-        if (logPos.containsKey(id) && logPos.get(id) == -1) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    public LogRecord getLogById(Long id) {
-        if (logPos.containsKey(id)) {
-            return logArray.get(logPos.get(id));
-        } else {
-            return null;
-        }
-    }
-
-    public void putLog(LogRecord record) {
-        if (record.preId == 4996) {
-            System.out.print(1);
-        }
-        if (record.opType == Config.OP_TYPE_UPDATE) {
-            record.preLogIndex = getPreLogIndex(record.preId);
-            if (record.preId != record.id) {
-                logPos.put(record.preId, -1);
-            }
-            logArray.add(record);
-            logPos.put(record.id, logArray.size() - 1);
-
-
-        } else if (record.opType == Config.OP_TYPE_INSERT) {
-            logArray.add(record);
-            logPos.put(record.id, logArray.size() - 1);
-        } else if (record.opType == Config.OP_TYPE_DELETE) {
-            logPos.put(record.preId, -1);
-        }
-/*
-
-        if (record.opType != Config.OP_TYPE_INSERT) {
-            record.preLogIndex = getPreLogIndex(record.preId);
-        }
-        //主键update
-        if (record.opType == Config.OP_TYPE_UPDATE && (record.preId != record.id)) {
-            //delete old
-            //logPos.remove(record.preId);
-            logPos.put(record.preId, -1);
-        }
-
-        if (record.opType != Config.OP_TYPE_DELETE) {
-            record.preLogIndex = getPreLogIndex(record.preId);
-            logArray.add(record);
-            logPos.put(record.id, logArray.size() - 1);
-        } else {
-            //delete op
-            //logPos.remove(record.preId);
-            logPos.put(record.preId, -1);
-        }
-        */
-    }
-
-    public int getPreLogIndex(Long id) {
-        if (logPos.containsKey(id)) {
-            return logPos.get(id);
-        } else {
-            return -1;
-        }
-    }
-
-}
 
 class AliLogData {
     //HashMap<String, TableInfo> tableInfos = new HashMap<>();
@@ -131,6 +55,12 @@ class BlockLog {
     //HashMap<String, LogOfTable> logInfos = new HashMap<>();
     LogOfTable logOfTable = new LogOfTable();
     FileBlock fileBlock;
+
+    public void indexDone() {
+        if (logOfTable != null) {
+            logOfTable.flipBuffer();
+        }
+    }
 }
 
 class FileBlock {
@@ -141,17 +71,21 @@ class FileBlock {
 }
 
 class LogRecord {
-    //
-    //public String opType;
+    //序列化区域
+
     public byte opType;
-    public long preId = -2;
-    public long id = -2;
+    public long preId;
+    public long id;
     //file info
     public long offset;
-    public String logPath;
     public int length;
+    public int preLogOff;
+
+    //非序列化
+
     //上一条关联日志在记录中的索引
-    public int preLogIndex = -1;
+    public String logPath;
+    //public int preLogIndex = -1;
     //只有在rebuild时才会有数据
     public ArrayList<LogColumnInfo> columns = null;
 }
@@ -164,6 +98,7 @@ public class LogParser {
     private static AtomicInteger insertCount = new AtomicInteger();
     private static AtomicInteger updateCount = new AtomicInteger();
     private static AtomicInteger deleteCount = new AtomicInteger();
+    private static ArrayList<String> filePathArray = new ArrayList<>();
 
     private static void splitLogFile() {
         int fileIndex = 1;
@@ -200,13 +135,10 @@ public class LogParser {
         } else {
             throw new Exception("unknown op " + s);
         }
-
     }
 
     private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog) throws Exception {
         String line = lineInfo.line;
-
-
         StringParser parser = new StringParser(line, 0);
         String uid = Util.getNextToken(parser, '|');
         String time = Util.getNextToken(parser, '|');
@@ -274,7 +206,7 @@ public class LogParser {
         } else {
             throw new Exception("非法的操作类型");
         }
-        blockLog.logOfTable.putLog(linfo);
+        blockLog.logOfTable.putLogInBuff(linfo);
     }
 
     private static class Worker implements Runnable {
@@ -287,6 +219,7 @@ public class LogParser {
                         break;
                     } else {
                         BlockLog blockLog = parseLogBlock(block);
+
                         synchronized (aliLogData) {
                             aliLogData.blockLogs.add(blockLog);
                         }
@@ -314,6 +247,7 @@ public class LogParser {
             line = lineReader.readLine();
             lineIndex++;
         }
+        blockLog.indexDone();
         return blockLog;
     }
 

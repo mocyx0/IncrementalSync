@@ -31,18 +31,14 @@ public class LogRebuilder {
     //根据id在blocks上找出对应的日志记录
     ArrayList<LogRecord> getLogs(long id) throws Exception {
 
-
         ArrayList<LogRecord> re = new ArrayList<>();
         //String hashKey = queryData.scheme + " " + queryData.table;
 
         int blockIndex = aliLogData.blockLogs.size() - 1;
-        if (id == 4) {
-            System.out.print(1);
-        }
-
         Long targetId = id;
         while (true) {
-            if (targetId == null) {
+            //主键不会出现为-1 所以可以用-1来判断
+            if (targetId == -1) {
                 break;
             }
             if (blockIndex < 0) {
@@ -51,15 +47,18 @@ public class LogRebuilder {
             //反向遍历
             BlockLog blockLog = aliLogData.blockLogs.get(blockIndex);
             LogOfTable logOfTable = blockLog.logOfTable;
+            //是否被删除?(标记为-1)
             if (logOfTable.isDeleted(targetId)) {
                 return re;
             }
+            //获取上一条日志
             LogRecord lastLog = logOfTable.getLogById(targetId);
             //
             while (lastLog != null) {
+                lastLog.logPath = blockLog.fileBlock.path;
                 re.add(lastLog);
-                if (lastLog.preLogIndex != -1) {
-                    lastLog = logOfTable.getLog(lastLog.preLogIndex);
+                if (lastLog.preLogOff != -1) {
+                    lastLog = logOfTable.getLog(lastLog.preLogOff);
                 } else {
                     targetId = lastLog.preId;
                     break;
