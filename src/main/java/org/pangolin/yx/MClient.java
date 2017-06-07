@@ -8,6 +8,7 @@ public class MClient {
         System.setProperty("middleware.test.home", Config.TESTER_HOME);
         System.setProperty("middleware.teamcode", Config.TEAMCODE);
         System.setProperty("app.logging.level", Config.LOG_LEVEL);
+        System.setProperty("middleware.log.home", Config.LOG_HOME);
     }
 
     public static void main(String[] args) {

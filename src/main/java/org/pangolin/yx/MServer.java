@@ -13,6 +13,7 @@ public class MServer {
 
     private static void initProperties() {
         System.setProperty("middleware.test.home", Config.TESTER_HOME);
+        System.setProperty("middleware.log.home", Config.LOG_HOME);
         System.setProperty("middleware.teamcode", Config.TEAMCODE);
         System.setProperty("app.logging.level", Config.LOG_LEVEL);
     }
@@ -44,6 +45,11 @@ public class MServer {
     private static ByteBuffer doTest() {
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
+
+
+
+
+
         return buffer;
     }
 

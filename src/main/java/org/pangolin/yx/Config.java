@@ -19,6 +19,7 @@ public class Config {
             LOG_LEVEL = Constants.LOG_LEVEL;
             MIDDLE_HOME = Constants.MIDDLE_HOME;
             SERVER_PORT = Constants.SERVER_PORT;
+            LOG_HOME = Constants.LOG_HOME;
         }
     }
 
@@ -35,6 +36,8 @@ public class Config {
     public static String LOG_LEVEL = "INFO";
     // 中间结果目录
     public static String MIDDLE_HOME = "D:/tmp/amimid/middle";
+    //
+    public static String LOG_HOME = "D:/tmp/testhome/logs/" + TEAMCODE;
     // server端口
     public static Integer SERVER_PORT = 5527;
 
@@ -46,7 +49,7 @@ public class Config {
     public static QueryData queryData;
     //单机模式
     public static boolean SINGLE = false;
-    public static boolean TEST_MODE=true;
+    public static boolean TEST_MODE = true;
 
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;

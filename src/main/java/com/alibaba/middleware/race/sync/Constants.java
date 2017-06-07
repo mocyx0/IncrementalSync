@@ -32,6 +32,8 @@ public interface Constants {
     //// 中间结果目录（client和server都会用到）
     String MIDDLE_HOME = "/home/admin/middle/" + TEAMCODE;
 
+    String LOG_HOME = "/home/admin/logs/" + TEAMCODE;
+
     // 结果文件的命名
     String RESULT_FILE_NAME = "Result.rs";
 
