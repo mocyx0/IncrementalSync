@@ -42,7 +42,7 @@ public class ReadingThread extends Thread {
                     ByteBuffer buffer = pool.get();
                     long pos = channel.position();
                     pos = (fileNo << 60) | pos;
-                    int n = channel.read(buffer);     
+                    int n = channel.read(buffer);
                     if(n == -1) {
                         pool.put(buffer);
                         break;
@@ -61,15 +61,16 @@ public class ReadingThread extends Thread {
                 fis.close();
                 fileNo += 1;
             }
-            
+
+            System.out.println("Reading Done!");
             for(Worker worker : workers) {
                 worker.appendBuffer(Worker.EMPTY_BUFFER, 0);
             }
             for(Worker worker : workers) {
                 worker.join();
             }
-            
-            
+
+
         } catch (IOException e) {
 
         } catch (InterruptedException e) {
