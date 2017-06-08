@@ -37,8 +37,7 @@ public class Server {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Logger logger = LoggerFactory.getLogger(Server.class);
-        logger.info("com.alibaba.middleware.race.sync.Server is running....");
+
         MServer.main(args);
 
         /*
