@@ -45,6 +45,7 @@ public class ReadingThread extends Thread {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length() - 4));
                 fis = new FileInputStream(new File(fileName));
                 FileChannel channel = fis.getChannel();
+                logger.info("read filename:{}", fileName);
                 while (true) {
                     ByteBuffer buffer = pool.get();
                     long pos = channel.position();
@@ -70,7 +71,7 @@ public class ReadingThread extends Thread {
                 fis.close();
             }
 
-            System.out.println("Reading Done!");
+            logger.info("Reading Done!");
             for (Worker worker : workers) {
                 worker.appendBuffer(Worker.EMPTY_BUFFER, 0, 0);
             }
