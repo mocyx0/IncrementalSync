@@ -38,6 +38,8 @@ public class Server {
 
     public static void main(String[] args) throws InterruptedException {
 
+        Logger logger = LoggerFactory.getLogger(Server.class);
+        logger.info("server start");
         MServer.main(args);
 
         /*

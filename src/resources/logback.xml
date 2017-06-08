@@ -78,7 +78,7 @@
 
 
     <root>
-        <level value="${app.logging.level}"/>
+        <level value="INFO"/>
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>
