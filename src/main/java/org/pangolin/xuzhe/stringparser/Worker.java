@@ -5,12 +5,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.pangolin.xuzhe.stringparser.Constants.LINE_MAX_LENGTH;
 
@@ -83,7 +80,7 @@ public class Worker extends Thread {
 
 
     private void process(String line, int fileNo, int position) {
-		LogParser.parse(line, fileNo, position, localIndex);
+		LogParser.parseToIndex(line, fileNo, position, localIndex);
 	}
 
 	public LocalLogIndex getIndexes() {

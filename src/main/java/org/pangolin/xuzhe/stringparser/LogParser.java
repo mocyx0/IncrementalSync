@@ -9,7 +9,7 @@ public class LogParser {
     public static String schemaName = "middleware3";
     public static String tableName = "student";
 
-    public static void parse(String str, int fileNo, int position, LocalLogIndex indexes) {
+    public static void parseToIndex(String str, int fileNo, int position, LocalLogIndex indexes) {
         try {
             String line = str;
             String[] items = line.split("\\|");
@@ -26,15 +26,19 @@ public class LogParser {
     public static long getTimestamp(String[] items) {
         return Long.parseLong(items[2]);
     }
+
     public static String getDatabaseName(String[] items) {
         return items[3];
     }
+
     public static String getTableName(String[] items) {
         return items[4];
     }
+
     public static String getOpType(String[] items) {
         return items[5];
     }
+
     // TODO 暂时假设主键在日志中是第一列，后期查看canel生成日志的源码验证
     public static long getPK(String[] items) {
         String pk;
@@ -46,6 +50,7 @@ public class LogParser {
         }
         return Long.parseLong(pk);
     }
+
     public static String[] getAllColumn(String[] items) {
         int cnt = getColumnCount(items);
         String[] result = new String[cnt];
@@ -54,9 +59,11 @@ public class LogParser {
         }
         return result;
     }
+
     public static int getColumnCount(String[] items) {
         return (items.length - 6) / 3;
     }
+
     public static String[] getColumnAllInfoByIndex(String[] items, int index) {
         String[] result = new String[3];
         result[0] = items[6+3*index];

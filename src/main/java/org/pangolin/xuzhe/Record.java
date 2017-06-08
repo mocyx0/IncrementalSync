@@ -85,12 +85,12 @@ public class Record {
                 "|mysql-bin.000017487943659|1496737820000|middleware3|student|U|id:1:1|1|1|score:1:0|999|247|"
         };
 
-        Record r = Record.createFromLastLog(Log.parse(logTexts[5]));
-        r.update(Log.parse(logTexts[4]));
-        r.update(Log.parse(logTexts[3]));
-        r.update(Log.parse(logTexts[2]));
-        r.update(Log.parse(logTexts[1]));
-        r.update(Log.parse(logTexts[0]));
+        Record r = Record.createFromLastLog(Log.parser(logTexts[5]));
+        r.update(Log.parser(logTexts[4]));
+        r.update(Log.parser(logTexts[3]));
+        r.update(Log.parser(logTexts[2]));
+        r.update(Log.parser(logTexts[1]));
+        r.update(Log.parser(logTexts[0]));
         System.out.println(r);
 
     }

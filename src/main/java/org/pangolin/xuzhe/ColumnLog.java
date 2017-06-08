@@ -54,7 +54,7 @@ public class ColumnLog {
         return results;
     }
 
-//    public int parse(byte[] bytes,int offset, int limit) {
+//    public int parser(byte[] bytes,int offset, int limit) {
 //        try {
 //            String str = new String(bytes, offset, limit, "utf-8");
 //            String[] items = str.split("|");
@@ -160,13 +160,13 @@ public class ColumnLog {
 //        byte[] data3 = "score:1:0|NULL|98|".getBytes("utf-8");
 //        for(int i = 0; i < it; ++i) {
 //            ColumnLog log = new ColumnLog();
-//            log.parse(data1, 0, data1.length);
+//            log.parser(data1, 0, data1.length);
 //        System.out.println(log);
 //            log = new ColumnLog();
-//            log.parse(data2, 0, data2.length);
+//            log.parser(data2, 0, data2.length);
 //        System.out.println(log);
 //            log = new ColumnLog();
-//            log.parse(data3, 0, data3.length);
+//            log.parser(data3, 0, data3.length);
 //        System.out.println(log);
 //        }
 //        long end = System.currentTimeMillis();

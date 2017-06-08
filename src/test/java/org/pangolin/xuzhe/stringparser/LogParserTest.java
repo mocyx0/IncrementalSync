@@ -40,7 +40,7 @@ public class LogParserTest {
     public void testParser() {
         String str = "|mysql-bin.00001717148759|1496736165000|middleware3|student|I|id:1:1|NULL|1|first_name:2:0|NULL|徐|last_name:2:0|NULL|依|sex:2:0|NULL|男|score:1:0|NULL|66|";
         LocalLogIndex localIndex = new LocalLogIndex();
-        LogParser.parse(str, 1, 0, localIndex);
+        LogParser.parseToIndex(str, 1, 0, localIndex);
         System.out.println(localIndex);
     }
 }

@@ -2,10 +2,8 @@ package org.pangolin.xuzhe;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * Created by ubuntu on 17-6-6.
@@ -14,12 +12,12 @@ public class Log {
     public char op;
     public ColumnLog[] columns;
 
-    public static void parse(byte[] bytes, int offest, int limit) {
+    public static void parser(byte[] bytes, int offest, int limit) {
         String str = getString(bytes, offest, limit);
         System.out.println(str);
     }
 
-    public static Log parse(String str) {
+    public static Log parser(String str) {
         String line = str;
         String[] items = line.split("\\|");
         Log log = new Log();
@@ -43,20 +41,20 @@ public class Log {
             Schema schema = Schema.generateFromInsertLog(line);
             schemaMap.put(dbTable, schema);
         }
-        Log log = parse(line);
+        Log log = parser(line);
         ArrayList<Log> logList = new ArrayList<>();
         logList.add(log);
 
         offset += len;
         len = getLineLength(data, offset, data.length);
         line = getString(data, offset, offset + len-1);
-        log = parse(line);
+        log = parser(line);
         logList.add(log);
 
         offset += len;
         len = getLineLength(data, offset, data.length);
         line = getString(data, offset, offset + len-1);
-        log = parse(line);
+        log = parser(line);
         logList.add(log);
 
     }
@@ -118,13 +116,13 @@ public class Log {
 //        System.out.println(String.format("%2d         op : %s", i, opType));
 //        next = i+1;
 //        ColumnLog log = new ColumnLog();
-//        next = log.parse(bytes, next, limit) + 1;
+//        next = log.parser(bytes, next, limit) + 1;
 //        System.out.println(String.format("%2d columnInfo : %s", next, log));
 //        log = new ColumnLog();
-//        next = log.parse(bytes, next, limit) + 1;
+//        next = log.parser(bytes, next, limit) + 1;
 //        System.out.println(String.format("%2d columnInfo : %s", next, log));
 //        log = new ColumnLog();
-//        next = log.parse(bytes, next, limit) + 1;
+//        next = log.parser(bytes, next, limit) + 1;
 //        System.out.println(String.format("%2d columnInfo : %s", next, log));
 //        return null;
 //    }
@@ -140,11 +138,11 @@ public class Log {
 //        byte op = bytes[next];
 //        next += 2;
 //        ColumnLog columnLog = new ColumnLog();
-//        next = columnLog.parse(bytes, next, limit) + 1;
+//        next = columnLog.parser(bytes, next, limit) + 1;
 //        columnLog = new ColumnLog();
-//        next = columnLog.parse(bytes, next, limit) + 1;
+//        next = columnLog.parser(bytes, next, limit) + 1;
 //        columnLog = new ColumnLog();
-//        next = columnLog.parse(bytes, next, limit) + 1;
+//        next = columnLog.parser(bytes, next, limit) + 1;
 //        return null;
 //    }
 //
