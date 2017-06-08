@@ -1,5 +1,6 @@
 package org.pangolin.yx;
 
+import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -13,7 +14,7 @@ import java.nio.ByteBuffer;
  * Created by yangxiao on 2017/6/7.
  */
 public class NetServerHandler extends ChannelInboundHandlerAdapter {
-    private static Logger logger = LoggerFactory.getLogger(NetServerHandler.class);
+    private static Logger logger = LoggerFactory.getLogger(Server.class);
     public static ByteBuffer data;
 
     /**

@@ -1,5 +1,6 @@
 package org.pangolin.yx;
 
+import com.alibaba.middleware.race.sync.Server;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -17,7 +18,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Created by yangxiao on 2017/6/7.
  */
 public class NetServer {
-    private static Logger logger = LoggerFactory.getLogger(NetServer.class);
+    private static Logger logger = LoggerFactory.getLogger(Server.class);
 
 
     public static void start() throws Exception {

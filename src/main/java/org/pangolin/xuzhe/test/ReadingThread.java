@@ -1,5 +1,6 @@
 package org.pangolin.xuzhe.test;
 
+import com.alibaba.middleware.race.sync.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,7 @@ import static org.pangolin.xuzhe.test.Constants.WORKER_NUM;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
-    private static Logger logger = LoggerFactory.getLogger(ReadingThread.class);
+    private static Logger logger = LoggerFactory.getLogger(Server.class);
     String[] fileNameArray;
     Worker[] workers;
 

@@ -1,6 +1,7 @@
 package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.Constants;
+import com.alibaba.middleware.race.sync.Server;
 import org.pangolin.xuzhe.test.IOPerfTest;
 import org.pangolin.xuzhe.test.ReadingThread;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ import java.nio.ByteBuffer;
  * Created by yangxiao on 2017/6/4.
  */
 public class MServer {
-    private static Logger logger = LoggerFactory.getLogger(MServer.class);
+    private static Logger logger;
 
     private static void initProperties() {
         System.setProperty("middleware.test.home", Config.TESTER_HOME);
@@ -75,6 +76,9 @@ public class MServer {
     public static void main(String[] args) {
         Config.init();
         initProperties();
+        logger = LoggerFactory.getLogger(Server.class);
+        logger.info("mserver start");
+
         try {
             if (args.length == 4) {
                 String scheme = args[0];
