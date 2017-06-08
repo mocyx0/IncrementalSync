@@ -44,7 +44,7 @@ public class ReadingThread extends Thread {
             for (String fileName : fileNameArray) {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length() - 4));
                 File f = new File(fileName);
-                if(!f.exists()) {
+                if (!f.exists()) {
                     logger.info("file: {} not exist");
                     continue;
                 }
@@ -123,8 +123,6 @@ public class ReadingThread extends Thread {
             logger.info("{}", tableLogCountMap);
             logger.info("{}", opCountMap);
             logger.info("{}", lineCountMap);
-
-
         } catch (IOException e) {
             logger.info("{}", e);
         } catch (InterruptedException e) {

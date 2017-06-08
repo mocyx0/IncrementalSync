@@ -47,28 +47,26 @@ public class MServer {
 
     }
 
-    private static ByteBuffer doTest() {
+
+    private static ByteBuffer doTest() throws Exception {
+        logger.info("doTest start");
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
-        try {
-            IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
-            // 不读同一个文件，避免从pagecache读
-            IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
-            String[] fileNameArray = new String[10];
-            for (int i = 1; i <= 10; i++) {
-                fileNameArray[i - 1] = String.format("%s/%d.txt", Config.DATA_HOME, i);
-            }
-            ReadingThread readingThread = new ReadingThread(fileNameArray);
-            readingThread.start();
-            readingThread.join();
-
-        } catch (IOException e) {
-            logger.info("{}", e);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        /*
+        IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
+        // 不读同一个文件，避免从pagecache读
+        IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
+        String[] fileNameArray = new String[10];
+        for (int i = 1; i <= 10; i++) {
+            fileNameArray[i - 1] = String.format("%s/%d.txt", Config.DATA_HOME, i);
         }
-
-
+        ReadingThread readingThread = new ReadingThread(fileNameArray);
+        readingThread.start();
+        readingThread.join();
+        */
+        //yx test
+        LogParserTest.parseLog();
+        logger.info("doTest done");
         return buffer;
     }
 
@@ -105,7 +103,7 @@ public class MServer {
                     NetServer.start();
                 }
             } else {
-                System.out.println("参数错误");
+                logger.info("参数错误");
             }
         } catch (Exception e) {
             e.printStackTrace();

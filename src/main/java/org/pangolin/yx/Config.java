@@ -51,7 +51,7 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static int BLOCK_SIZE = 1024 * 1024 * 1;
+    public static int BLOCK_SIZE = 1024 * 1024 * 1024;
 
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
@@ -67,5 +67,4 @@ public class Config {
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;
     public static byte OP_TYPE_UPDATE = 3;
-
 }
