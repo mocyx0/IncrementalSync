@@ -20,6 +20,17 @@ public class Config {
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = Constants.LOG_HOME;
         }
+        String runtime = System.getenv("RUNTIME");
+        if (runtime != null && runtime.equals("xuzhe")) {
+            TESTER_HOME = "/home/ubuntu/alitest/";
+            DATA_HOME = "/home/ubuntu/alitest/data";
+            RESULT_HOME = "/home/ubuntu/alitest/result";
+            TEAMCODE = Constants.TEAMCODE;
+            LOG_LEVEL = "DEBUG";
+            MIDDLE_HOME = "/home/ubuntu/alitest/middle";
+            SERVER_PORT = Constants.SERVER_PORT;
+            LOG_HOME = "/home/ubuntu/alitest/log";
+        }
     }
 
     // 工作主目录
@@ -47,7 +58,7 @@ public class Config {
 
     //单机模式
     public static boolean SINGLE = false;
-    public static String RUNTIME = "yx";
+    public static String RUNTIME = "ali";
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"

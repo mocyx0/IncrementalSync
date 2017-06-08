@@ -43,8 +43,14 @@ public class ReadingThread extends Thread {
         try {
             for (String fileName : fileNameArray) {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length() - 4));
-                fis = new FileInputStream(new File(fileName));
+                File f = new File(fileName);
+                if (!f.exists()) {
+                    logger.info("file: {} not exist");
+                    continue;
+                }
+                fis = new FileInputStream(f);
                 FileChannel channel = fis.getChannel();
+                logger.info("read filename:{}", fileName);
                 while (true) {
                     ByteBuffer buffer = pool.get();
                     long pos = channel.position();
@@ -70,7 +76,7 @@ public class ReadingThread extends Thread {
                 fis.close();
             }
 
-            System.out.println("Reading Done!");
+            logger.info("Reading Done!");
             for (Worker worker : workers) {
                 worker.appendBuffer(Worker.EMPTY_BUFFER, 0, 0);
             }
@@ -117,9 +123,9 @@ public class ReadingThread extends Thread {
             logger.info("{}", opCountMap);
             logger.info("{}", lineCountMap);
         } catch (IOException e) {
-            logger.info("{}", e);
+            logger.info("", e);
         } catch (InterruptedException e) {
-            logger.info("{}", e);
+            logger.info("", e);
         }
     }
 
