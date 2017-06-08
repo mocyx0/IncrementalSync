@@ -280,13 +280,7 @@ public class LogParser {
         }
         latch.await();
         sortBlock();
-        //
-
         return aliLogData;
-//        logPath = Config.DATA_HOME + "/1.txt";
-//        File f1 = new File(logPath);
-//        lineReader = new LineReader(logPath, 0, f1.length());
-
 
     }
 }

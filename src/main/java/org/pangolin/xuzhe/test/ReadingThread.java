@@ -116,12 +116,10 @@ public class ReadingThread extends Thread {
             logger.info("{}", tableLogCountMap);
             logger.info("{}", opCountMap);
             logger.info("{}", lineCountMap);
-
-
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.info("{}", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.info("{}", e);
         }
     }
 
