@@ -74,6 +74,7 @@ public class ReadingThread extends Thread {
                 }
                 channel.close();
                 fis.close();
+                logger.info("read file: {} done!");
             }
 
             logger.info("Reading Done!");
@@ -125,9 +126,11 @@ public class ReadingThread extends Thread {
 
 
         } catch (IOException e) {
-            logger.info("", e);
+            logger.info("{}", e);
         } catch (InterruptedException e) {
-            logger.info("", e);
+            logger.info("{}", e);
+        } catch (Exception e) {
+            logger.info("{}", e);
         }
     }
 
