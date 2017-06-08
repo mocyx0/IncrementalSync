@@ -8,10 +8,9 @@ import com.alibaba.middleware.race.sync.*;
 public class Config {
     private static String runtime = "yx";
 
-    public static void setRuntime(String rt) {
-        runtime = rt;
+    public static void init() {
         //使用阿里环境的配置
-        if (rt.equals("ali")) {
+        if (RUNTIME.equals("ali")) {
             TESTER_HOME = Constants.TESTER_HOME;
             DATA_HOME = Constants.DATA_HOME;
             RESULT_HOME = Constants.RESULT_HOME;
@@ -46,9 +45,12 @@ public class Config {
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 
-    public static QueryData queryData;
     //单机模式
     public static boolean SINGLE = false;
+    public static String RUNTIME = "ali";
+
+    public static QueryData queryData;
+    //test mode会执行mserver的doTest并且只会返回client "hello world"
     public static boolean TEST_MODE = true;
 
     public static byte OP_TYPE_DELETE = 1;

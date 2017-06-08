@@ -25,7 +25,8 @@ public class Client {
     private EventLoopGroup loop = new NioEventLoopGroup();
 
     public static void main(String[] args) throws Exception {
-        org.pangolin.yx.Config.setRuntime("ali");
+        Logger logger = LoggerFactory.getLogger(Client.class);
+        logger.info("com.alibaba.middleware.race.sync.Client is running....");
         MClient.main(args);
         /*
         initProperties();

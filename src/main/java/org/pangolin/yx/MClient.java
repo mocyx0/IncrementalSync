@@ -12,7 +12,7 @@ public class MClient {
     }
 
     public static void main(String[] args) {
-
+        Config.init();
         try {
             initProperties();
             NetClient.start(args[0]);

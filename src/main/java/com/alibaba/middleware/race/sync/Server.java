@@ -37,15 +37,19 @@ public class Server {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        org.pangolin.yx.Config.setRuntime("ali");
+        Logger logger = LoggerFactory.getLogger(Server.class);
+        logger.info("com.alibaba.middleware.race.sync.Server is running....");
         MServer.main(args);
+
         /*
         initProperties();
 
         printInput(args);
         Logger logger = LoggerFactory.getLogger(Client.class);
         Server server = new Server();
-        logger.info("com.alibaba.middleware.race.sync.Server is running....");
+        for (int i = 0; i < 100; i++) {
+            logger.info("com.alibaba.middleware.race.sync.Server is running....");
+        }
 
         server.startServer(5527);
         */

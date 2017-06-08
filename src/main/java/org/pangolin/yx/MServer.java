@@ -50,22 +50,22 @@ public class MServer {
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
         try {
-            IOPerfTest.positiveOrderReadByFileChannel(Constants.DATA_HOME + "/1.txt");
+            IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
             // 不读同一个文件，避免从pagecache读
-            IOPerfTest.reverseOrderReadByFileChannel(Constants.DATA_HOME + "/2.txt");
+            IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
             String[] fileNameArray = new String[10];
-            for(int i = 1; i <= 10; i++) {
-                fileNameArray[i-1] = String.format("%s/%d.txt", Constants.DATA_HOME, i);
+            for (int i = 1; i <= 10; i++) {
+                fileNameArray[i - 1] = String.format("%s/%d.txt", Config.DATA_HOME, i);
             }
             ReadingThread readingThread = new ReadingThread(fileNameArray);
             readingThread.start();
             readingThread.join();
+
         } catch (IOException e) {
             logger.info("{}", e);
         } catch (InterruptedException e) {
-
+            e.printStackTrace();
         }
-
 
 
         return buffer;
@@ -73,10 +73,9 @@ public class MServer {
 
 
     public static void main(String[] args) {
+        Config.init();
         initProperties();
         try {
-            Config.setRuntime("yx");
-
             if (args.length == 4) {
                 String scheme = args[0];
                 String table = args[1];
