@@ -43,7 +43,12 @@ public class ReadingThread extends Thread {
         try {
             for (String fileName : fileNameArray) {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length() - 4));
-                fis = new FileInputStream(new File(fileName));
+                File f = new File(fileName);
+                if(!f.exists()) {
+                    logger.info("file: {} not exist");
+                    continue;
+                }
+                fis = new FileInputStream(f);
                 FileChannel channel = fis.getChannel();
                 logger.info("read filename:{}", fileName);
                 while (true) {
@@ -120,9 +125,9 @@ public class ReadingThread extends Thread {
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.info("", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.info("", e);
         }
     }
 
