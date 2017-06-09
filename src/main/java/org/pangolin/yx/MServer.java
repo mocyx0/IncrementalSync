@@ -55,6 +55,9 @@ public class MServer {
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
 
+        //yx test
+        LogParserTest.parseLog();
+
         IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
         // 不读同一个文件，避免从pagecache读
         IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
@@ -65,8 +68,7 @@ public class MServer {
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
-        //yx test
-        LogParserTest.parseLog();
+
         logger.info("doTest done");
         return buffer;
 
