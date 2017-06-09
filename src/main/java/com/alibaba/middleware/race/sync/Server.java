@@ -37,10 +37,10 @@ public class Server {
     }
 
     public static void main(String[] args) throws InterruptedException {
-
         Logger logger = LoggerFactory.getLogger(Server.class);
-        logger.info("server start");
-        MServer.main(args);
+        try {
+            logger.info("server start");
+            MServer.main(args);
 
         /*
         initProperties();
@@ -54,6 +54,9 @@ public class Server {
 
         server.startServer(5527);
         */
+        } catch (Exception e) {
+            logger.info("{}", e);
+        }
     }
 
     /**

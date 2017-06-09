@@ -77,11 +77,7 @@ public class MServer {
     }
 
     public static void main(String[] args) {
-        String runtime = "ali";
-        if (args.length >= 5) {
-            runtime = args[4];
-        }
-        Config.init(runtime);
+        Config.init();
         initProperties();
         logger = LoggerFactory.getLogger(Server.class);
         logger.info("mserver start ");

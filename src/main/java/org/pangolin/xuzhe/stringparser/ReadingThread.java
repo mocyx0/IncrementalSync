@@ -101,7 +101,7 @@ public class ReadingThread extends Thread {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        Config.init(args[0]);
+        Config.init();
 
         String[] fileNameArray = {Config.DATA_HOME + "/1.txt"};
         Long time1 = System.currentTimeMillis();

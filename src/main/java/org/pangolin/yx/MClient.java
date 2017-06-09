@@ -23,11 +23,7 @@ public class MClient {
         for (String s : args) {
             logger.info(s);
         }
-        String runtime = "ali";
-        if (args.length >= 2) {
-            runtime = args[1];
-        }
-        Config.init(runtime);
+        Config.init();
 
 
         try {

@@ -6,22 +6,11 @@ import com.alibaba.middleware.race.sync.*;
  * Created by yangxiao on 2017/6/4.
  */
 public class Config {
-    public static void init(String runtime) {
+    public static void init() {
         //使用阿里环境的配置
-        if (runtime.equals("ali")) {
-            TESTER_HOME = Constants.TESTER_HOME;
-            DATA_HOME = Constants.DATA_HOME;
-            RESULT_HOME = Constants.RESULT_HOME;
-            TEAMCODE = Constants.TEAMCODE;
-            LOG_LEVEL = Constants.LOG_LEVEL;
-            MIDDLE_HOME = Constants.MIDDLE_HOME;
-            SERVER_PORT = Constants.SERVER_PORT;
-            LOG_HOME = Constants.LOG_HOME;
-        } else if (runtime.equals("yx")) {
-
-        } else {
-            String rt = System.getenv("RUNTIME");
-            if (rt != null && runtime.equals("xuzhe")) {
+        String rt = System.getenv("RUNTIME");
+        if (rt != null) {
+            if (rt.equals("xuzhe")) {
                 TESTER_HOME = "/home/ubuntu/alitest/";
                 DATA_HOME = "/home/ubuntu/alitest/data";
                 RESULT_HOME = "/home/ubuntu/alitest/result";
@@ -31,7 +20,20 @@ public class Config {
                 SERVER_PORT = Constants.SERVER_PORT;
                 LOG_HOME = "/home/ubuntu/alitest/log";
             }
+            if (rt.equals("yx")) {
+
+            }
+        } else {
+            TESTER_HOME = Constants.TESTER_HOME;
+            DATA_HOME = Constants.DATA_HOME;
+            RESULT_HOME = Constants.RESULT_HOME;
+            TEAMCODE = Constants.TEAMCODE;
+            LOG_LEVEL = Constants.LOG_LEVEL;
+            MIDDLE_HOME = Constants.MIDDLE_HOME;
+            SERVER_PORT = Constants.SERVER_PORT;
+            LOG_HOME = Constants.LOG_HOME;
         }
+
     }
 
     // 工作主目录

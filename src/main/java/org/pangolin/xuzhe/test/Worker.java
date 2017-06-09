@@ -1,8 +1,10 @@
 package org.pangolin.xuzhe.test;
 
+import com.alibaba.middleware.race.sync.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -20,7 +22,7 @@ import static org.pangolin.xuzhe.test.Constants.LINE_MAX_LENGTH;
  * Created by ubuntu on 17-6-3.
  */
 public class Worker extends Thread {
-    Logger logger = LoggerFactory.getLogger(Worker.class);
+    Logger logger = LoggerFactory.getLogger(Server.class);
     public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     private Queue<Block> buffers;
     private static AtomicInteger workerNum = new AtomicInteger(0);
@@ -78,7 +80,9 @@ public class Worker extends Thread {
             logger.info("{} done!", Thread.currentThread().getName());
         } catch (InterruptedException e) {
             logger.error("Worker was interrupted", e);
-        }
+        } catch (Exception e) {
+        	logger.info("{}", e);
+		}
 
     }
 
