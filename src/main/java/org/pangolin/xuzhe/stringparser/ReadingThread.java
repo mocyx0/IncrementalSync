@@ -82,15 +82,14 @@ public class ReadingThread extends Thread {
 //                logger.debug("Worker:{}", worker.getName());
 //                logger.debug("{}", worker.getIndexes());
 //            }
-            LocalLogIndex[] localLogIndices = new LocalLogIndex[WORKER_NUM];
-            for(int i = 0; i < WORKER_NUM; ++i) {
-                localLogIndices[i] = workers[i].getIndexes();
-            }
-            LocalLogIndex allIndexex = LocalLogIndex.merge(localLogIndices);
+//            LocalLogIndex[] localLogIndices = new LocalLogIndex[WORKER_NUM];
+//            for(int i = 0; i < WORKER_NUM; ++i) {
+//                localLogIndices[i] = workers[i].getIndexes();
+//            }
+            LocalLogIndex allIndexex =workers[0].getIndexes();
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
-
             searchResult(allIndexex);
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
 //            searchTest(allIndexex);
