@@ -21,7 +21,7 @@ public class ColumnLog {
     }
 
     public static ColumnLog[] parser(String[] items) {
-        int size = (items.length - 6) / 3;
+        int size = (items.length - 6) / 3;  //这个是提取出一条Log中有多少字段
         ColumnLog[] results = new ColumnLog[size];
         for(int i = 0; i < size; i++) {
             int itemIndex = 6+3*i;

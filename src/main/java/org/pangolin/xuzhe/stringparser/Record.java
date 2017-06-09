@@ -1,13 +1,11 @@
 package org.pangolin.xuzhe.stringparser;
 
-import org.pangolin.xuzhe.stringparser.ColumnLog;
 import org.pangolin.xuzhe.HashUtil;
-import org.pangolin.xuzhe.stringparser.Log;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.pangolin.xuzhe.stringparser.ReadingThread.getLineByPosition;
 
 /**
  * Created by ubuntu on 17-6-5.
@@ -31,6 +29,14 @@ public class Record {
         values.put(columnName, value);
     }
 
+    public Long getPk() {
+        return pk;
+    }
+
+    public Map<String, Object> getValues() {
+        return values;
+    }
+
     public static Integer getColumnID(byte[] columnName, int len) {
         int hashCode = HashUtil.hash(columnName, len);
         Integer id = columnHashMap.get(hashCode);
@@ -42,23 +48,25 @@ public class Record {
         return id;
     }
 
-    public void update(Log log) {
+    public void update(Log log, LocalLogIndex indexes) {
         if(log.op == 'I') {
-            for(ColumnLog columnLog : log.columns) {
-                if(columnLog.columnInfo.type == '1')
-                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newLongValue);
-                else
-                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newStringValue);
-            }
-            this.finished = true;
+//            for(ColumnLog columnLog : log.columns) {
+//                if(columnLog.columnInfo.type == '1')
+//                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newLongValue);
+//                else
+//                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newStringValue);
+//            }
+//            this.finished = true;
+            insertResult(log);
         } else if(log.op == 'U') {
-            for(ColumnLog columnLog : log.columns) {
-                if(columnLog.columnInfo.type == '1')
-                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newLongValue);
-                else
-                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newStringValue);
-            }
-            this.finished = false;
+//            for(ColumnLog columnLog : log.columns) {
+//                if(columnLog.columnInfo.type == '1')
+//                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newLongValue);
+//                else
+//                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newStringValue);
+//            }
+//            this.finished = false;
+            updateResult(log, indexes);
         } else if(log.op == 'D') {
             this.deleted = true;
             this.finished = true;
@@ -67,15 +75,53 @@ public class Record {
         }
     }
 
-    public static Record createFromLastLog(Log log) {
+    private void insertResult(Log log){
+        for(ColumnLog columnLog : log.columns) {
+            if(!values.containsKey(columnLog.columnInfo.name)){
+                if(columnLog.columnInfo.type == '1')
+                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newLongValue);
+                else
+                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newStringValue);
+            }
+        }
+    }
+    private void updateResult(Log log, LocalLogIndex indexes){
+        long oldKey = 0, newKey = 0;
+        for(ColumnLog columnLog : log.columns) {
+            if(columnLog.columnInfo.isPK) {
+                oldKey = columnLog.oldLongValue;
+                newKey = columnLog.newLongValue;
+            }
+            if(!values.containsKey(columnLog.columnInfo.name)){
+                if(columnLog.columnInfo.type == '1')
+                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newLongValue);
+                else
+                    this.updateColumn(columnLog.columnInfo.name ,columnLog.newStringValue);
+            }
+        }
+        if(oldKey != newKey){
+            List<LocalLogIndex.IndexEntry> logs = indexes.indexes.get(oldKey);
+            Collections.sort(logs);
+            Collections.reverse(logs);
+            for(LocalLogIndex.IndexEntry index : logs) {
+                String line = getLineByPosition(index.fileNo, index.position);
+                Log log1 = Log.parser(line);
+                    //如果是插入操作就到此终止
+                    this.update(log1, indexes);
+                    if(log1.op == 'I'){
+                        break;
+                    }
+            }
+        }
+    }
+    public static Record createFromLastLog(Log log, LocalLogIndex indexes) {
         Record record = null;
         for(ColumnLog columnLog : log.columns) {
             if(columnLog.columnInfo.isPK) {
                 record = new Record(columnLog.newLongValue);
             }
         }
-        record.update(log);
-
+        record.update(log,indexes);
         return record;
     }
 
@@ -89,13 +135,13 @@ public class Record {
                 "|mysql-bin.000017487943659|1496737820000|middleware3|student|U|id:1:1|1|1|score:1:0|999|247|"
         };
 
-        Record r = Record.createFromLastLog(Log.parser(logTexts[5]));
-        r.update(Log.parser(logTexts[4]));
-        r.update(Log.parser(logTexts[3]));
-        r.update(Log.parser(logTexts[2]));
-        r.update(Log.parser(logTexts[1]));
-        r.update(Log.parser(logTexts[0]));
-        System.out.println(r);
+//        Record r = Record.createFromLastLog(Log.parser(logTexts[5]));
+//        r.update(Log.parser(logTexts[4]));
+//        r.update(Log.parser(logTexts[3]));
+//        r.update(Log.parser(logTexts[2]));
+//        r.update(Log.parser(logTexts[1]));
+////        r.update(Log.parser(logTexts[0]));
+//        System.out.println(r);
 
     }
 }

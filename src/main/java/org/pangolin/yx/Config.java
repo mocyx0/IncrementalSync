@@ -6,24 +6,11 @@ import com.alibaba.middleware.race.sync.*;
  * Created by yangxiao on 2017/6/4.
  */
 public class Config {
+    private static String runtime = "yx";
+
     public static void init() {
         //使用阿里环境的配置
-        String rt = System.getenv("RUNTIME");
-        if (rt != null) {
-            if (rt.equals("xuzhe")) {
-                TESTER_HOME = "/home/ubuntu/alitest/";
-                DATA_HOME = "/home/ubuntu/alitest/data";
-                RESULT_HOME = "/home/ubuntu/alitest/result";
-                TEAMCODE = Constants.TEAMCODE;
-                LOG_LEVEL = "DEBUG";
-                MIDDLE_HOME = "/home/ubuntu/alitest/middle";
-                SERVER_PORT = Constants.SERVER_PORT;
-                LOG_HOME = "/home/ubuntu/alitest/log";
-            }
-            if (rt.equals("yx")) {
-
-            }
-        } else {
+        if (RUNTIME.equals("ali")) {
             TESTER_HOME = Constants.TESTER_HOME;
             DATA_HOME = Constants.DATA_HOME;
             RESULT_HOME = Constants.RESULT_HOME;
@@ -33,7 +20,26 @@ public class Config {
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = Constants.LOG_HOME;
         }
-
+        String runtime = System.getenv("RUNTIME");
+        if (runtime != null && runtime.equals("xuzhe")) {
+            TESTER_HOME = "/home/ubuntu/alitest/";
+            DATA_HOME = "/home/ubuntu/alitest/data";
+            RESULT_HOME = "/home/ubuntu/alitest/result";
+            TEAMCODE = Constants.TEAMCODE;
+            LOG_LEVEL = "DEBUG";
+            MIDDLE_HOME = "/home/ubuntu/alitest/middle";
+            SERVER_PORT = Constants.SERVER_PORT;
+            LOG_HOME = "/home/ubuntu/alitest/log";
+        }else if(runtime != null && runtime.equals("zsn")) {
+            TESTER_HOME = "G:/研究生/AliCompetition/quarter-final/home";
+            DATA_HOME = "G:/研究生/AliCompetition/quarter-final/home/data";
+            RESULT_HOME = "G:/研究生/AliCompetition/quarter-final/home/result";
+            TEAMCODE = Constants.TEAMCODE;
+            LOG_LEVEL = "DEBUG";
+            MIDDLE_HOME = "G:/研究生/AliCompetition/quarter-final/home/middle";
+            SERVER_PORT = Constants.SERVER_PORT;
+            LOG_HOME = "G:/研究生/AliCompetition/quarter-final/home/log";
+        }
     }
 
     // 工作主目录
@@ -54,13 +60,15 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static int BLOCK_SIZE = 1024 * 1024 * 128;
+    public static int BLOCK_SIZE = 1024 * 1024 * 1024;
 
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 
     //单机模式
     public static boolean SINGLE = false;
+    public static String RUNTIME = "ali";
+
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"
     public static boolean TEST_MODE = true;
