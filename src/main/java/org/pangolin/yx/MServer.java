@@ -2,6 +2,7 @@ package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.Constants;
 import com.alibaba.middleware.race.sync.Server;
+import io.netty.channel.Channel;
 import org.pangolin.xuzhe.test.IOPerfTest;
 import org.pangolin.xuzhe.test.ReadingThread;
 import org.slf4j.Logger;
@@ -76,6 +77,34 @@ public class MServer {
 
     }
 
+
+    private static class Worker implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                //运行我们的程序
+                ByteBuffer buffer;
+                if (Config.TEST_MODE) {
+                    buffer = doTest();
+                } else {
+                    buffer = getResult(Config.queryData);
+                }
+                logger.info("send result to client");
+                if (buffer != null) {
+                    //发送结果
+                    NetServerHandler.sendResult(buffer);
+                }
+            } catch (Exception e) {
+                logger.info("{}", e);
+                System.exit(0);
+            } catch (Error e) {
+                logger.info("{}", e);
+                throw e;
+            }
+        }
+    }
+
     public static void main(String[] args) {
         Config.init();
         initProperties();
@@ -100,17 +129,13 @@ public class MServer {
                 query.end = endId;
                 Config.queryData = query;
 
-                ByteBuffer buffer;
-                if (Config.TEST_MODE) {
-                    buffer = doTest();
+                //开启网络服务
+                //NetServerHandler.data = buffer;
+                Thread th = new Thread(new Worker());
+                th.start();
+                NetServer.start();
 
-                } else {
-                    buffer = getResult(query);
-                }
-                if (buffer != null) {
-                    NetServerHandler.data = buffer;
-                    NetServer.start();
-                }
+
             } else {
                 logger.info("参数错误");
             }
