@@ -56,7 +56,7 @@ public class MServer {
         buffer.put("hello wprld".getBytes());
 
         //yx test
-        LogParserTest.parseLog();
+        //LogParserTest.parseLog();
 
         IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
         // 不读同一个文件，避免从pagecache读
@@ -82,10 +82,15 @@ public class MServer {
             try {
                 //运行我们的程序
                 ByteBuffer buffer;
-                if (Config.TEST_MODE) {
+                if (Config.TEST_MODE.equals("test")) {
                     buffer = doTest();
-                } else {
+                } else if (Config.TEST_MODE.equals("real")) {
                     buffer = getResult(Config.queryData);
+                } else if (Config.TEST_MODE.equals("mix")) {
+                    doTest();
+                    buffer = getResult(Config.queryData);
+                } else {
+                    throw new Exception("wrong test mode");
                 }
                 logger.info("send result to client");
                 if (buffer != null) {

@@ -69,7 +69,9 @@ public class Config {
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"
-    public static boolean TEST_MODE = false;
+    //real test mix
+    //mix会一起执行real和test
+    public static String TEST_MODE = "mix";
 
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;

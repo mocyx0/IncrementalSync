@@ -77,7 +77,7 @@ public class Worker extends Thread {
                 long end = System.nanoTime();
                 pool.put(buffer);
             }
-            logger.info("{} done!", Thread.currentThread().getName());
+            //logger.info("{} done!", Thread.currentThread().getName());
         } catch (InterruptedException e) {
             logger.error("Worker was interrupted", e);
         } catch (Exception e) {
