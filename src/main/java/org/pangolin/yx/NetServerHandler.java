@@ -76,24 +76,33 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
 
     }
 
+    private static volatile Channel clientChannel;
+
+    public static void sendResult(ByteBuffer data) {
+        if (clientChannel != null) {
+            //发送查询结果
+            ByteBuf byteBuf = Unpooled.wrappedBuffer(data.array(), data.arrayOffset(), data.position());
+            clientChannel.writeAndFlush(byteBuf);
+            logger.info("send data done");
+            ChannelFuture closeFuture = clientChannel.closeFuture();
+            closeFuture.addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture future) throws Exception {
+                    //session cleanup logic
+                    logger.info("client close");
+                    //我们不需要shutdown 由评测程序杀死server
+                    //logger.info("server close");
+                    //System.exit(0);
+                }
+            });
+        } else {
+            logger.info("ERROR clientChannel is null");
+        }
+    }
+
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         logger.info("channelActive");
-        //发送查询结果
-        ByteBuf byteBuf = Unpooled.wrappedBuffer(data.array(), data.arrayOffset(), data.position());
-        ctx.channel().writeAndFlush(byteBuf);
-        logger.info("send data done");
-
-        ChannelFuture closeFuture = ctx.channel().closeFuture();
-        closeFuture.addListener(new ChannelFutureListener() {
-            @Override
-            public void operationComplete(ChannelFuture future) throws Exception {
-                //session cleanup logic
-                logger.info("client close");
-                //我们不需要shutdown 由评测程序杀死server
-                //logger.info("server close");
-                //System.exit(0);
-            }
-        });
+        clientChannel = ctx.channel();
     }
 
     @Override
