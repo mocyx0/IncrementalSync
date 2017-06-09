@@ -1,5 +1,9 @@
 package org.pangolin.yx;
 
+import com.alibaba.middleware.race.sync.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -92,7 +96,7 @@ class LogRecord {
 
 
 public class LogParser {
-
+    private static Logger logger = LoggerFactory.getLogger(Server.class);
     private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
     private static final AliLogData aliLogData = new AliLogData();
     private static AtomicInteger insertCount = new AtomicInteger();
@@ -219,13 +223,14 @@ public class LogParser {
                         break;
                     } else {
                         BlockLog blockLog = parseLogBlock(block);
-
                         synchronized (aliLogData) {
                             aliLogData.blockLogs.add(blockLog);
                         }
                         latch.countDown();
                     }
                 }
+                logger.info("worker done");
+
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(0);

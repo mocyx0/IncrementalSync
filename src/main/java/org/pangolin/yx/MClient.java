@@ -12,7 +12,11 @@ public class MClient {
     }
 
     public static void main(String[] args) {
-        Config.init();
+        String runtime = "ali";
+        if (args.length >= 2) {
+            runtime = args[1];
+        }
+        Config.init(runtime);
         try {
             initProperties();
             NetClient.start(args[0]);

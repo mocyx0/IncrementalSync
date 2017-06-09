@@ -73,7 +73,11 @@ public class MServer {
     }
 
     public static void main(String[] args) {
-        Config.init();
+        String runtime = "ali";
+        if (args.length >= 5) {
+            runtime = args[4];
+        }
+        Config.init(runtime);
         initProperties();
         logger = LoggerFactory.getLogger(Server.class);
         logger.info("mserver start ");
@@ -82,7 +86,7 @@ public class MServer {
         }
 
         try {
-            if (args.length == 4) {
+            if (args.length >= 4) {
                 String scheme = args[0];
                 String table = args[1];
                 int startId = Integer.parseInt(args[2]);
