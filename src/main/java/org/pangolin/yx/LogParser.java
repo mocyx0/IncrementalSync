@@ -273,7 +273,7 @@ public class LogParser {
         splitLogFile();
         latch = new CountDownLatch(fileBlocks.size());
         int cpu = Runtime.getRuntime().availableProcessors();
-        cpu = 4;
+        cpu = 8;
         for (int i = 0; i < cpu; i++) {
             Thread th = new Thread(new Worker());
             th.start();

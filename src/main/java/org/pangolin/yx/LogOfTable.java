@@ -4,6 +4,7 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yangxiao on 2017/6/7.
@@ -15,13 +16,16 @@ import java.util.HashMap;
 
 
 class LogOfTable {
+    public static AtomicInteger TOTAL_MEM = new AtomicInteger();
 
     private static int LOG_TYPE_UPDATE = 1;
     private static int LOG_TYPE_INSERT = 2;
 
     //private ArrayList<LogRecord> logArray = new ArrayList<>();//log链表
     // private HashMap<Long, Integer> logPos = new HashMap<>();//当前的id对应的上一条log索引
-    private HashMap<Long, Integer> logOff = new HashMap<>();
+    //    private HashMap<Long, Integer> logOff = new HashMap<>();
+    private LinearHashing logOff = new LinearHashing();
+
     private int writeOff;
     private static int BUFFER_SIZE = 1024 * 1024;
     private int bufferTotalLength = 0;
@@ -29,6 +33,7 @@ class LogOfTable {
 
     LogOfTable() {
         datas.add(ByteBuffer.allocate(BUFFER_SIZE));
+        TOTAL_MEM.addAndGet(BUFFER_SIZE);
     }
 
     public void flipBuffer() {
@@ -108,7 +113,7 @@ class LogOfTable {
     }
     */
 
-    public boolean isDeleted(long id) {
+    public boolean isDeleted(long id) throws Exception {
         if (logOff.containsKey(id) && logOff.get(id) == -1) {
             return true;
         } else {
@@ -119,14 +124,14 @@ class LogOfTable {
     public LogRecord getLogById(long id) throws Exception {
         if (logOff.containsKey(id)) {
             //return logArray.get(logOff.get(id));
-            Integer off = logOff.get(id);
+            int off = logOff.get(id);
             return getLog(off);
         } else {
             return null;
         }
     }
 
-    public int getPreLogOff(Long id) {
+    public int getPreLogOff(Long id) throws Exception {
         if (logOff.containsKey(id)) {
             return logOff.get(id);
         } else {
@@ -139,6 +144,7 @@ class LogOfTable {
         //writeOff += datas.get(datas.size() - 1).position();
         writeOff += BUFFER_SIZE;
         datas.add(ByteBuffer.allocate(BUFFER_SIZE));
+        TOTAL_MEM.addAndGet(BUFFER_SIZE);
     }
 
     //return write postion

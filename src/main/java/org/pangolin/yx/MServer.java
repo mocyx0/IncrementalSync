@@ -36,6 +36,8 @@ public class MServer {
         //rebuild data
         RebuildResult result = rebuider.getResult();
         logger.info("getResult done");
+        logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
+        logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
         //write to file
         if (Config.SINGLE) {
             ResultWriter.writeToFile(result);
@@ -44,7 +46,6 @@ public class MServer {
             ByteBuffer re = ResultWriter.writeToBuffer(result);
             return re;
         }
-
     }
 
 
@@ -76,7 +77,7 @@ public class MServer {
         initProperties();
         logger = LoggerFactory.getLogger(Server.class);
         logger.info("mserver start ");
-        for(String s : args){
+        for (String s : args) {
             logger.info(s);
         }
 

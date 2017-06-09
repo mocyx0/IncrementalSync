@@ -31,6 +31,7 @@ public class LogRebuilder {
     //根据id在blocks上找出对应的日志记录
     ArrayList<LogRecord> getLogs(long id) throws Exception {
 
+
         ArrayList<LogRecord> re = new ArrayList<>();
         //String hashKey = queryData.scheme + " " + queryData.table;
 
@@ -55,6 +56,7 @@ public class LogRebuilder {
             LogRecord lastLog = logOfTable.getLogById(targetId);
             //
             while (lastLog != null) {
+
                 lastLog.logPath = blockLog.fileBlock.path;
                 re.add(lastLog);
                 if (lastLog.preLogOff != -1) {

@@ -3,12 +3,15 @@ package org.pangolin.yx;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yangxiao on 2017/6/8.
  * 注意我们不需要实现remove,size 因为我们不用到这个操作
  */
 public class LinearHashing {
+    public static AtomicInteger TOTAL_MEM = new AtomicInteger();
+
     private static int BUFFER_SIZE = 4 * 1024;//
     private static int BLOCK_SIZE = 4;//8字节的key 4字节value,
     private static int CHAIN_BLOCK_SIZE = 16;//链表节点的大小 4字节指向下一节点 8key 4value
@@ -26,6 +29,10 @@ public class LinearHashing {
     private int i;//number of bits used in hash
     private int r;//data count
 
+    public int size() {
+        return r;
+    }
+
     public LinearHashing() {
         n = 2;
         i = 1;
@@ -33,6 +40,13 @@ public class LinearHashing {
         freeChain = CHAIN_BLOCK_SIZE;
         blockBuffer.add(new byte[BUFFER_SIZE]);
         chainBuffer.add(new byte[BUFFER_SIZE]);
+        updateMemCount();
+        updateMemCount();
+
+    }
+
+    private void updateMemCount() {
+        TOTAL_MEM.addAndGet(BUFFER_SIZE);
     }
 
 
@@ -64,6 +78,7 @@ public class LinearHashing {
         } else {
             if (freeChain + CHAIN_BLOCK_SIZE > chainBuffer.size() * BUFFER_SIZE) {
                 chainBuffer.add(new byte[BUFFER_SIZE]);
+                updateMemCount();
                 freeChain = (chainBuffer.size() - 1) * BUFFER_SIZE;
             }
             int re = freeChain;
@@ -128,8 +143,22 @@ public class LinearHashing {
         buf[buffOff + 7] = (byte) (0xff & v >>> 56);
     }
 
-
+    //如果存在key则更新 否则插入新值
     private void putToBuffer(int block, long key, int value) {
+
+        //search first
+        int blockHead = readInt(blockBuffer, block);
+        while (blockHead != 0) {
+            int next = readInt(chainBuffer, blockHead);
+            long k = readInt(chainBuffer, blockHead + 4);
+            if (k == key) {
+                writeInt(chainBuffer, blockHead + 12, value);
+                return;
+            }
+            blockHead = next;
+        }
+        //没有找到key 插入新值
+        r++;
         //链表内存地址
         int newHead = allocateChainNode();
         /*
@@ -148,6 +177,7 @@ public class LinearHashing {
     private void newBlock() {
         if (n * BLOCK_SIZE > blockBuffer.size() * BUFFER_SIZE) {
             blockBuffer.add(new byte[BUFFER_SIZE]);
+            updateMemCount();
         }
     }
 
@@ -184,11 +214,10 @@ public class LinearHashing {
         }
     }
 
-    public void put(long k, int v) {
+    public void put(long k, int v) throws Exception {
         int hash = hashCode(k);
         int block = getBlock(hash);
         putToBuffer(block, k, v);
-        r++;
         if (r / (float) n > LOAD_FACTOR) {
             split();
         }
@@ -215,7 +244,7 @@ public class LinearHashing {
         throw new Exception("no such key");
     }
 
-    public boolean contains(long k) {
+    public boolean containsKey(long k) {
         int hash = hashCode(k);
         int block = getBlock(hash);
         int head = readInt(blockBuffer, block);
@@ -243,9 +272,9 @@ public class LinearHashing {
         ArrayList<Integer> searchValue1 = new ArrayList<>();
 
         for (int i = 0; i < testCount; i++) {
-            putKey.add((long) random.nextInt(testCount * 2));
-            putValue.add(random.nextInt(testCount * 2));
-            searchKey.add((long) random.nextInt(testCount * 2));
+            putKey.add((long) random.nextInt(testCount * 2) - testCount);
+            putValue.add(random.nextInt(testCount * 2) - testCount);
+            searchKey.add((long) random.nextInt(testCount * 2) - testCount);
         }
         long t1 = System.currentTimeMillis();
         //hashmap
@@ -267,7 +296,7 @@ public class LinearHashing {
         }
         for (int i = 0; i < testCount; i++) {
             long key = searchKey.get(i);
-            if (lhash.contains(key)) {
+            if (lhash.containsKey(key)) {
                 searchValue1.add(lhash.get(key));
             } else {
                 searchValue1.add(null);
@@ -283,10 +312,7 @@ public class LinearHashing {
             } else if (v2 != null && !v2.equals(v1)) {
                 System.out.println("error");
             }
-
         }
-
-
         System.out.println(String.format("hashmap %d lhash %d", t2 - t1, t3 - t2));
     }
 }
