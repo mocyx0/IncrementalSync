@@ -16,11 +16,11 @@ import static org.pangolin.xuzhe.stringparser.Constants.LINE_MAX_LENGTH;
  */
 public class Worker extends Thread {
     Logger logger = LoggerFactory.getLogger(Worker.class);
-    public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
-    private Queue<Block> buffers;
-    private static AtomicInteger workerNum = new AtomicInteger(0);
-	private LocalLogIndex localIndex = new LocalLogIndex();
-
+	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+	//	private LocalLogIndex localIndex = new LocalLogIndex();
+	private static final LocalLogIndex localIndex = new LocalLogIndex();
+	private Queue<Block> buffers;
+	private static AtomicInteger workerNum = new AtomicInteger(0);
     public Worker() {
         super("Worker" + workerNum.incrementAndGet());
         this.buffers = new ConcurrentLinkedQueue<Block>();

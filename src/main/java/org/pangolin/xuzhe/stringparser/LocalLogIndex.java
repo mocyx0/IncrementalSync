@@ -2,10 +2,7 @@ package org.pangolin.xuzhe.stringparser;
 
 import com.sun.org.apache.bcel.internal.generic.INEG;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by ubuntu on 17-6-8.
@@ -19,9 +16,12 @@ public class LocalLogIndex {
 
     public void appendIndex(long pk, long timestamp, int fileNo, int position) {
         List<IndexEntry> list = indexes.get(pk);
-        if(list == null) {
-            list = new ArrayList<>();
-            indexes.put(pk, list);
+        synchronized (this){
+            if(list == null) {
+                list = new ArrayList<>();
+                Collections.synchronizedList(list);
+                indexes.put(pk, list);
+            }
         }
         list.add(new IndexEntry(timestamp, fileNo, position));
     }
