@@ -9,8 +9,9 @@ public class Config {
     private static String runtime = "yx";
 
     public static void init() {
-        //使用阿里环境的配置
-        if (RUNTIME.equals("ali")) {
+        String runtime = System.getenv("RUNTIME");
+        if (runtime == null) {
+            //使用阿里环境的配置
             TESTER_HOME = Constants.TESTER_HOME;
             DATA_HOME = Constants.DATA_HOME;
             RESULT_HOME = Constants.RESULT_HOME;
@@ -19,9 +20,7 @@ public class Config {
             MIDDLE_HOME = Constants.MIDDLE_HOME;
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = Constants.LOG_HOME;
-        }
-        String runtime = System.getenv("RUNTIME");
-        if (runtime != null && runtime.equals("xuzhe")) {
+        } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
             DATA_HOME = "/home/ubuntu/alitest/data";
             RESULT_HOME = "/home/ubuntu/alitest/result";
@@ -30,7 +29,7 @@ public class Config {
             MIDDLE_HOME = "/home/ubuntu/alitest/middle";
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = "/home/ubuntu/alitest/log";
-        }else if(runtime != null && runtime.equals("zsn")) {
+        } else if (runtime.equals("zsn")) {
             TESTER_HOME = "G:/研究生/AliCompetition/quarter-final/home";
             DATA_HOME = "G:/研究生/AliCompetition/quarter-final/home/data";
             RESULT_HOME = "G:/研究生/AliCompetition/quarter-final/home/result";
@@ -60,14 +59,13 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static int BLOCK_SIZE = 1024 * 1024 * 1024;
+    public static int BLOCK_SIZE = 1024 * 1024 * 128;
 
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 
     //单机模式
     public static boolean SINGLE = false;
-    public static String RUNTIME = "ali";
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"
