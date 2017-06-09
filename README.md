@@ -237,14 +237,15 @@ java $JAVA_OPS -cp $jarPath com.alibaba.middleware.race.sync.Client
 # ============================= 如何获取评测日志 ===================================
 1. 超时时间： server端不做超时处理，client端超时时间为5分钟
 2. 日志处理：
-    - 请将日志写入指定的日志目录：/home/admin/logs/${teamCode}/，这里的teamCode请替换成自己的唯一teamCode，此外请不要透露自己的teamCode给别人哦。
+    - 请将日志写入指定的日志目录：/home/admin/logs/${teamCode}/，这里的teamCode请替换成自己的唯一teamCode，此外请不要透露自己的teamCode给别人哦。teamCode目录服务器会自己建，自己不用再创建。
 3. 如何获取自己运行的日志：
     - 选手每次提交的程序运行的gc日志以及符合上面命名规范的日志，评测程序才会将其反馈给选手。
-    - 日志的命名${logName}按照如下命名：${test.role}-${teamCode}-WARN.log.part和${test.role}-${teamCode}-INFO.log.part。例如client-teamCode-INFO.log.part或者server-teamCode-INFO.log.part。${test.role}可以为client或者server
-    - 如果查看GC日志的话，${logName}则为gc_client.log或者gc_server.log
-    - 选手可以通过地址：http://middle2017.oss-cn-shanghai.aliyuncs.com/${teamCode}/${logName} 这样的形式获取自己的日志
-    - 日志已经做了上传大小的限制，INFO日志限制10K，WARN和ERROR日志限制大小1K
-    - 评测日志的命名为${test.role}-${teamCode}-assessment-WARN.log，例如
+    - 选手的日志请命名为server-custom.log和client-custom.log，否则不会上传到OSS
+    - GC日志的名称为：gc_client.log或者gc_server.log
+    - 评测日志名称为：server-assesment-INFO.log或者client-assessment-INFO.log
+    - 选手可以通过地址：http://middle2017.oss-cn-shanghai.aliyuncs.com/${teamCode}/server.log.tar.gz或者client.log.tar.gz来获取日志
+    - 日志已经做了上传大小的限制，限制为10K
+
 
 
 
@@ -290,7 +291,7 @@ teamcode是识别选手的唯一标示，评测程序会从选手teamcode相关�
 4. Client和Server的类名必须是"Client"和"Server"，否则评测程序无法正常启动选手的程序
 5. 评测程序给server的参数，第一个参数是schema名字，第二个参数是table名字，第三个参数和第四个参数表征查询的主键范围。具体可以查看Demo
 6. 构建工程必须保证构件名字为sync，最后得到的jar为sync-1.0.jar，建议使用Demo里面的assembly.xml，用mvn clean assembly:assembly -Dmaven.test.skip=true命令打包。
-7. 结果文件的格式可以使用SQL:select * into outfile 'student.txt' from student来获得。默认每一列都是以tab分隔，每一行都以'\n'来换行
+7. 结果文件的格式可以使用SQL:select * into outfile 'student.txt' from student来获得。默认每一列都是以tab分隔，每一行都以'\n'来换行（包括最后一行）
 8. 变更信息的10个数据文件命名为： 1.txt、2.txt、3.txt、4.txt、5.txt、6.txt、7.txt、8.txt、9.txt、10.txt
 
 
