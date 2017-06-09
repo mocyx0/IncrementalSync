@@ -105,7 +105,7 @@ public class LogParserTest {
                         synchronized (aliLogData) {
                             aliLogData.blockLogs.add(blockLog);
                         }
-                        logger.info(String.format("Worker parse done, file: %s index: %d", block.path, block.index));
+                        //logger.info(String.format("Worker parse done, file: %s index: %d", block.path, block.index));
                         latch.countDown();
                     }
                 }
@@ -165,7 +165,7 @@ public class LogParserTest {
         logger.info(String.format("line:%d update:%d insert:%d delete:%d ", lineCount.get(), updateCount.get(), insertCount.get(), deleteCount.get()));
         for (String s : tableOpCount.keySet()) {
             OpCount opCount = tableOpCount.get(s);
-            logger.info(String.format("table %s line:%d update:%d insert:%d delete:%d ", s, lineCount.get(), updateCount.get(), insertCount.get(), deleteCount.get()));
+            logger.info(String.format("table %s line:%d update:%d insert:%d delete:%d ", s, opCount.lineCount.get(), opCount.updateCount.get(), opCount.insertCount.get(), deleteCount.get()));
         }
         return aliLogData;
 
