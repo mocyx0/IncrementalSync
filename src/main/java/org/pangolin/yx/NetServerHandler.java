@@ -84,6 +84,7 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
             ByteBuf byteBuf = Unpooled.wrappedBuffer(data.array(), data.arrayOffset(), data.position());
             clientChannel.writeAndFlush(byteBuf);
             logger.info("send data done");
+            /*
             ChannelFuture closeFuture = clientChannel.closeFuture();
             closeFuture.addListener(new ChannelFutureListener() {
                 @Override
@@ -95,6 +96,7 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
                     //System.exit(0);
                 }
             });
+            */
         } else {
             logger.info("ERROR clientChannel is null");
         }
