@@ -59,6 +59,8 @@ public class MServer {
         // 不读同一个文件，避免从pagecache读
         IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
         */
+
+        /*
         String[] fileNameArray = new String[10];
         for (int i = 1; i <= 10; i++) {
             fileNameArray[i - 1] = String.format("%s/%d.txt", Config.DATA_HOME, i);
@@ -66,8 +68,9 @@ public class MServer {
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
+        */
         //yx test
-        //LogParserTest.parseLog();
+        LogParserTest.parseLog();
         logger.info("doTest done");
         return buffer;
 
@@ -118,6 +121,10 @@ public class MServer {
         } catch (Exception e) {
             logger.info("{}", e);
             System.exit(0);
+        } catch (Error e) {
+            logger.info("{}", e);
+            logger.info(e.toString());
+            throw e;
         }
     }
 

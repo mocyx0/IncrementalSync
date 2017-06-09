@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class LogParserTest {
-
     private static class OpCount {
         AtomicInteger insertCount = new AtomicInteger();
         AtomicInteger updateCount = new AtomicInteger();
@@ -106,12 +105,17 @@ public class LogParserTest {
                         synchronized (aliLogData) {
                             aliLogData.blockLogs.add(blockLog);
                         }
+                        logger.info(String.format("Worker parse done, file: %s index: %d", block.path, block.index));
                         latch.countDown();
                     }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.info("{}", e);
                 System.exit(0);
+            } catch (Error e) {
+                logger.info("{}", e);
+                logger.info(e.toString());
+                throw e;
             }
         }
     }
@@ -122,14 +126,23 @@ public class LogParserTest {
         BlockLog blockLog = new BlockLog();
         blockLog.fileBlock = block;
         LineReader lineReader = new LineReader(block.path, block.offset, block.length);
+
+
         ReadLineInfo line = lineReader.readLine();
-        int lineIndex = 1;
-        while (line.line != null) {
-            parseLine(line, blockLog);
-            line = lineReader.readLine();
-            lineIndex++;
+        int lineIndex = 0;
+        try {
+
+            while (line.line != null) {
+                parseLine(line, blockLog);
+                line = lineReader.readLine();
+                lineIndex++;
+            }
+            blockLog.indexDone();
+        } catch (Exception e) {
+            logger.info(String.format("parseLogBlock error  index:%d line:%s", lineIndex, line.line));
+            throw e;
         }
-        blockLog.indexDone();
+
         return blockLog;
     }
 
