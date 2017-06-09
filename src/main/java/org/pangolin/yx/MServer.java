@@ -81,6 +81,7 @@ public class MServer {
         initProperties();
         logger = LoggerFactory.getLogger(Server.class);
         logger.info("mserver start ");
+        logger.info("args:  ");
         for (String s : args) {
             logger.info(s);
         }
