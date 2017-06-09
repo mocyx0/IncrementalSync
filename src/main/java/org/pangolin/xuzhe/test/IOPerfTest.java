@@ -18,7 +18,7 @@ public class IOPerfTest {
 
     public static void reverseOrderReadByFileChannel(String fileName) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
-        RandomAccessFile file = new RandomAccessFile(fileName, "rw");
+        RandomAccessFile file = new RandomAccessFile(fileName, "r");
         FileChannel channel = file.getChannel();
         long size = channel.size();
         long pos = size;
@@ -44,7 +44,7 @@ public class IOPerfTest {
 
     public static void positiveOrderReadByFileChannel(String fileName) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
-        RandomAccessFile file = new RandomAccessFile(fileName, "rw");
+        RandomAccessFile file = new RandomAccessFile(fileName, "r");
         FileChannel channel = file.getChannel();
         long size = channel.size();
         long pos = size;
