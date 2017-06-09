@@ -53,10 +53,12 @@ public class MServer {
         logger.info("doTest start");
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
+
         /*
         IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
         // 不读同一个文件，避免从pagecache读
         IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
+        */
         String[] fileNameArray = new String[10];
         for (int i = 1; i <= 10; i++) {
             fileNameArray[i - 1] = String.format("%s/%d.txt", Config.DATA_HOME, i);
@@ -64,9 +66,8 @@ public class MServer {
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
-        */
         //yx test
-        LogParserTest.parseLog();
+        //LogParserTest.parseLog();
         logger.info("doTest done");
         return buffer;
 
