@@ -74,7 +74,7 @@ public class ReadingThread extends Thread {
                 }
                 channel.close();
                 fis.close();
-                logger.info("read file: {} done!");
+                logger.info("read file: {} done!", fileName);
             }
 
             logger.info("Reading Done!");
