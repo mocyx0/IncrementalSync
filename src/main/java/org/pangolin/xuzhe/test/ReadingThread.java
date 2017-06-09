@@ -45,7 +45,7 @@ public class ReadingThread extends Thread {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length() - 4));
                 File f = new File(fileName);
                 if (!f.exists()) {
-                    logger.info("file: {} not exist");
+                    logger.info("file: {} not exist", fileName);
                     continue;
                 }
                 fis = new FileInputStream(f);
@@ -74,7 +74,7 @@ public class ReadingThread extends Thread {
                 }
                 channel.close();
                 fis.close();
-                logger.info("read file: {} done!");
+                logger.info("read file: {} done!", fileName);
             }
 
             logger.info("Reading Done!");

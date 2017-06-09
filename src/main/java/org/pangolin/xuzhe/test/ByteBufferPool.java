@@ -25,13 +25,13 @@ public class ByteBufferPool {
     }
 
     public ByteBuffer get() throws InterruptedException {
-        if(pool.size() < 2) return ByteBuffer.allocateDirect(BUFFER_SIZE);
+//        if(pool.size() < 2) return ByteBuffer.allocateDirect(BUFFER_SIZE);
         return pool.take();
     }
 
     public void put(ByteBuffer buffer) throws InterruptedException {
         buffer.clear();
-        if(pool.remainingCapacity() < 2) return;
+//        if(pool.remainingCapacity() < 2) return;
         pool.put(buffer);
     }
 }
