@@ -121,7 +121,7 @@ public class ReadingThread extends Thread {
                 }
             }
             logger.info("每个表的log行数{}", tableLogCountMap);
-            logger.info("{}", opCountMap);
+            logger.info("每种操作的数量{}", opCountMap);
             logger.info("每个文件的行数：{}", lineCountMap);
         } catch (IOException e) {
             logger.info("{}", e);
