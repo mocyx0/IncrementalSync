@@ -161,9 +161,6 @@ class LogOfTable {
 
     public void putLogInBuff(LogRecord record) throws Exception {
 
-        if (record.opType == Config.OP_TYPE_DELETE && record.preId == 6) {
-            System.out.print(1);
-        }
         if (record.opType == Config.OP_TYPE_UPDATE) {
             //pre off
             record.preLogOff = getPreLogOff(record.preId);

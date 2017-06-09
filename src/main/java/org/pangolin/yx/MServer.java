@@ -68,14 +68,17 @@ public class MServer {
         LogParserTest.parseLog();
         logger.info("doTest done");
         return buffer;
-    }
 
+    }
 
     public static void main(String[] args) {
         Config.init();
         initProperties();
         logger = LoggerFactory.getLogger(Server.class);
-        logger.info("mserver start");
+        logger.info("mserver start ");
+        for(String s : args){
+            logger.info(s);
+        }
 
         try {
             if (args.length == 4) {
@@ -106,7 +109,7 @@ public class MServer {
                 logger.info("参数错误");
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.info("{}", e);
             System.exit(0);
         }
     }

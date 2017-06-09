@@ -51,18 +51,18 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static int BLOCK_SIZE = 1024 * 1024 * 1024;
+    public static int BLOCK_SIZE = 1024 * 1024 * 16;
 
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 
     //单机模式
-    public static boolean SINGLE = false;
-    public static String RUNTIME = "ali";
+    public static boolean SINGLE = true;
+    public static String RUNTIME = "yx";
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"
-    public static boolean TEST_MODE = true;
+    public static boolean TEST_MODE = false;
 
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;
