@@ -13,10 +13,24 @@ public class Redo {
         List<LocalLogIndex.IndexEntry> logs = indexes.indexes.get(pk);
         Collections.sort(logs);
         Collections.reverse(logs);
+        Record r = null;
+        int count = 0;
         for(LocalLogIndex.IndexEntry index : logs) {
             String line = getLineByPosition(index.fileNo, index.position);
-            Record r = Record.createFromLastLog(Log.parser(line));
+            Log log = Log.parser(line);
+            if(log.op == 'D'){
+                break;
+            }
+            if(count == 0) {
+                r = Record.createFromLastLog(log, indexes);
+            }else {
+                r.update(Log.parser(line), indexes);
+            }
+            if(log.op == 'I'){
+                break;
+            }
+            ++count;
         }
-        return null;
+        return r;
     }
 }

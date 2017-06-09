@@ -19,9 +19,9 @@ public class Column {
      * @return
      */
     public static Column parser(String str) {
-        int index = str.indexOf(':');
+        int index = str.indexOf(':');      //获取字段中冒号的位置
         String name = str.substring(0, index);
-        char type = str.charAt(index+1);
+        char type = str.charAt(index+1);            //获取字段中第一个冒号后的类型的值：1代表数字型，2代表字符型
         boolean isPK = str.charAt(index+3) == '0' ? false : true;
         return new Column(name, type, isPK);
     }

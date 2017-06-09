@@ -25,7 +25,7 @@ public class Log {
         String line = str;
         String[] items = line.split("\\|");
         Log log = new Log();
-        log.op = items[5].charAt(0);
+        log.op = items[5].charAt(0);       //获取Log的操作类型
         log.columns = ColumnLog.parser(items);
         return log;
     }
