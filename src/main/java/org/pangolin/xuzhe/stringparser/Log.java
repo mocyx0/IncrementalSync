@@ -1,4 +1,8 @@
-package org.pangolin.xuzhe;
+package org.pangolin.xuzhe.stringparser;
+
+import org.pangolin.xuzhe.stringparser.ColumnLog;
+import org.pangolin.xuzhe.stringparser.Constants;
+import org.pangolin.xuzhe.stringparser.Schema;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;

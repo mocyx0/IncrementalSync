@@ -1,4 +1,6 @@
-package org.pangolin.xuzhe;
+package org.pangolin.xuzhe.stringparser;
+
+import org.pangolin.xuzhe.Column;
 
 /**
  * Created by ubuntu on 17-6-6.

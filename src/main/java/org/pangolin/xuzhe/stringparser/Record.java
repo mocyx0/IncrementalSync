@@ -1,4 +1,8 @@
-package org.pangolin.xuzhe;
+package org.pangolin.xuzhe.stringparser;
+
+import org.pangolin.xuzhe.stringparser.ColumnLog;
+import org.pangolin.xuzhe.HashUtil;
+import org.pangolin.xuzhe.stringparser.Log;
 
 import java.util.Arrays;
 import java.util.HashMap;

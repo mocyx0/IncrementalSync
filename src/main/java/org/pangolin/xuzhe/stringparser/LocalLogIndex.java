@@ -1,5 +1,7 @@
 package org.pangolin.xuzhe.stringparser;
 
+import com.sun.org.apache.bcel.internal.generic.INEG;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,12 +43,27 @@ public class LocalLogIndex {
         return builder.toString();
     }
 
-    private static class IndexEntry {
+    public static LocalLogIndex merge(LocalLogIndex[] indexes) {
+        LocalLogIndex result = new LocalLogIndex();
+        for(LocalLogIndex index : indexes) {
+            for(Map.Entry<Long, List<IndexEntry>> entry : index.indexes.entrySet()) {
+                List<IndexEntry> list = result.indexes.get(entry.getKey());
+                if(list == null) {
+                    list = new ArrayList<>();
+                    result.indexes.put(entry.getKey(), list);
+                }
+                list.addAll(entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    public static class IndexEntry implements Comparable<IndexEntry> {
         public final long timestamp;
         public final int fileNo;
         public final int position;
 
-        public IndexEntry(long timestamp, int fileNo, int position) {
+        private IndexEntry(long timestamp, int fileNo, int position) {
             this.timestamp = timestamp;
             this.fileNo = fileNo;
             this.position = position;
@@ -63,6 +80,11 @@ public class LocalLogIndex {
             sb.append(position);
             sb.append(')');
             return sb.toString();
+        }
+
+        @Override
+        public int compareTo(IndexEntry indexEntry) {
+            return (int)(this.timestamp - indexEntry.timestamp);
         }
     }
 }
