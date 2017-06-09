@@ -486,3 +486,11 @@ file locks                      (-x) unlimited
 ```
 会有
 ```
+
+
+16. 预热赛的答案能否提供?
+
+```
+可以提供，为了让选手更好的调试代码，解决问题。预热赛的答案提供如下：
+下载地址：https://space.dingtalk.com/c/ggHaACQzMTYwZjhlMi01Zjk5LTRmODMtODM2ZC1jYWFlNjlkYzg1ZWYCzhoZeDw
+```
