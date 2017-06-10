@@ -73,6 +73,7 @@
     <logger name="com.alibaba.middleware.race.sync.Client" additivity="false">
         <level value="INFO"/>
         <appender-ref ref="FILE_CLIENT"/>
+        <appender-ref ref="STDOUT"/>
     </logger>
 
 
