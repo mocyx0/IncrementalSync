@@ -31,6 +31,7 @@ public class Client {
         ip = args[0];
         Client client = new Client();
         client.connect(ip, port);
+        Thread.sleep(4000000);
 
     }
 
