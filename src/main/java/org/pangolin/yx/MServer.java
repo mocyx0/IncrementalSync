@@ -28,6 +28,11 @@ public class MServer {
     private static ByteBuffer getResult(QueryData query) throws Exception {
 
         LogParser parser = new LogParser();
+
+        //precache
+
+        PreCache.precache(Util.logFiles(Config.DATA_HOME));
+
         //read log
         AliLogData data = parser.parseLog();
         logger.info("parseLog done");
@@ -136,8 +141,6 @@ public class MServer {
                 Thread th = new Thread(new Worker());
                 th.start();
                 NetServer.start();
-
-
             } else {
                 logger.info("参数错误");
             }

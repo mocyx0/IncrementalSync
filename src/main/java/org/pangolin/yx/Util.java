@@ -1,7 +1,9 @@
 package org.pangolin.yx;
 
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by yangxiao on 2017/6/4.
@@ -84,6 +86,20 @@ public class Util {
         parser.off = e + 1;
         return parser.str.substring(s, e);
 
+    }
+
+    public static ArrayList<String> logFiles(String dir) {
+        ArrayList<String> files = new ArrayList<>();
+        for (int i = 1; i < 100; i++) {
+            String filepath = dir + "/" + i + ".txt";
+            File f = new File(filepath);
+            if (f.exists()) {
+                files.add(filepath);
+            } else {
+                break;
+            }
+        }
+        return files;
     }
 
 
