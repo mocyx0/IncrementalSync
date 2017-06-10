@@ -45,6 +45,10 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
         // 接收并打印客户端的信息
         logger.info("Client said:" + resultStr);
 
+        if (sData != null) {
+            sendResult(sData);
+        }
+
         /*
         String message = "hello!";
         ByteBuf byteBuf = Unpooled.wrappedBuffer(message.getBytes());
@@ -78,6 +82,10 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
 
     private static volatile Channel clientChannel;
 
+
+    private static ByteBuffer sData;
+
+
     public static void sendResult(ByteBuffer data) {
         if (clientChannel != null) {
             //发送查询结果
@@ -99,6 +107,7 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
             */
         } else {
             logger.info("ERROR clientChannel is null");
+            sData = data;
         }
     }
 

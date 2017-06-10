@@ -30,7 +30,7 @@ public class MClient {
             initProperties();
             NetClient.start(args[0]);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.info("{}",e);
             System.exit(0);
         }
     }
