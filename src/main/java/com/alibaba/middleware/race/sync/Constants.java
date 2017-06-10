@@ -14,7 +14,7 @@ interface Constants {
     // 结果文件目录
     String RESULT_HOME = "/Users/wanshao/work/middlewareTester/user_result";
     // teamCode
-    String TEAMCODE = "wanshao_test";
+    String TEAMCODE = "81440metjs";
     // 日志级别
     String LOG_LEVEL = "INFO";
     // 中间结果目录
