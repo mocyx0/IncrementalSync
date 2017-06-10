@@ -37,7 +37,7 @@ public class MServer {
             PreCache.class.wait();
         }
         */
-
+        Thread.sleep(2000);
         //read log
         AliLogData data = parser.parseLog();
         logger.info("parseLog done");

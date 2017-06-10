@@ -38,8 +38,7 @@ public interface Constants {
     String RESULT_FILE_NAME = "Result.rs";
 
     //
-    public static int PRECACHE_DELAY = 10000;
-    public static int PRECACHE_THREAD = 20;
-    public static int CPU_COUNT = 24;
-
+    int PRECACHE_DELAY = 10000;
+    int PRECACHE_THREAD = 5;
+    int CPU_COUNT = 12;
 }

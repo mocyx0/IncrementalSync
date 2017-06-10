@@ -85,8 +85,6 @@ public class Config {
     //precache开始后多久开始执行日志分析
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
-    public static int CPU_COUNT = 8;
-
-
+    public static int CPU_COUNT = 4;
 }
 
