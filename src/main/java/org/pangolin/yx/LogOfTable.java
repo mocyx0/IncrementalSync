@@ -49,6 +49,10 @@ class LogOfTable {
     */
 
     private void putToBufferRaw(ByteBuffer buffer, LogRecord record) throws Exception {
+        buffer.putInt(record.offset);
+        //buffer.putInt(record.length);
+        buffer.putInt(record.preLogOff);
+        /*
         buffer.put(record.opType);
         if (record.opType == Config.OP_TYPE_UPDATE) {
             buffer.putLong(record.preId);
@@ -56,6 +60,7 @@ class LogOfTable {
             buffer.putLong(record.offset);
             buffer.putInt(record.length);
             buffer.putInt(record.preLogOff);
+
         } else if (record.opType == Config.OP_TYPE_INSERT) {
             buffer.putLong(record.id);
             buffer.putLong(record.offset);
@@ -64,10 +69,17 @@ class LogOfTable {
         } else {
             throw new Exception("error");
         }
+        */
     }
 
     private LogRecord readFromBuffer(ByteBuffer buffer) throws Exception {
         LogRecord record = new LogRecord();
+        record.offset = buffer.getInt();
+        //record.length = buffer.getInt();
+        record.preLogOff = buffer.getInt();
+        return record;
+
+        /*
         record.opType = buffer.get();
         if (record.opType == Config.OP_TYPE_UPDATE) {
             record.preId = buffer.getLong();
@@ -85,6 +97,7 @@ class LogOfTable {
             throw new Exception();
         }
         return record;
+        */
     }
 
     public LogRecord getLog(int off) throws Exception {
@@ -182,6 +195,7 @@ class LogOfTable {
         } else if (record.opType == Config.OP_TYPE_INSERT) {
             //logArray.add(record);
             //logPos.put(record.id, logArray.size() - 1);
+            record.preLogOff = -1;
             int off = putToBuffer(record);
             logOff.put(record.id, off);
         } else if (record.opType == Config.OP_TYPE_DELETE) {

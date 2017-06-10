@@ -38,8 +38,11 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
 
 
     private void writeToFile(byte[] data) throws Exception {
-
-        raf.write(data);
+        int len = data.length;
+        if (data[data.length - 1] == 0) {
+            len = data.length - 1;
+        }
+        raf.write(data, 0, len);
     }
 
     // 接收server端的消息，并打印出来
@@ -51,17 +54,22 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
         byte[] result1 = new byte[result.readableBytes()];
         result.readBytes(result1);
         writeToFile(result1);
-//        System.out.println("Server said:" + new String(result1));
+        if (result1[result1.length - 1] == 0) {
+            //end
+            raf.close();
+            //关闭连接
+            ctx.channel().close().sync();
+            System.exit(0);
 
+        }
+//        System.out.println("Server said:" + new String(result1));
         result.release();
 
         //ctx.writeAndFlush("I have received your messages and wait for next messages");
         //ctx.write(stringToBuffer("hi!"));
         //ctx.channel().writeAndFlush(stringToBuffer("hi!"));
 
-        //关闭连接
-        ctx.channel().close().sync();
-        System.exit(0);
+
     }
 
     private static ByteBuf stringToBuffer(String msg) {

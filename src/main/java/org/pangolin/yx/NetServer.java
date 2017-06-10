@@ -19,7 +19,7 @@ public class NetServer {
 
 
     public static void start() throws Exception {
-        logger.info("hello world");
+        logger.info("NetServer start");
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

@@ -21,8 +21,9 @@ public class ResultWriter {
                     buffer.put((byte) '\t');
                 }
             }
-            buffer.put((byte) '\t');
+            buffer.put((byte) '\n');
         }
+        buffer.put((byte) 0);
         return buffer;
     }
 

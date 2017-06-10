@@ -28,6 +28,11 @@ public class MServer {
     private static ByteBuffer getResult(QueryData query) throws Exception {
 
         LogParser parser = new LogParser();
+
+        //precache
+
+        PreCache.precache(Util.logFiles(Config.DATA_HOME));
+
         //read log
         AliLogData data = parser.parseLog();
         logger.info("parseLog done");
@@ -56,7 +61,7 @@ public class MServer {
         buffer.put("hello wprld".getBytes());
 
         //yx test
-        LogParserTest.parseLog();
+        //LogParserTest.parseLog();
 
         IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
         // 不读同一个文件，避免从pagecache读
@@ -80,12 +85,18 @@ public class MServer {
         @Override
         public void run() {
             try {
+                //Thread.sleep(2000);
                 //运行我们的程序
                 ByteBuffer buffer;
-                if (Config.TEST_MODE) {
+                if (Config.TEST_MODE.equals("test")) {
                     buffer = doTest();
-                } else {
+                } else if (Config.TEST_MODE.equals("real")) {
                     buffer = getResult(Config.queryData);
+                } else if (Config.TEST_MODE.equals("mix")) {
+                    doTest();
+                    buffer = getResult(Config.queryData);
+                } else {
+                    throw new Exception("wrong test mode");
                 }
                 logger.info("send result to client");
                 if (buffer != null) {
@@ -131,8 +142,6 @@ public class MServer {
                 Thread th = new Thread(new Worker());
                 th.start();
                 NetServer.start();
-
-
             } else {
                 logger.info("参数错误");
             }

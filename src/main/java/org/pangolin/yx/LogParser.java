@@ -76,17 +76,15 @@ class FileBlock {
 
 class LogRecord {
     //序列化区域
-
-    public byte opType;
-    public long preId;
-    public long id;
     //file info
-    public long offset;
-    public int length;
+    public int offset;
     public int preLogOff;
 
     //非序列化
-
+    public int length;
+    public byte opType;
+    public long preId;
+    public long id;
     //上一条关联日志在记录中的索引
     public String logPath;
     //public int preLogIndex = -1;
@@ -278,7 +276,8 @@ public class LogParser {
         splitLogFile();
         latch = new CountDownLatch(fileBlocks.size());
         int cpu = Runtime.getRuntime().availableProcessors();
-        cpu = 8;
+        logger.info(String.format("cpu count %d", cpu));
+        //cpu = 8;
         for (int i = 0; i < cpu; i++) {
             Thread th = new Thread(new Worker());
             th.start();

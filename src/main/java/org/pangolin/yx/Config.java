@@ -44,7 +44,7 @@ public class Config {
     // 工作主目录
     public static String TESTER_HOME = "D:/tmp/testhome";
     // 赛题数据
-    public static String DATA_HOME = "D:/tmp/amimid/log";
+    public static String DATA_HOME = "C:/tmp/log";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
     public static String RESULT_NAME = "Result.rs";
@@ -59,7 +59,7 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static int BLOCK_SIZE = 1024 * 1024 * 128;
+    public static int BLOCK_SIZE = 1024 * 1024 * 256;
 
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
@@ -69,7 +69,9 @@ public class Config {
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"
-    public static boolean TEST_MODE = true;
+    //real test mix
+    //mix会一起执行real和test
+    public static String TEST_MODE = "real";
 
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;

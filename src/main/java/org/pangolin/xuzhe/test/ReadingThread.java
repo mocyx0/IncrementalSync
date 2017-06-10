@@ -120,9 +120,9 @@ public class ReadingThread extends Thread {
                     }
                 }
             }
-            logger.info("{}", tableLogCountMap);
-            logger.info("{}", opCountMap);
-            logger.info("{}", lineCountMap);
+            logger.info("每个表的log行数{}", tableLogCountMap);
+            logger.info("每种操作的数量{}", opCountMap);
+            logger.info("每个文件的行数：{}", lineCountMap);
         } catch (IOException e) {
             logger.info("{}", e);
         } catch (InterruptedException e) {

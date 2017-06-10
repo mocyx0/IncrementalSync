@@ -56,12 +56,14 @@ public class LogRebuilder {
             LogRecord lastLog = logOfTable.getLogById(targetId);
             //
             while (lastLog != null) {
-
                 lastLog.logPath = blockLog.fileBlock.path;
                 re.add(lastLog);
                 if (lastLog.preLogOff != -1) {
                     lastLog = logOfTable.getLog(lastLog.preLogOff);
                 } else {
+                    //这是单个block的第一条日志,上一条日志需要根据preid去查找
+                    RandomAccessFile raf = getLogFile(lastLog.logPath);
+                    Util.fillLogData(raf, lastLog);
                     targetId = lastLog.preId;
                     break;
                 }
