@@ -58,6 +58,36 @@ public class LocalLogIndex {
         return result;
     }
 
+    public static class matchingEntry{
+        private final long id;
+        private final char type;
+        private final long preId;
+        private final long nextId;
+
+        public matchingEntry(long id, char type, long preId, long nextId) {
+            this.id = id;
+            this.type = type;
+            this.preId = preId;
+            this.nextId = nextId;
+        }
+
+        public long getId() {
+            return id;
+        }
+
+        public char getType() {
+            return type;
+        }
+
+        public long getPreId() {
+            return preId;
+        }
+
+        public long getNextId() {
+            return nextId;
+        }
+    }
+
     public static class IndexEntry implements Comparable<IndexEntry> {
         public final long timestamp;
         public final int fileNo;

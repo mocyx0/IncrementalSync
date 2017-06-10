@@ -90,9 +90,9 @@ public class ReadingThread extends Thread {
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
-            searchResult(allIndexex);
+             searchResult(allIndexex);
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
-//            searchTest(allIndexex);
+    //      searchTest(allIndexex);
             if(true){
                 throw new Exception("1");
             }
