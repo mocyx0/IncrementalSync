@@ -85,6 +85,7 @@ public class MServer {
         @Override
         public void run() {
             try {
+                //Thread.sleep(2000);
                 //运行我们的程序
                 ByteBuffer buffer;
                 if (Config.TEST_MODE.equals("test")) {

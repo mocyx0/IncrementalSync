@@ -72,6 +72,7 @@ public class PreCache {
         }
 
         int cpu = Runtime.getRuntime().availableProcessors();
+        cpu = Math.max(cpu - 4, cpu / 2);
         latch = new CountDownLatch(cpu);
         for (int i = 0; i < cpu; i++) {
             Thread th = new Thread(new Worker());
