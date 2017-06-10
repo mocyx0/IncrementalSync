@@ -27,7 +27,6 @@ public class Client {
         initProperties();
         Logger logger = LoggerFactory.getLogger(Client.class);
         logger.info("Welcome to Client");
-        Thread.sleep(5000);
         // 从args获取server端的ip
         ip = args[0];
         Client client = new Client();
