@@ -8,12 +8,28 @@ import java.util.ArrayList;
  */
 public class Util {
 
+    private static int MAX_LINE_SIZE = 4096;
 
     public static void fillLogData(RandomAccessFile raf, LogRecord log) throws Exception {
-        byte[] buffer = new byte[log.length];
+
+        byte[] buffer = new byte[MAX_LINE_SIZE];
         raf.seek(log.offset);
         raf.read(buffer, 0, buffer.length);
-        String line = new String(buffer);
+
+        int l = 0;
+        for (int i = 0; i < buffer.length; i++) {
+            if (buffer[i] == '\n') {
+                l = i;
+                break;
+            }
+        }
+        if (l == 0) {
+            throw new Exception("line length > " + MAX_LINE_SIZE);
+        }
+        log.length = l;
+
+        String line = new String(buffer, 0, l);
+
         StringParser parser = new StringParser(line, 0);
         String uid = Util.getNextToken(parser, '|');
         String time = Util.getNextToken(parser, '|');
@@ -21,11 +37,23 @@ public class Util {
         String table = Util.getNextToken(parser, '|');
         String op = Util.getNextToken(parser, '|');
 
-        log.columns=new ArrayList<>();
+        log.columns = new ArrayList<>();
         //解析到主键为止
         LogColumnInfo cinfo = Util.getNextColumnInfo(parser);
         while (cinfo != null) {
             log.columns.add(cinfo);
+            if (cinfo.isPk == 1) {
+                if (op.equals("U")) {
+                    log.id = Long.parseLong(cinfo.newValue);
+                    log.preId = Long.parseLong(cinfo.oldValue);
+                } else if (op.equals("I")) {
+                    log.id = Long.parseLong(cinfo.newValue);
+                    log.preId = -1;
+                } else {
+                    throw new Exception("wrong op type");
+                }
+
+            }
             cinfo = Util.getNextColumnInfo(parser);
         }
         //done

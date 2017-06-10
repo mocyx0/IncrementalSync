@@ -76,17 +76,15 @@ class FileBlock {
 
 class LogRecord {
     //序列化区域
-
-    public byte opType;
-    public long preId;
-    public long id;
     //file info
-    public long offset;
-    public int length;
+    public int offset;
     public int preLogOff;
 
     //非序列化
-
+    public int length;
+    public byte opType;
+    public long preId;
+    public long id;
     //上一条关联日志在记录中的索引
     public String logPath;
     //public int preLogIndex = -1;

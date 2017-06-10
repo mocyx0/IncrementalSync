@@ -12,7 +12,7 @@ import java.io.RandomAccessFile;
 
 class ReadLineInfo {
     String line;
-    long off;
+    int off;
     int length;
 }
 
@@ -97,7 +97,7 @@ public class LineReader {
             s = tryReadLine();
         }
         re.line = s;
-        re.off = lastStringPos;
+        re.off = (int) lastStringPos;
         //-1 \n
         re.length = (int) (curFilePos + pos - lastStringPos - 1);
 
