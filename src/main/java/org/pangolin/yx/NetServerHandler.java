@@ -85,6 +85,9 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
 
     private static ByteBuffer sData;
 
+    public static Channel getClientChannel() {
+        return clientChannel;
+    }
 
     public static void sendResult(ByteBuffer data) {
         if (clientChannel != null) {

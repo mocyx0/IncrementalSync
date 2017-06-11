@@ -100,7 +100,7 @@ class LogOfTable {
         */
     }
 
-    public LogRecord getLog(int off) throws Exception {
+    public synchronized LogRecord getLog(int off) throws Exception {
         int index = off / BUFFER_SIZE;
         int bufferOff = off % BUFFER_SIZE;
         ByteBuffer buffer = datas.get(index);

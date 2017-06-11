@@ -2,6 +2,7 @@ package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.Constants;
 import com.alibaba.middleware.race.sync.Server;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import org.pangolin.xuzhe.test.IOPerfTest;
 import org.pangolin.xuzhe.test.ReadingThread;
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
 /**
@@ -25,7 +27,9 @@ public class MServer {
     }
 
 
-    private static ByteBuffer getResult(QueryData query) throws Exception {
+    private static void getResult() throws Exception {
+        long t1 = System.currentTimeMillis();
+
         LogParser parser = new LogParser();
         //precache
         //PreCache.precache(Util.logFiles(Config.DATA_HOME));
@@ -37,37 +41,37 @@ public class MServer {
             PreCache.class.wait();
         }
         */
-        Thread.sleep(2000);
+        // Thread.sleep(2000);
         //read log
         AliLogData data = parser.parseLog();
         logger.info("parseLog done");
-        //get log info
+        //rebuild
+        /*
         LogRebuilder rebuider = new LogRebuilder(data);
-        logger.info("rebuild done");
-        //rebuild data
         RebuildResult result = rebuider.getResult();
-        logger.info("getResult done");
+        */
+
+
+        long t2 = System.currentTimeMillis();
+        LogRebuilderLarge.init(data);
+        LogRebuilderLarge.run();
+        long t3 = System.currentTimeMillis();
+        logger.info("rebuild done");
+        logger.info(String.format("cost time  index:%d   rebuild:%d", t2 - t1, t3 - t2));
         logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
         logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
-        //write to file
-        if (Config.SINGLE) {
-            ResultWriter.writeToFile(result);
-            return null;
-        } else {
-            ByteBuffer re = ResultWriter.writeToBuffer(result);
-            return re;
-        }
+        logger.info(String.format("read load count: %d", Util.readLogCount.get()));
+        logger.info(String.format("out put line : %d", LogRebuilderLarge.outputCount.get()));
     }
 
 
-    private static ByteBuffer doTest() throws Exception {
+    private static void doTest() throws Exception {
         logger.info("doTest start");
         ByteBuffer buffer = ByteBuffer.allocate(128);
         buffer.put("hello wprld".getBytes());
 
         //yx test
         //LogParserTest.parseLog();
-
         IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
         // 不读同一个文件，避免从pagecache读
         IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
@@ -80,8 +84,8 @@ public class MServer {
         readingThread.join();
 
         logger.info("doTest done");
-        return buffer;
-
+        buffer.flip();
+        ResultWriter.writeBuffer(buffer);
     }
 
 
@@ -91,22 +95,17 @@ public class MServer {
         public void run() {
             try {
                 //运行我们的程序
-                ByteBuffer buffer;
                 if (Config.TEST_MODE.equals("test")) {
-                    buffer = doTest();
+                    doTest();
                 } else if (Config.TEST_MODE.equals("real")) {
-                    buffer = getResult(Config.queryData);
+                    getResult();
                 } else if (Config.TEST_MODE.equals("mix")) {
                     doTest();
-                    buffer = getResult(Config.queryData);
+                    getResult();
                 } else {
                     throw new Exception("wrong test mode");
                 }
                 logger.info("send result to client");
-                if (buffer != null) {
-                    //发送结果
-                    NetServerHandler.sendResult(buffer);
-                }
             } catch (Exception e) {
                 logger.info("{}", e);
                 System.exit(0);

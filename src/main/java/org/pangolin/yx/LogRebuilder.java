@@ -11,14 +11,6 @@ class RebuildResult {
     ArrayList<ArrayList<String>> datas = new ArrayList<>();
 }
 
-
-class QueryData {
-    String scheme;
-    String table;
-    long start;
-    long end;
-}
-
 public class LogRebuilder {
     private AliLogData aliLogData;
     //需要rebuild的log
@@ -30,8 +22,6 @@ public class LogRebuilder {
 
     //根据id在blocks上找出对应的日志记录
     ArrayList<LogRecord> getLogs(long id) throws Exception {
-
-
         ArrayList<LogRecord> re = new ArrayList<>();
         //String hashKey = queryData.scheme + " " + queryData.table;
 

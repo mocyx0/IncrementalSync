@@ -24,13 +24,11 @@ public class MClient {
             logger.info(s);
         }
         Config.init();
-
-
         try {
             initProperties();
             NetClient.start(args[0]);
         } catch (Exception e) {
-            logger.info("{}",e);
+            logger.info("{}", e);
             System.exit(0);
         }
     }

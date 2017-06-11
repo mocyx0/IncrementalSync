@@ -1,7 +1,6 @@
 package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.Client;
-import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
@@ -10,9 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.TreeMap;
 
 /**
  * Created by yangxiao on 2017/6/7.
@@ -45,31 +45,87 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
         raf.write(data, 0, len);
     }
 
-    ByteBuffer testBuffer = ByteBuffer.allocate(1024 * 1024);
+    private static class DumpBlock {
+        long pos;
+        int length;
+    }
+
+    private static int printLineCount = 0;
+
+    private void dumpToFile() throws Exception {
+        logger.info("start dump");
+        ByteBuffer bf = ByteBuffer.wrap(buffer);
+        bf.position(writeOff);
+
+        bf.flip();
+        TreeMap<Integer, ArrayList<DumpBlock>> blocks = new TreeMap<>();
+        while (true) {
+            int index = bf.getInt();
+            if (index == 0) {
+                break;
+            } else {
+                int size = bf.getInt();
+                if (!blocks.containsKey(index)) {
+                    blocks.put(index, new ArrayList<DumpBlock>());
+                }
+                ArrayList<DumpBlock> arr = blocks.get(index);
+                DumpBlock newBlock = new DumpBlock();
+                newBlock.pos = bf.position();
+                newBlock.length = size;
+                arr.add(newBlock);
+                bf.position(bf.position() + size);
+
+            }
+        }
+        //write to file
+        for (Integer i : blocks.keySet()) {
+            ArrayList<DumpBlock> arr = blocks.get(i);
+            for (DumpBlock block : arr) {
+                //打印一部分输出
+                if (printLineCount < Config.PRINT_RESULT_LINE) {
+                    String s = new String(buffer, (int) block.pos, block.length);
+                    String[] ss = s.split("\\n");
+                    int j = 0;
+                    while (j < ss.length && printLineCount < Config.PRINT_RESULT_LINE) {
+                        logger.info(ss[j]);
+                        printLineCount++;
+                        j++;
+                    }
+                }
+                //raf.write(buffer.array(), (int) block.pos, block.length);
+                raf.write(buffer, (int) block.pos, block.length);
+            }
+        }
+        raf.close();
+        logger.info("end dump");
+    }
+
+    //
+    private static int RECV_BUFF_SZIE = 1024 * 1024 * 512;
+    private static int packCount = 0;
+    private static byte[] buffer = new byte[RECV_BUFF_SZIE];
+    private static int writeOff = 0;
 
     // 接收server端的消息，并打印出来
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        logger.info("channelRead");
-
         ByteBuf result = (ByteBuf) msg;
-        byte[] result1 = new byte[result.readableBytes()];
-        result.readBytes(result1);
-
-        writeToFile(result1);
-        if (result1[result1.length - 1] == 0) {
-            //end
-            testBuffer.put(result1, 0, result1.length - 1);
-            String testStr = new String(testBuffer.array(), 0, testBuffer.position());
-            logger.info(testStr);
-            raf.close();
-            //关闭连接
+        logger.info(String.format("channelRead size:%d", result.readableBytes()));
+        int readlLen = result.readableBytes();
+        result.readBytes(buffer, writeOff, result.readableBytes());
+        writeOff += readlLen;
+        if (writeOff > 0 && buffer[writeOff - 1] == 0) {
+            dumpToFile();
             ctx.channel().close().sync();
             System.exit(0);
-
-        } else {
-            testBuffer.put(result1, 0, result1.length);
         }
+        /*
+        if (buffer.position() > 0 && buffer.array()[buffer.position() - 1] == 0) {
+            dumpToFile();
+            ctx.channel().close().sync();
+            System.exit(0);
+        }
+        */
 //        System.out.println("Server said:" + new String(result1));
         result.release();
 

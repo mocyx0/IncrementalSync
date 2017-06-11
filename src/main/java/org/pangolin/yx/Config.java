@@ -1,10 +1,21 @@
 package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by yangxiao on 2017/6/4.
  */
+
+class QueryData {
+    String scheme;
+    String table;
+    long start;
+    long end;
+}
+
+
 public class Config {
     private static String runtime = "yx";
 
@@ -69,8 +80,8 @@ public class Config {
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 
-    //单机模式
-    public static boolean SINGLE = false;
+    //客户端打印一部分输出
+    public static int PRINT_RESULT_LINE = 200;
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"
@@ -86,5 +97,10 @@ public class Config {
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 4;
+
+    //
+    public static Logger serverLogger = LoggerFactory.getLogger(Server.class);
+
+
 }
 
