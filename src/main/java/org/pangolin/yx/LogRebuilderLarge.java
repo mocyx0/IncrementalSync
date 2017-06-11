@@ -22,6 +22,7 @@ public class LogRebuilderLarge {
         LogRebuilderLarge.aliLogData = aliLogData;
 
     }
+
     public static AtomicInteger outputCount = new AtomicInteger();
 
     private static class Worker implements Runnable {
@@ -107,11 +108,14 @@ public class LogRebuilderLarge {
         }
 
 
-
         private void writeToBuffer(ByteBuffer bf, ArrayList<String> strs) {
-            for (String s : strs) {
+
+            for (int i = 0; i < strs.size(); i++) {
+                String s = strs.get(i);
                 bf.put(s.getBytes());
-                bf.put((byte) '\t');
+                if (i != strs.size() - 1) {
+                    bf.put((byte) '\t');
+                }
             }
             if (strs.size() != 0) {
                 bf.put((byte) '\n');
