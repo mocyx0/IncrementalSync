@@ -1,15 +1,43 @@
 package org.pangolin.xuzhe.stringparser;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by ubuntu on 17-6-8.
  */
 public class LocalLogIndex {
     Map<Long, List<IndexEntry>> indexes = new HashMap<>();
-
+    private static Map<Long, Integer> pkLastPosMap = new HashMap<>();
+    public static final long[] indexesArray_1 = new long[1500_0000];  // 保存1号文件中的索引
+    public static final AtomicInteger nextIndexPos = new AtomicInteger(0); // 使用getAndIncrement
     public LocalLogIndex() {
 
+    }
+
+    public long[] getAllIndexesByPK(long pk) {
+        return null;
+    }
+
+    private static long makeIndex(int fileNo, int position) {
+        long result = fileNo;
+        result = result << 56;
+        result = (result + ((long)position)<<24);
+        return result;
+    }
+
+    // 先按照只有1个文件来写
+    public static void appendIndex2(long pk, int fileNo, int position) {
+        Integer lastPos = pkLastPosMap.get(pk);
+        int pos;
+        if(lastPos == null) {
+            pos = -1;
+        } else {
+            pos = lastPos;
+        }
+        int currentIndexPos = nextIndexPos.getAndIncrement();
+
+        pkLastPosMap.put(pk, currentIndexPos);
     }
 
     public void appendIndex(long pk, int fileNo, int position) {
@@ -56,35 +84,7 @@ public class LocalLogIndex {
         return result;
     }
 
-    public static class matchingEntry{
-        private final long id;
-        private final char type;
-        private final long preId;
-        private final long nextId;
 
-        public matchingEntry(long id, char type, long preId, long nextId) {
-            this.id = id;
-            this.type = type;
-            this.preId = preId;
-            this.nextId = nextId;
-        }
-
-        public long getId() {
-            return id;
-        }
-
-        public char getType() {
-            return type;
-        }
-
-        public long getPreId() {
-            return preId;
-        }
-
-        public long getNextId() {
-            return nextId;
-        }
-    }
 
     public static class IndexEntry implements Comparable<IndexEntry> {
         public final int fileNo;

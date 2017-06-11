@@ -19,6 +19,7 @@ public class Worker extends Thread {
 	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 	//	private LocalLogIndex localIndex = new LocalLogIndex();
 	private static final LocalLogIndex localIndex = new LocalLogIndex();
+
 	private Queue<Block> buffers;
 	private static AtomicInteger workerNum = new AtomicInteger(0);
     public Worker() {

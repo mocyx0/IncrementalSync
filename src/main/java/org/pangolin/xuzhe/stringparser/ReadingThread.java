@@ -40,6 +40,7 @@ public class ReadingThread extends Thread {
         FileInputStream fis = null;
         try {
             long begin = System.currentTimeMillis();
+            byte[] lineBuffer = new byte[1024];
             for (String fileName : fileNameArray) {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/")+1, fileName.length()-4));
                 fis = new FileInputStream(new File(fileName));
@@ -52,15 +53,33 @@ public class ReadingThread extends Thread {
                         pool.put(buffer);
                         break;
                     }
-                    buffer.limit(n);
-                    int limit = buffer.position();
-                    buffer.position(buffer.limit() - 1);
-                    // 将多读的不足半行的数据退回
-                    while(buffer.get() != (byte) '\n'){
-                        buffer.position(buffer.position() - 2);
+                    if(n < lineBuffer.length) {
+                        buffer.position(0);
+                        buffer.get(lineBuffer, 0, n);
+                        int i = n;
+                        while(lineBuffer[--i] != (byte) '\n'){
+
+                        }
+                        ++i;
+                        channel.position(channel.position() - (n-i));
+                        buffer.position(0);
+                        buffer.flip();
+                    } else {
+                        int limit = buffer.position();
+                        buffer.position(limit - lineBuffer.length);
+                        buffer.get(lineBuffer);
+                        int i = lineBuffer.length; //记录了除去最后半行数据后，有效数据字节数
+                        while(lineBuffer[--i] != (byte) '\n'){
+
+                        }
+                        ++i; //因为下标从0开始，所以要+1才为字节数
+                        channel.position(channel.position() - (lineBuffer.length-i));
+                        buffer.position(limit-(lineBuffer.length-i));
+                        buffer.flip();
                     }
-                    channel.position(channel.position() - (limit - buffer.position()));
-                    buffer.flip();
+//                    buffer.limit(n);
+                    // 将多读的不足半行的数据退回
+
                     int w = workerIndex%WORKER_NUM;
 //                    pool.put(buffer);
                     workers[w].appendBuffer(buffer, pos, fileNo);
@@ -95,10 +114,10 @@ public class ReadingThread extends Thread {
     //      searchTest(allIndexex);
  //            searchTest(allIndexex);
         } catch (IOException e) {
-
+            logger.info("{}", e);
         } catch (InterruptedException e) {
 
-
+            logger.info("{}", e);
         } catch (Exception e) {
             logger.info("{}", e);
         }
@@ -142,13 +161,14 @@ public class ReadingThread extends Thread {
                 Long pk = Long.valueOf(line);
                 Record result = Redo.redo(indexes, pk);
 
-                System.out.print(result.getPk() + " ");
+                System.out.print(result.getPk() + "\t");
                 for(Map.Entry<String, Object> entry : result.getValues().entrySet()){
                     //           System.out.print(entry.getKey() + " " + String.valueOf(entry.getValue()+ " "));
                     if(!entry.getKey().equals("id")) {
                         System.out.print(String.valueOf(entry.getValue() + " "));
                     }
                 }
+                System.out.println();
             } catch (Exception e) {
 
             }
