@@ -494,3 +494,11 @@ file locks                      (-x) unlimited
 可以提供，为了让选手更好的调试代码，解决问题。预热赛的答案提供如下：
 下载地址：https://space.dingtalk.com/c/ggHaACQzMTYwZjhlMi01Zjk5LTRmODMtODM2ZC1jYWFlNjlkYzg1ZWYCzhoZeDw
 ```
+
+17. client端程序连不上server怎么办？
+
+```
+选手server端程序启动后，评测程序马上通知client端的评测程序启动选手的client端程序，此时如果server端程序还没有完全起来，就会导致连不上。
+因此，选手需要自己对client端程序做重试逻辑，或者干脆sleep一段时间（一般15秒肯定起来了，当然还是建议做重试，避免浪费时间）
+```
+
