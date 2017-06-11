@@ -17,7 +17,7 @@ public class LogParser {
                 return;
             }
             long pk = getPK(items);
-            indexes.appendIndex(pk, getTimestamp(items), fileNo, position);
+            indexes.appendIndex(pk, fileNo, position);
         } catch (Exception e) {
             System.out.println(str);
         }

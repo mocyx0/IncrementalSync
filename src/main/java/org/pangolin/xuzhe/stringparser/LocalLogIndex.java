@@ -1,7 +1,5 @@
 package org.pangolin.xuzhe.stringparser;
 
-import com.sun.org.apache.bcel.internal.generic.INEG;
-
 import java.util.*;
 
 /**
@@ -14,7 +12,7 @@ public class LocalLogIndex {
 
     }
 
-    public void appendIndex(long pk, long timestamp, int fileNo, int position) {
+    public void appendIndex(long pk, int fileNo, int position) {
         List<IndexEntry> list = indexes.get(pk);
         synchronized (this){
             if(list == null) {
@@ -23,7 +21,7 @@ public class LocalLogIndex {
                 indexes.put(pk, list);
             }
         }
-        list.add(new IndexEntry(timestamp, fileNo, position));
+        list.add(new IndexEntry(fileNo, position));
     }
 
     @Override
@@ -89,12 +87,10 @@ public class LocalLogIndex {
     }
 
     public static class IndexEntry implements Comparable<IndexEntry> {
-        public final long timestamp;
         public final int fileNo;
         public final int position;
 
-        private IndexEntry(long timestamp, int fileNo, int position) {
-            this.timestamp = timestamp;
+        private IndexEntry(int fileNo, int position) {
             this.fileNo = fileNo;
             this.position = position;
         }
@@ -103,8 +99,6 @@ public class LocalLogIndex {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append('(');
-            sb.append(timestamp);
-            sb.append(',');
             sb.append(fileNo);
             sb.append(',');
             sb.append(position);
@@ -114,7 +108,9 @@ public class LocalLogIndex {
 
         @Override
         public int compareTo(IndexEntry indexEntry) {
-            return (int)(this.position - indexEntry.position);
+            if(this.fileNo != indexEntry.fileNo) return this.fileNo - indexEntry.fileNo;
+            return (this.position - indexEntry.position);
         }
     }
+
 }

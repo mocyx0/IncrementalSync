@@ -93,9 +93,6 @@ public class ReadingThread extends Thread {
              searchResult(allIndexex);
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
     //      searchTest(allIndexex);
-            if(true){
-                throw new Exception("1");
-            }
  //            searchTest(allIndexex);
         } catch (IOException e) {
 
