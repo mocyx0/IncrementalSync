@@ -112,10 +112,10 @@ public class Worker extends Thread {
 			map = new HashMap<String, AtomicLong>();
 			opCountMap.put(fileNo, map);
 		}
-		atomicLong = map.get(dbTableName);
+		atomicLong = map.get(op);
 		if(atomicLong == null) {
 			atomicLong =new AtomicLong(0);
-			map.put(dbTableName, atomicLong);
+			map.put(op, atomicLong);
 		}
 		atomicLong.incrementAndGet();
 

@@ -15,10 +15,29 @@ import java.util.Map;
 public class Log {
     public char op;
     public ColumnLog[] columns;
+    private long currentOldKey;
+    private long currentNewkey;
 
     public static void parser(byte[] bytes, int offest, int limit) {
         String str = getString(bytes, offest, limit);
         System.out.println(str);
+    }
+
+    public void setCurrentOldKey(long currentOldKey) {
+        this.currentOldKey = currentOldKey;
+    }
+
+    public void setCurrentNewkey(long currentNewkey) {
+        this.currentNewkey = currentNewkey;
+    }
+
+    public long getCurrentOldKey() {
+
+        return currentOldKey;
+    }
+
+    public long getCurrentNewkey() {
+        return currentNewkey;
     }
 
     public static Log parser(String str) {
