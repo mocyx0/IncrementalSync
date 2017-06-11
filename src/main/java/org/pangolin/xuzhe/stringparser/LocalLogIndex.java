@@ -31,15 +31,15 @@ public class LocalLogIndex {
         StringBuilder builder = new StringBuilder();
         builder.append("Size:");
         builder.append(indexes.size());
-        builder.append("\n");
-        for(Map.Entry<Long, List<IndexEntry>> entry : indexes.entrySet()) {
-            builder.append(entry.getKey());
-            builder.append("\n");
-            for(IndexEntry item : entry.getValue()) {
-                builder.append(item);
-                builder.append("\n");
-            }
-        }
+//        builder.append("\n");
+//        for(Map.Entry<Long, List<IndexEntry>> entry : indexes.entrySet()) {
+//            builder.append(entry.getKey());
+//            builder.append("\n");
+//            for(IndexEntry item : entry.getValue()) {
+//                builder.append(item);
+//                builder.append("\n");
+//            }
+//        }
         return builder.toString();
     }
 
@@ -114,7 +114,7 @@ public class LocalLogIndex {
 
         @Override
         public int compareTo(IndexEntry indexEntry) {
-            return (int)(this.timestamp - indexEntry.timestamp);
+            return (int)(this.position - indexEntry.position);
         }
     }
 }

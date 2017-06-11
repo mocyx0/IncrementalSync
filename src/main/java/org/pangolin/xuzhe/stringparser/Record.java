@@ -43,6 +43,22 @@ public class Record {
         return values;
     }
 
+    public static List<Long> getList() {
+        return list;
+    }
+    public void setFileNo(int fileNo) {
+        this.fileNo = fileNo;
+    }
+    public void setPosition(long position) {
+        this.position = position;
+    }
+
+    public int getFileNo() {return fileNo;}
+
+    public long getPosition() {
+        return position;
+    }
+
     public static Integer getColumnID(byte[] columnName, int len) {
         int hashCode = HashUtil.hash(columnName, len);
         Integer id = columnHashMap.get(hashCode);
@@ -119,7 +135,7 @@ public class Record {
 //    }
 
 
-    public void insertResult(Log log) {
+    public void updateResult(Log log) {
         for (ColumnLog columnLog : log.columns) {
             if (!values.containsKey(columnLog.columnInfo.name)) {
                 if (columnLog.columnInfo.type == '1')
@@ -130,23 +146,6 @@ public class Record {
         }
     }
 
-    public void setFileNo(int fileNo) {
-        this.fileNo = fileNo;
-    }
-
-    public void setPosition(long position) {
-        this.position = position;
-    }
-
-    public int getFileNo() {
-
-        return fileNo;
-    }
-
-    public long getPosition() {
-        return position;
-    }
-
     public static Record createFromLastLog(Log log, LocalLogIndex indexes, int fileNo, long position) {
         Record record = null;
         for (ColumnLog columnLog : log.columns) {
@@ -154,12 +153,9 @@ public class Record {
                 record = new Record(columnLog.newLongValue, fileNo, position);
             }
         }
- //       record.update(log, indexes, fileNo, position);
         return record;
     }
 
-    public static List<Long> getList() {
-        return list;
-    }
+
 }
 
