@@ -45,6 +45,8 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
         raf.write(data, 0, len);
     }
 
+    ByteBuffer testBuffer = ByteBuffer.allocate(1024 * 1024);
+
     // 接收server端的消息，并打印出来
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -53,14 +55,20 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
         ByteBuf result = (ByteBuf) msg;
         byte[] result1 = new byte[result.readableBytes()];
         result.readBytes(result1);
+
         writeToFile(result1);
         if (result1[result1.length - 1] == 0) {
             //end
+            testBuffer.put(result1, 0, result1.length - 1);
+            String testStr = new String(testBuffer.array(), 0, testBuffer.position());
+            logger.info(testStr);
             raf.close();
             //关闭连接
             ctx.channel().close().sync();
             System.exit(0);
 
+        } else {
+            testBuffer.put(result1, 0, result1.length);
         }
 //        System.out.println("Server said:" + new String(result1));
         result.release();

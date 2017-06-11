@@ -275,9 +275,8 @@ public class LogParser {
 
         splitLogFile();
         latch = new CountDownLatch(fileBlocks.size());
-        int cpu = Runtime.getRuntime().availableProcessors();
+        int cpu = Config.CPU_COUNT;
         logger.info(String.format("cpu count %d", cpu));
-        //cpu = 8;
         for (int i = 0; i < cpu; i++) {
             Thread th = new Thread(new Worker());
             th.start();

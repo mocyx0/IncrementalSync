@@ -26,13 +26,18 @@ public class MServer {
 
 
     private static ByteBuffer getResult(QueryData query) throws Exception {
-
         LogParser parser = new LogParser();
-
         //precache
+        //PreCache.precache(Util.logFiles(Config.DATA_HOME));
 
-        PreCache.precache(Util.logFiles(Config.DATA_HOME));
-
+        //等待precache一部分数据
+        //Thread.sleep(Config.PRECACHE_DELAY);
+        /*
+        synchronized (PreCache.class) {
+            PreCache.class.wait();
+        }
+        */
+        Thread.sleep(2000);
         //read log
         AliLogData data = parser.parseLog();
         logger.info("parseLog done");
@@ -85,7 +90,6 @@ public class MServer {
         @Override
         public void run() {
             try {
-                //Thread.sleep(2000);
                 //运行我们的程序
                 ByteBuffer buffer;
                 if (Config.TEST_MODE.equals("test")) {
@@ -119,6 +123,7 @@ public class MServer {
         logger = LoggerFactory.getLogger(Server.class);
         logger.info("mserver start ");
         logger.info("args:  ");
+
         for (String s : args) {
             logger.info(s);
         }

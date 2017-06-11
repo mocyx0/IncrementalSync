@@ -20,6 +20,11 @@ public class Config {
             MIDDLE_HOME = Constants.MIDDLE_HOME;
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = Constants.LOG_HOME;
+            //
+            CPU_COUNT = Constants.CPU_COUNT;
+            PRECACHE_DELAY = Constants.PRECACHE_DELAY;
+            PRECACHE_THREAD = Constants.PRECACHE_THREAD;
+
         } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
             DATA_HOME = "/home/ubuntu/alitest/data";
@@ -76,4 +81,10 @@ public class Config {
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;
     public static byte OP_TYPE_UPDATE = 3;
+
+    //precache开始后多久开始执行日志分析
+    public static int PRECACHE_DELAY = 3000;
+    public static int PRECACHE_THREAD = 4;
+    public static int CPU_COUNT = 4;
 }
+

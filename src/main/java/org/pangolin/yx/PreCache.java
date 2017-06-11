@@ -24,6 +24,7 @@ public class PreCache {
     private static ConcurrentLinkedQueue<Task> fileTasks = new ConcurrentLinkedQueue<>();
     private static int BLOCK_SIZE = 1024 * 1024 * 128;
 
+
     private static class Task {
         String path;
         long off;
@@ -54,34 +55,54 @@ public class PreCache {
         }
     }
 
+    private static class PrecacheInner implements Runnable {
+
+        ArrayList<String> paths;
+
+        PrecacheInner(ArrayList<String> paths) {
+            this.paths = paths;
+        }
+
+        @Override
+        public void run() {
+            try {
+                logger.info("precache start");
+                for (String s : paths) {
+                    File file = new File(s);
+                    if (file.exists()) {
+                        long len = file.length();
+                        for (int off = 0; off < len; off += BLOCK_SIZE) {
+                            Task task = new Task();
+                            task.path = s;
+                            task.off = off;
+                            task.length = Math.min(BLOCK_SIZE, len - off);
+                            fileTasks.add(task);
+                        }
+                    }
+                }
+                int thread = Config.PRECACHE_THREAD;
+                latch = new CountDownLatch(thread);
+                for (int i = 0; i < thread; i++) {
+                    Thread th = new Thread(new Worker());
+                    th.start();
+                }
+                latch.await();
+                synchronized (PreCache.class) {
+                    PreCache.class.notifyAll();
+                }
+                //
+                logger.info("precache end");
+            } catch (Exception e) {
+                logger.info("{}", e);
+                System.exit(0);
+            }
+
+        }
+    }
 
     public static void precache(ArrayList<String> paths) throws Exception {
-        logger.info("precache start");
-        for (String s : paths) {
-            File file = new File(s);
-            if (file.exists()) {
-                long len = file.length();
-                for (int off = 0; off < len; off += BLOCK_SIZE) {
-                    Task task = new Task();
-                    task.path = s;
-                    task.off = off;
-                    task.length = Math.min(BLOCK_SIZE, len - off);
-                    fileTasks.add(task);
-                }
-            }
-        }
-
-        int cpu = Runtime.getRuntime().availableProcessors();
-        cpu = Math.max(cpu - 4, cpu / 2);
-        latch = new CountDownLatch(cpu);
-        for (int i = 0; i < cpu; i++) {
-            Thread th = new Thread(new Worker());
-            th.start();
-        }
-        latch.await();
-        //
-
-        logger.info("precache end");
+        Thread th = new Thread(new PrecacheInner(paths));
+        th.start();
     }
 
 }
