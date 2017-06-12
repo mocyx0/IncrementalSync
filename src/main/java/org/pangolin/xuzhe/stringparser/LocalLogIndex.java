@@ -15,6 +15,13 @@ public class LocalLogIndex {
 
     }
 
+    public static long maxPK() {
+        ArrayList<Long> a = new ArrayList<>(pkLastPosMap.keySet());
+        Collections.sort(a);
+        System.out.println(a.get(0) + "," + a.get(a.size()-1));
+        return 0;
+    }
+
     public static long[] getAllIndexesByPK(long pk) {
         Integer lastPos = pkLastPosMap.get(pk);
         if(lastPos == null) {

@@ -112,6 +112,7 @@ public class ReadingThread extends Thread {
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
               searchResult(allIndexex);
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
+            maxPK();
 //          searchTest(allIndexex);
  //             searchTest(allIndexex);
         } catch (IOException e) {

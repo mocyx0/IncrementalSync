@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,7 +20,7 @@ public class Worker extends Thread {
 	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 	//	private LocalLogIndex localIndex = new LocalLogIndex();
 	private static final LocalLogIndex localIndex = new LocalLogIndex();
-
+	private final ArrayList<String> localItemsBuffer = new ArrayList<>();
 	private Queue<Block> buffers;
 	private static AtomicInteger workerNum = new AtomicInteger(0);
     public Worker() {
@@ -81,7 +82,7 @@ public class Worker extends Thread {
 
 
     private void process(String line, int fileNo, int position) {
-		LogParser.parseToIndex(line, fileNo, position, localIndex);
+		LogParser.parseToIndex(line, fileNo, position, localItemsBuffer);
 	}
 
 	public LocalLogIndex getIndexes() {
