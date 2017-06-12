@@ -1,5 +1,11 @@
 package org.pangolin.xuzhe.stringparser;
 
+import com.koloboke.collect.hash.HashConfig;
+import com.koloboke.collect.map.hash.HashLongIntMap;
+import com.koloboke.collect.map.hash.HashLongIntMaps;
+import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
+import net.sourceforge.sizeof.SizeOf;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -8,37 +14,55 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class LocalLogIndex {
     Map<Long, List<IndexEntry>> indexes = new HashMap<>();
-    private static Map<Long, Integer> pkLastPosMap = new HashMap<>();
-    public static final long[] indexesArray_1 = new long[1500_0000];  // 保存1号文件中的索引
-    public static final AtomicInteger nextIndexPos = new AtomicInteger(0); // 使用getAndIncrement
+    private static HashLongIntMap[] pkLastPosMap = new HashLongIntMap[10];
+    static {
+//        HashLongIntMap map = makeMap(200_0000, 0.9f);
+        for(int i = 0; i < 10; i++) {
+            pkLastPosMap[i] = makeMap(200_000, 0.9f);
+//            System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(pkLastPosMap[i])));
+        }
+    }
+    private static HashLongIntMap makeMap(final int size, final float fillFactor )
+    {
+        return HashLongIntMaps.getDefaultFactory().
+                withHashConfig(HashConfig.fromLoads(fillFactor/2, fillFactor, fillFactor)).newMutableMap(size);
+    }
+    public static final long[][] indexesArrays = new long[10][400_0000];
+//    public static final AtomicInteger nextIndexPos = new AtomicInteger(0); // 使用getAndIncrement
+    public static int[] nextIndexPos = new int[10]; // 使用getAndIncrement
     public LocalLogIndex() {
 
     }
 
-    public static long maxPK() {
-        ArrayList<Long> a = new ArrayList<>(pkLastPosMap.keySet());
-        Collections.sort(a);
-        System.out.println(a.get(0) + "," + a.get(a.size()-1));
-        return 0;
-    }
-
     public static long[] getAllIndexesByPK(long pk) {
-        Integer lastPos = pkLastPosMap.get(pk);
-        if(lastPos == null) {
-            return null;
-        }
-        int pos = lastPos;
         long[] tmp = new long[1024];
         int idx = 0; // 结果数组中存当前数据的索引
-        long index = indexesArray_1[pos]; // 记录的当前一条索引信息
-        tmp[idx] = index;
-        ++idx;
-        while((pos = getPrevIndexFromLong(index)) != 0xFFFFFF) {
-            index = indexesArray_1[pos]; // 记录的当前一条索引信息
+        for(int i = 0; i < 10; i++) {
+            int lastPos = pkLastPosMap[i].get(pk);
+            if (lastPos == 0) {
+                continue;
+            }
+            int pos = lastPos;
+            if(pos == 0xFFFFFF) {
+                pos = 0;
+            }
+            long index = indexesArrays[i][pos]; // 记录的当前一条索引信息
             tmp[idx] = index;
             ++idx;
+            while ((pos = getPrevIndexFromLong(index)) != 0xFFFFFF) {
+                index = indexesArrays[i][pos]; // 记录的当前一条索引信息
+                tmp[idx] = index;
+                ++idx;
+            }
         }
-        return Arrays.copyOf(tmp, idx);
+        long[] result = Arrays.copyOf(tmp, idx);
+        Arrays.sort(result);
+        for(int i = 0; i < result.length/2; i++) {
+            long _tmp = result[i];
+            result[i] = result[result.length-i-1];
+            result[result.length-i-1] = _tmp;
+        }
+        return result;
     }
 
     public static int getFileNoFromLong(long index) {
@@ -53,6 +77,10 @@ public class LocalLogIndex {
 
     public static int getPrevIndexFromLong(long index) {
         index = index & 0xFFFFFF;
+        if(index == 0xFFFFFF)
+            return 0;
+        if(index == 0)
+            return 0xFFFFFF;
         return (int)index;
     }
 
@@ -64,21 +92,26 @@ public class LocalLogIndex {
     }
 
     // 先按照只有1个文件来写
-    public static void appendIndex2(long pk, int fileNo, int position) {
-        Integer lastPos = pkLastPosMap.get(pk);
+    public synchronized static void appendIndex2(long pk, int fileNo, int position) {
+        int lastPos = pkLastPosMap[fileNo-1].get(pk);
         int pos;
-        if(lastPos == null) {
-            pos = -1;
-        } else {
-            pos = lastPos;
-        }
-        int currentIndexPos = nextIndexPos.getAndIncrement();
+//        if(lastPos == 0) { // 没有数据
+//            pos = 0;  // 因LongIntMap的默认值为0，因此0用0xFFFFFF代替
+        pos = lastPos;
 
-        pkLastPosMap.put(pk, currentIndexPos);
+//        int currentIndexPos = nextIndexPos.getAndIncrement();
+        int currentIndexPos = nextIndexPos[fileNo-1]++;
+
+        if(currentIndexPos == 0) {
+            pkLastPosMap[fileNo-1].put(pk, 0xFFFFFF);
+
+        } else {
+            pkLastPosMap[fileNo-1].put(pk, currentIndexPos);
+        }
         long index = makeIndex(fileNo, position);
         pos = pos & 0xFFFFFF;
         index = index | pos;
-        indexesArray_1[currentIndexPos] = index;
+        indexesArrays[fileNo-1][currentIndexPos] = index;
     }
 
     public void appendIndex(long pk, int fileNo, int position) {

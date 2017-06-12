@@ -13,39 +13,38 @@ public class LogParser {
 
     public static void parseToIndex(String str, int fileNo, int position, ArrayList<String> out) {
         try {
-            String line = str;
             out.clear();
             StringTokenizer tokenizer = new StringTokenizer(str, "|", false);
             while (tokenizer.hasMoreElements()) {
                 out.add(tokenizer.nextToken());
             }
-
-//            String[] items = line.split("\\|");
             if (!getDatabaseName(out).equals(schemaName) || !getTableName(out).equals(tableName)) {
                 return;
             }
             long pk = getPK(out);
 //            indexes.appendIndex(pk, fileNo, position);
+            // TODO: 添加针对PK被修改，查找该PK时仍然有记录的错误处理
             LocalLogIndex.appendIndex2(pk, fileNo, position);
         } catch (Exception e) {
-            System.out.println(str);
+            System.out.println("parseToIndex 解析错误" + str);
+            e.printStackTrace();
         }
     }
 
     public static long getTimestamp(ArrayList<String> items) {
-        return Long.parseLong(items.get(2));
+        return Long.parseLong(items.get(1));
     }
 
     public static String getDatabaseName(ArrayList<String> items) {
-        return items.get(3);
+        return items.get(2);
     }
 
     public static String getTableName(ArrayList<String> items) {
-        return items.get(4);
+        return items.get(3);
     }
 
     public static String getOpType(ArrayList<String> items) {
-        return items.get(5);
+        return items.get(4);
     }
 
     // TODO 暂时假设主键在日志中是第一列，后期查看canel生成日志的源码验证
@@ -64,20 +63,20 @@ public class LogParser {
         int cnt = getColumnCount(items);
         String[] result = new String[cnt];
         for(int i = 0; i < cnt; i++) {
-            result[i] = items.get(6+i*3);
+            result[i] = items.get(5+i*3);
         }
         return result;
     }
 
     public static int getColumnCount(ArrayList<String> items) {
-        return (items.size() - 6) / 3;
+        return (items.size() - 5) / 3;
     }
 
     public static String[] getColumnAllInfoByIndex(ArrayList<String> items, int index) {
         String[] result = new String[3];
-        result[0] = items.get(6+3*index);
-        result[1] = items.get(7+3*index);
-        result[2] = items.get(8+3*index);
+        result[0] = items.get(5+3*index);
+        result[1] = items.get(6+3*index);
+        result[2] = items.get(7+3*index);
         return result;
     }
 

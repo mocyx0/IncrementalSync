@@ -36,65 +36,65 @@ public class ReadingThread extends Thread {
 
     @Override
     public void run() {
-        ByteBufferPool pool = ByteBufferPool.getInstance();
-        int workerIndex = 0;
-        FileInputStream fis = null;
+//        ByteBufferPool pool = ByteBufferPool.getInstance();
+//        int workerIndex = 0;
+//        FileInputStream fis = null;
         try {
             long begin = System.currentTimeMillis();
-            byte[] lineBuffer = new byte[1024];
-            for (String fileName : fileNameArray) {
-                int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/")+1, fileName.length()-4));
-                fis = new FileInputStream(new File(fileName));
-                FileChannel channel = fis.getChannel();
-                while(true) {
-                    ByteBuffer buffer = pool.get();
-                    int pos = (int)channel.position();
-                    int n = channel.read(buffer);
-                    if(n == -1) {
-                        pool.put(buffer);
-                        break;
-                    }
-                    if(n < lineBuffer.length) {
-                        buffer.position(0);
-                        buffer.get(lineBuffer, 0, n);
-                        int i = n;
-                        while(lineBuffer[--i] != (byte) '\n'){
-
-                        }
-                        ++i;
-                        channel.position(channel.position() - (n-i));
-                        buffer.position(0);
-                        buffer.flip();
-                    } else {
-                        int limit = buffer.position();
-                        buffer.position(limit - lineBuffer.length);
-                        buffer.get(lineBuffer);
-                        int i = lineBuffer.length; //记录了除去最后半行数据后，有效数据字节数
-                        while(lineBuffer[--i] != (byte) '\n'){
-
-                        }
-                        ++i; //因为下标从0开始，所以要+1才为字节数
-                        channel.position(channel.position() - (lineBuffer.length-i));
-                        buffer.position(limit-(lineBuffer.length-i));
-                        buffer.flip();
-                    }
-//                    buffer.limit(n);
-                    // 将多读的不足半行的数据退回
-
-                    int w = workerIndex%WORKER_NUM;
-//                    pool.put(buffer);
-                    workers[w].appendBuffer(buffer, pos, fileNo);
-                    ++workerIndex;
-                }
-                channel.close();
-                fis.close();
-            }
-
+//            byte[] lineBuffer = new byte[1024];
+//            for (String fileName : fileNameArray) {
+//                int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/")+1, fileName.length()-4));
+//                fis = new FileInputStream(new File(fileName));
+//                FileChannel channel = fis.getChannel();
+//                while(true) {
+//                    ByteBuffer buffer = pool.get();
+//                    int pos = (int)channel.position();
+//                    int n = channel.read(buffer);
+//                    if(n == -1) {
+//                        pool.put(buffer);
+//                        break;
+//                    }
+//                    if(n < lineBuffer.length) {
+//                        buffer.position(0);
+//                        buffer.get(lineBuffer, 0, n);
+//                        int i = n;
+//                        while(lineBuffer[--i] != (byte) '\n'){
+//
+//                        }
+//                        ++i;
+//                        channel.position(channel.position() - (n-i));
+//                        buffer.position(0);
+//                        buffer.flip();
+//                    } else {
+//                        int limit = buffer.position();
+//                        buffer.position(limit - lineBuffer.length);
+//                        buffer.get(lineBuffer);
+//                        int i = lineBuffer.length; //记录了除去最后半行数据后，有效数据字节数
+//                        while(lineBuffer[--i] != (byte) '\n'){
+//
+//                        }
+//                        ++i; //因为下标从0开始，所以要+1才为字节数
+//                        channel.position(channel.position() - (lineBuffer.length-i));
+//                        buffer.position(limit-(lineBuffer.length-i));
+//                        buffer.flip();
+//                    }
+////                    buffer.limit(n);
+//                    // 将多读的不足半行的数据退回
+//
+//                    int w = workerIndex%WORKER_NUM;
+////                    pool.put(buffer);
+//                    workers[w].appendBuffer(buffer, pos, fileNo);
+//                    ++workerIndex;
+//                }
+//                channel.close();
+//                fis.close();
+//            }
+//
             long end = System.currentTimeMillis();
-            logger.info("Reading Done! elapsed time: {} ms", (end-begin));
-            for(Worker worker : workers) {
-                worker.appendBuffer(Worker.EMPTY_BUFFER, 0, 0);
-            }
+//            logger.info("Reading Done! elapsed time: {} ms", (end-begin));
+////            for(Worker worker : workers) {
+////                worker.appendBuffer(Worker.EMPTY_BUFFER, 0, 0);
+////            }
             for(Worker worker : workers) {
                 worker.join();
             }
@@ -106,18 +106,18 @@ public class ReadingThread extends Thread {
 //            for(int i = 0; i < WORKER_NUM; ++i) {
 //                localLogIndices[i] = workers[i].getIndexes();
 //            }
-            LocalLogIndex allIndexex =workers[0].getIndexes();
+//            LocalLogIndex allIndexex =workers[0].getIndexes();
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
-              searchResult(allIndexex);
+              searchResult();
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
-            maxPK();
-//          searchTest(allIndexex);
+//            maxPK();
+            searchTest();
  //             searchTest(allIndexex);
-        } catch (IOException e) {
+        } /*catch (IOException e) {
             logger.info("{}", e);
-        } catch (InterruptedException e) {
+        } */catch (InterruptedException e) {
 
             logger.info("{}", e);
         } catch (Exception e) {
@@ -134,10 +134,11 @@ public class ReadingThread extends Thread {
         readingThread.join();
 	    Long time2 = System.currentTimeMillis();
 	  //  readingThread.sleep(3000);
-	    logger.info("从pagecache读时，需要花费的时间：{} ms", time2-time1);
+	    logger.info("从pagecache读时，需要花费的时间:{} ms", time2-time1);
     }
 
-    public static void searchTest(LocalLogIndex indexes) {
+    public static void searchTest() {
+        System.out.println("开始测试索引信息，请输入主键（quit退出）：");
         Scanner scanner = new Scanner(System.in);
         while(scanner.hasNext()) {
             String line = scanner.nextLine().trim();
@@ -160,11 +161,11 @@ public class ReadingThread extends Thread {
 //                    System.out.println(String.format("%d:%10d %s", index.fileNo, index.position,  getLineByPosition(index.fileNo, index.position)));
 
             } catch (Exception e) {
-
+                e.printStackTrace();
             }
         }
     }
-    public static void searchResult(LocalLogIndex indexes) {
+    public static void searchResult() {
         Scanner scanner = new Scanner(System.in);
         while(scanner.hasNext()) {
             String line = scanner.nextLine().trim();
@@ -196,7 +197,7 @@ public class ReadingThread extends Thread {
         FileChannel fileChannel = fileMap.get(fileNo);
         try {
             if(fileChannel == null) {
-                fileChannel = new RandomAccessFile(Config.DATA_HOME + "/" + fileNo + ".txt", "r").getChannel();
+                fileChannel = new RandomAccessFile(Constants.getFileNameByNo(fileNo), "r").getChannel();
                 fileMap.put(fileNo, fileChannel);
             }
             lineBuffer.clear();

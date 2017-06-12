@@ -108,6 +108,7 @@ public class Redo {
         long index = _indexes[0];
         String line = getLineByPosition(LocalLogIndex.getFileNoFromLong(index), LocalLogIndex.getPositionFromLong(index));
         Log log = Log.parser(line);
+        // TODO: 删除操作没有做处理
         r = Record.createFromLastLog(log, index);  //对最后一条log创建record
         if (log.op == 'U') {
             updateResult(r, log, index);                        //无论该log的类型是什么都应该先进行result的更新
