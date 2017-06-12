@@ -15,14 +15,44 @@ public class LocalLogIndex {
 
     }
 
-    public long[] getAllIndexesByPK(long pk) {
-        return null;
+    public static long[] getAllIndexesByPK(long pk) {
+        Integer lastPos = pkLastPosMap.get(pk);
+        if(lastPos == null) {
+            return null;
+        }
+        int pos = lastPos;
+        long[] tmp = new long[1024];
+        int idx = 0; // 结果数组中存当前数据的索引
+        long index = indexesArray_1[pos]; // 记录的当前一条索引信息
+        tmp[idx] = index;
+        ++idx;
+        while((pos = getPrevIndexFromLong(index)) != 0xFFFFFF) {
+            index = indexesArray_1[pos]; // 记录的当前一条索引信息
+            tmp[idx] = index;
+            ++idx;
+        }
+        return Arrays.copyOf(tmp, idx);
+    }
+
+    public static int getFileNoFromLong(long index) {
+        index = (index >> 56) & 0xFF;
+        return (int)index;
+    }
+
+    public static int getPositionFromLong(long index) {
+        index = (index >> 24) & 0xFFFFFFFF;
+        return (int)index;
+    }
+
+    public static int getPrevIndexFromLong(long index) {
+        index = index & 0xFFFFFF;
+        return (int)index;
     }
 
     private static long makeIndex(int fileNo, int position) {
         long result = fileNo;
         result = result << 56;
-        result = (result + ((long)position)<<24);
+        result = (result + (((long)position)<<24));
         return result;
     }
 
@@ -38,6 +68,10 @@ public class LocalLogIndex {
         int currentIndexPos = nextIndexPos.getAndIncrement();
 
         pkLastPosMap.put(pk, currentIndexPos);
+        long index = makeIndex(fileNo, position);
+        pos = pos & 0xFFFFFF;
+        index = index | pos;
+        indexesArray_1[currentIndexPos] = index;
     }
 
     public void appendIndex(long pk, int fileNo, int position) {

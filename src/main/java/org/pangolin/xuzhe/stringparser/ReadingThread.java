@@ -12,6 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
 
+import static org.pangolin.xuzhe.stringparser.LocalLogIndex.*;
 import static org.pangolin.xuzhe.stringparser.Constants.WORKER_NUM;
 
 /**
@@ -109,9 +110,9 @@ public class ReadingThread extends Thread {
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
-             searchResult(allIndexex);
+//             searchResult(allIndexex);
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
-    //      searchTest(allIndexex);
+//          searchTest(allIndexex);
  //            searchTest(allIndexex);
         } catch (IOException e) {
             logger.info("{}", e);
@@ -125,7 +126,7 @@ public class ReadingThread extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Config.init();
-        String[] fileNameArray = {Config.DATA_HOME + "/1.txt"};
+        String[] fileNameArray = {Config.DATA_HOME + "/2.txt"};
         Long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
@@ -142,11 +143,21 @@ public class ReadingThread extends Thread {
             if(line.startsWith("quit")) break;
             try {
                 Long pk = Long.valueOf(line);
-                List<LocalLogIndex.IndexEntry> logs = indexes.indexes.get(pk);
-                Collections.sort(logs);
-                for(LocalLogIndex.IndexEntry index : logs) {
-                    System.out.println(String.format("%d:%10d %s", index.fileNo, index.position,  getLineByPosition(index.fileNo, index.position)));
+                long[] _indexes = getAllIndexesByPK(pk);
+                if(_indexes != null) {
+//                    System.out.println(Arrays.toString(_indexes));
+                    for(long index : _indexes) {
+                        System.out.println(String.format("%d:%10d %s",
+                                getFileNoFromLong(index), getPositionFromLong(index),
+                                getLineByPosition(getFileNoFromLong(index), getPositionFromLong(index))
+                        ));
+                    }
                 }
+//                List<LocalLogIndex.IndexEntry> logs = indexes.indexes.get(pk);
+//                Collections.sort(logs);
+//                for(LocalLogIndex.IndexEntry index : logs) {
+//                    System.out.println(String.format("%d:%10d %s", index.fileNo, index.position,  getLineByPosition(index.fileNo, index.position)));
+
             } catch (Exception e) {
 
             }

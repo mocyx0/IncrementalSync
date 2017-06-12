@@ -6,7 +6,7 @@ import java.io.IOException;
  * Created by ubuntu on 17-6-7.
  */
 public class LogParser {
-    public static String schemaName = "middleware5";
+    public static String schemaName = "middleware3";
     public static String tableName = "student";
 
     public static void parseToIndex(String str, int fileNo, int position, LocalLogIndex indexes) {
@@ -17,7 +17,8 @@ public class LogParser {
                 return;
             }
             long pk = getPK(items);
-            indexes.appendIndex(pk, fileNo, position);
+//            indexes.appendIndex(pk, fileNo, position);
+            LocalLogIndex.appendIndex2(pk, fileNo, position);
         } catch (Exception e) {
             System.out.println(str);
         }
