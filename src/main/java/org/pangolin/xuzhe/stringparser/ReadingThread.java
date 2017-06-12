@@ -110,10 +110,10 @@ public class ReadingThread extends Thread {
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
-//             searchResult(allIndexex);
+              searchResult(allIndexex);
             logger.info("Worker Done! elapsed time: {} ms", (end - begin));
 //          searchTest(allIndexex);
- //            searchTest(allIndexex);
+ //             searchTest(allIndexex);
         } catch (IOException e) {
             logger.info("{}", e);
         } catch (InterruptedException e) {
@@ -126,7 +126,7 @@ public class ReadingThread extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Config.init();
-        String[] fileNameArray = {Config.DATA_HOME + "/2.txt"};
+        String[] fileNameArray = {Config.DATA_HOME + "/1.txt"};
         Long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
@@ -170,15 +170,19 @@ public class ReadingThread extends Thread {
             if(line.startsWith("quit")) break;
             try {
                 Long pk = Long.valueOf(line);
-                Record result = Redo.redo(indexes, pk);
+                String[] result = Redo.redo(pk);
 
-                System.out.print(result.getPk() + "\t");
-                for(Map.Entry<String, Object> entry : result.getValues().entrySet()){
-                    //           System.out.print(entry.getKey() + " " + String.valueOf(entry.getValue()+ " "));
-                    if(!entry.getKey().equals("id")) {
-                        System.out.print(String.valueOf(entry.getValue() + " "));
-                    }
+                for(String s : result){
+                    if(s != null)
+                    System.out.print(s + " ");
                 }
+//                System.out.print(result.getPk() + "\t");
+//                for(Map.Entry<String, Object> entry : result.getValues().entrySet()){
+//                    //           System.out.print(entry.getKey() + " " + String.valueOf(entry.getValue()+ " "));
+//                    if(!entry.getKey().equals("id")) {
+//                        System.out.print(String.valueOf(entry.getValue() + " "));
+//                    }
+//                }
                 System.out.println();
             } catch (Exception e) {
 
