@@ -28,17 +28,17 @@ public class LocalLogIndex {
         int idx = 0; // 结果数组中存当前数据的索引
         for(int i = 0; i < 10; i++) {
             int lastPos = pkLastPosMap[i].get(pk);
-            if (lastPos == 0) {
+            if (lastPos == -1) {
                 continue;
             }
             int pos = lastPos;
-            if(pos == 0xFFFFFF) {
-                pos = 0;
-            }
+//            if(pos == 0xFFFFFF) {
+//                pos = 0;
+//            }
             long index = indexesArrays[i][pos]; // 记录的当前一条索引信息
             tmp[idx] = index;
             ++idx;
-            while ((pos = getPrevIndexFromLong(index)) != 0xFFFFFF) {
+            while ((pos = getPrevIndexFromLong(index)) != -1) {
                 index = indexesArrays[i][pos]; // 记录的当前一条索引信息
                 tmp[idx] = index;
                 ++idx;
@@ -67,9 +67,7 @@ public class LocalLogIndex {
     public static int getPrevIndexFromLong(long index) {
         index = index & 0xFFFFFF;
         if(index == 0xFFFFFF)
-            return 0;
-        if(index == 0)
-            return 0xFFFFFF;
+            return -1;
         return (int)index;
     }
 
@@ -84,19 +82,20 @@ public class LocalLogIndex {
     public synchronized static void appendIndex2(long pk, int fileNo, int position) {
         int lastPos = pkLastPosMap[fileNo-1].get(pk);
         int pos;
-//        if(lastPos == 0) { // 没有数据
-//            pos = 0;  // 因LongIntMap的默认值为0，因此0用0xFFFFFF代替
+        if(lastPos == -1) { // 没有数据
+            pos = 0xFFFFFF;  // 因LongIntMap的默认值为0，因此0用0xFFFFFF代替
+        }
         pos = lastPos;
 
 //        int currentIndexPos = nextIndexPos.getAndIncrement();
         int currentIndexPos = nextIndexPos[fileNo-1]++;
 
-        if(currentIndexPos == 0) {
-            pkLastPosMap[fileNo-1].put(pk, 0xFFFFFF);
-
-        } else {
+//        if(currentIndexPos == 0) {
+//            pkLastPosMap[fileNo-1].put(pk, 0xFFFFFF);
+//
+//        } else {
             pkLastPosMap[fileNo-1].put(pk, currentIndexPos);
-        }
+//        }
         long index = makeIndex(fileNo, position);
         pos = pos & 0xFFFFFF;
         index = index | pos;

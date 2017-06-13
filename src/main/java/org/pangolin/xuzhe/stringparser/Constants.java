@@ -10,6 +10,8 @@ public class Constants {
     static final int POOL_SIZE = 180;
     static final int WORKER_NUM = 4;
     static final int LINE_MAX_LENGTH = 2000;
+    public static String schemaName = "middleware3";
+    public static String tableName = "student";
     public static String getFileNameByNo(int no) {
         return String.format("%s/splited.txt%02d", Config.DATA_HOME, no);
     }

@@ -50,6 +50,7 @@ public class Worker extends Thread {
 					System.out.println();
 				}
 				for(int i = 0; i < readCnt; ) {
+					System.out.println(String.format("%s : read pos:%d %d(%d,%d)", getName(), fileNo, begin+i, begin, end));
 					int n = 0, cnt = 0;
 					long beginTime = System.nanoTime();
 					int needRead = Math.min(readCnt-i, buffer.length);
@@ -62,16 +63,18 @@ public class Worker extends Thread {
 					i += n;
 					int j = 0;
 					// 判断第一行是不是完整的一行
-					if(firstRead && (buffer[0] != '|' || buffer[6] != '-' || buffer[10] != '.')) {
-						while(buffer[j] != '\n') {
-							++j;
+					if(firstRead) {
+						if(buffer[0] != '|' || buffer[6] != '-' || buffer[10] != '.') {
+							while (buffer[j] != '\n') {
+								++j;
+							}
+							++j; // 跳过换行符
 						}
-						++j; // 跳过换行符
 						firstRead = false;
 //						System.out.println(getName() + "半行内容：" +  new String(buffer, 0, j));
 					}
 					currentPos += j;
-//					System.out.println(getName() + ":" + new String(buffer, 0, 150));
+//					System.out.println(getName() + "文件初始内容:" + new String(buffer, 0, 150));
 					long endTime = System.nanoTime();
 					for(; j < cnt; j++) {
 						byte b = buffer[j];
@@ -85,7 +88,8 @@ public class Worker extends Thread {
 							lineBuilder.clear();
 						}
 					}
-					n = n;
+					if(workerNo == 0)
+						n = n;
 				}
 				if(lineBuilder.getSize() != 0) {
 					raf.seek(end);
@@ -104,7 +108,6 @@ public class Worker extends Thread {
 					}
 				}
 				++fileNo;
-//				break;
             }
             logger.info("{} done!", Thread.currentThread().getName());
         } catch (IOException e) {

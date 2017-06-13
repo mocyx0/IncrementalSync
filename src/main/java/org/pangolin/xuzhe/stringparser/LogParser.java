@@ -4,12 +4,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import static org.pangolin.xuzhe.stringparser.Constants.schemaName;
+import static org.pangolin.xuzhe.stringparser.Constants.tableName;
+
 /**
  * Created by ubuntu on 17-6-7.
  */
 public class LogParser {
-    public static String schemaName = "middleware5";
-    public static String tableName = "student";
+
 
     public static void parseToIndex(String str, int fileNo, int position, ArrayList<String> out) {
         try {
