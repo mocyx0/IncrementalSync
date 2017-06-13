@@ -1,9 +1,5 @@
 package org.pangolin.xuzhe.stringparser;
 
-import com.koloboke.collect.hash.HashConfig;
-import com.koloboke.collect.map.hash.HashLongIntMap;
-import com.koloboke.collect.map.hash.HashLongIntMaps;
-
 import java.util.*;
 
 /**
@@ -11,19 +7,15 @@ import java.util.*;
  */
 public class LocalLogIndex {
     Map<Long, List<IndexEntry>> indexes = new HashMap<>();
-    private static HashLongIntMap[] pkLastPosMap = new HashLongIntMap[10];
+    private static MyLong2IntHashMap[] pkLastPosMap = new MyLong2IntHashMap[10];
     static {
 //        HashLongIntMap map = makeMap(200_0000, 0.9f);
         for(int i = 0; i < 10; i++) {
-            pkLastPosMap[i] = makeMap(200_000, 0.9f);
+            pkLastPosMap[i] = new MyLong2IntHashMap(1000_000, 0.9f);
 //            System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(pkLastPosMap[i])));
         }
     }
-    private static HashLongIntMap makeMap(final int size, final float fillFactor )
-    {
-        return HashLongIntMaps.getDefaultFactory().
-                withHashConfig(HashConfig.fromLoads(fillFactor/2, fillFactor, fillFactor)).newMutableMap(size);
-    }
+
     public static final long[][] indexesArrays = new long[10][400_0000];
 //    public static final AtomicInteger nextIndexPos = new AtomicInteger(0); // 使用getAndIncrement
     public static int[] nextIndexPos = new int[10]; // 使用getAndIncrement
