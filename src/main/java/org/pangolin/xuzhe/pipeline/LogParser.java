@@ -1,6 +1,8 @@
 package org.pangolin.xuzhe.pipeline;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import static org.pangolin.xuzhe.stringparser.Constants.schemaName;
@@ -10,8 +12,13 @@ import static org.pangolin.xuzhe.stringparser.Constants.tableName;
  * Created by ubuntu on 17-6-7.
  */
 public class LogParser {
-
-    public static boolean isBelongsToClient(String str,ArrayList<String> out , long beginPk, long endPk) {
+    private static final Set<Long> pkSet = new HashSet<>();
+    public static void updatePkSet(long beginPk, long endPk){
+        for(long i = endPk - 1; i > beginPk ;i--){
+            pkSet.add(i);
+        }
+    }
+    public static boolean isBelongsToClient(String str,ArrayList<String> out ) {
         try {
             out.clear();
             StringTokenizer tokenizer = new StringTokenizer(str, "|", false);
@@ -25,7 +32,7 @@ public class LogParser {
             System.out.println("parseToIndex 解析错误" + str);
             e.printStackTrace();
         }
-        return judgePk(out, beginPk, endPk);
+        return judgePk(out);
     }
 
 
@@ -39,25 +46,42 @@ public class LogParser {
     public static String getOpType(ArrayList<String> items) {
         return items.get(4);
     }
-    public static boolean judgePk(ArrayList<String> items, long beginPk, long endPk){
+    public static boolean judgePk(ArrayList<String> items){
+
         char opType = getOpType(items).charAt(0);
         String oldPk = getColumnAllInfoByIndex(items, 0)[1];
         String newPk = getColumnAllInfoByIndex(items, 0)[2];
-        if(opType == 'D' &&  isInPk(Long.parseLong(oldPk),beginPk,endPk)) {
+        if(opType == 'U' && !oldPk.equals(newPk)){
+            if(pkSet.contains(Long.parseLong(oldPk))){
+                pkSet.remove(Long.parseLong(oldPk));
+                if(!pkSet.contains(Long.parseLong(oldPk)))
+                    pkSet.add(Long.parseLong(oldPk));
                 return true;
-        }else if(opType == 'I' && isInPk(Long.parseLong(newPk),beginPk,endPk)){
-            return true;
-        }else if(opType == 'U' && (isInPk(Long.parseLong(oldPk),beginPk,endPk) || isInPk(Long.parseLong(newPk),beginPk,endPk))){
+            }
+        }else if(opType == 'I' && pkSet.contains(Long.parseLong(newPk))){
+                return true;
+        }else if(opType == 'D' && pkSet.contains(Long.parseLong(oldPk))){
+            pkSet.remove(Long.parseLong(oldPk));
             return true;
         }
+//        char opType = getOpType(items).charAt(0);
+//        String oldPk = getColumnAllInfoByIndex(items, 0)[1];
+//        String newPk = getColumnAllInfoByIndex(items, 0)[2];
+//        if(opType == 'D' &&  isInPk(Long.parseLong(oldPk),beginPk,endPk)) {
+//                return true;
+//        }else if(opType == 'I' && isInPk(Long.parseLong(newPk),beginPk,endPk)){
+//            return true;
+//        }else if(opType == 'U' && (isInPk(Long.parseLong(oldPk),beginPk,endPk) || isInPk(Long.parseLong(newPk),beginPk,endPk))){
+//            return true;
+//        }
         return false;
     }
 
-    private static boolean isInPk(long pk, long beginPk, long endPk){
-        if(pk > beginPk && pk < endPk)
-            return true;
-        return false;
-    }
+//    private static boolean isInPk(long pk, long beginPk, long endPk){
+//        if(pk > beginPk && pk < endPk)
+//            return true;
+//        return false;
+//    }
     public static String[] getColumnAllInfoByIndex(ArrayList<String> items, int index) {
         String[] result = new String[3];
         result[0] = items.get(5+3*index);

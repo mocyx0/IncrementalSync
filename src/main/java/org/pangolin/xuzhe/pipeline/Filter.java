@@ -24,6 +24,7 @@ public class Filter extends Thread {
             ArrayList<String> storeResults = stringArrayListPool.get();
             ArrayList<String> readList = null;
             boolean flag = false;
+            LogParser.updatePkSet(beginPk,endPk);
             while (true) {
 
                 readList = logStringListQueue.take();
@@ -31,7 +32,7 @@ public class Filter extends Thread {
                     break;
                 }
                 for (String scanResult : readList) {
-                    flag = LogParser.isBelongsToClient(scanResult, out, beginPk, endPk);
+                    flag = LogParser.isBelongsToClient(scanResult, out);
                     if (flag == true) {
 //                        System.out.println(scanResult);
                         if (storeResults.size() == STRING_LIST_SIZE) {
