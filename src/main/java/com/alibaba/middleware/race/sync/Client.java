@@ -29,10 +29,11 @@ public class Client {
         /*
         initProperties();
         Logger logger = LoggerFactory.getLogger(Client.class);
-        logger.info("Welcome");
+        logger.info("Welcome to Client");
         // 从args获取server端的ip
         ip = args[0];
         Client client = new Client();
+        Thread.sleep(20000);
         client.connect(ip, port);
         */
     }

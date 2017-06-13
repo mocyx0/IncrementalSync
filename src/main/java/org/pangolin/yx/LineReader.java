@@ -47,7 +47,6 @@ public class LineReader {
         }
     }
 
-    //TODO utf-8
     String tryReadLine() {
         lastStringPos = pos + curFilePos;
         int s = pos;

@@ -28,6 +28,8 @@ public class MServer {
 
 
     private static void getResult() throws Exception {
+        // Thread.sleep(5000);
+
         long t1 = System.currentTimeMillis();
 
         LogParser parser = new LogParser();
@@ -51,7 +53,7 @@ public class MServer {
         RebuildResult result = rebuider.getResult();
         */
 
-
+        //System.exit(0);
         long t2 = System.currentTimeMillis();
         LogRebuilderLarge.init(data);
         LogRebuilderLarge.run();
@@ -67,11 +69,10 @@ public class MServer {
 
     private static void doTest() throws Exception {
         logger.info("doTest start");
-        ByteBuffer buffer = ByteBuffer.allocate(128);
-        buffer.put("hello wprld".getBytes());
 
         //yx test
-        //LogParserTest.parseLog();
+        LogParserTest.parseLog();
+
         IOPerfTest.positiveOrderReadByFileChannel(Config.DATA_HOME + "/1.txt");
         // 不读同一个文件，避免从pagecache读
         IOPerfTest.reverseOrderReadByFileChannel(Config.DATA_HOME + "/2.txt");
@@ -84,8 +85,6 @@ public class MServer {
         readingThread.join();
 
         logger.info("doTest done");
-        buffer.flip();
-        ResultWriter.writeBuffer(buffer);
     }
 
 
@@ -139,6 +138,7 @@ public class MServer {
                 query.table = table;
                 query.start = startId;
                 query.end = endId;
+                //query.end = 2000000;
                 Config.queryData = query;
 
                 //开启网络服务

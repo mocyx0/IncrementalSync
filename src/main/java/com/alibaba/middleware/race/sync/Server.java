@@ -46,7 +46,7 @@ public class Server {
         initProperties();
 
         printInput(args);
-        Logger logger = LoggerFactory.getLogger(Client.class);
+        Logger logger = LoggerFactory.getLogger(Server.class);
         Server server = new Server();
         for (int i = 0; i < 100; i++) {
             logger.info("com.alibaba.middleware.race.sync.Server is running....");

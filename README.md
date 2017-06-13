@@ -5,6 +5,12 @@
 4. 该文档根据实际情况会进行更新，选手每次写代码前建议pull下该样例工程，查看README文件的变化
 
 
+## 重要提示：2017年6月12日，预热赛评测通道临时关闭，评测机器做一些安全加固。
+## 再次提醒选手，禁止在JAVA程序中启shell脚本，可允许读的目录只有canal_data下的10份数据文件
+## 允许写的目录只有/home/admin/middle目录和自己teamCode对应的结果文件目录，禁止操作其他目录。
+## 违反比赛规则的将视情况追究责任
+
+
 # ================================================== 赛题规则 ============================================================
 
 # 1. 赛题描述
@@ -325,12 +331,10 @@ Java HotSpot(TM) 64-Bit Server VM (build 24.80-b11, mixed mode)
 ```
 $sudo fdisk -l /dev/sda5
 
-Disk /dev/sda5: 424.0 GB, 423999045632 bytes
-255 heads, 63 sectors/track, 51548 cylinders
-Units = cylinders of 16065 * 512 = 8225280 bytes
-Sector size (logical/physical): 512 bytes / 4096 bytes
-I/O size (minimum/optimal): 4096 bytes / 4096 bytes
-Disk identifier: 0x00000000
+Disk /dev/vda1: 128.8 GB, 128846921728 bytes, 251654144 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
 ```
@@ -338,21 +342,125 @@ Disk identifier: 0x00000000
 $sudo  time dd if=/dev/zero of=/data/test  bs=8k count=1000000
 1000000+0 records in
 1000000+0 records out
-8192000000 bytes (8.2 GB) copied, 18.6796 s, 439 MB/s
-0.19user 15.03system 0:18.80elapsed 80%CPU (0avgtext+0avgdata 3760maxresident)k
-1152inputs+16000000outputs (1major+360minor)pagefaults 0swaps
+8192000000 bytes (8.2 GB) copied, 56.1853 s, 146 MB/s
+
+real	0m56.186s
+user	0m0.086s
+sys	0m10.758s
 # 读性能
-$sudo time dd if=/dev/sda5  of=/dev/null bs=8k count=1000000
+$sudo time dd if=/dev/vda1  of=/dev/null bs=8k count=1000000
 1000000+0 records in
 1000000+0 records out
-8192000000 bytes (8.2 GB) copied, 25.6534 s, 319 MB/s
-0.13user 7.93system 0:25.65elapsed 31%CPU (0avgtext+0avgdata 3792maxresident)k
-16000320inputs+0outputs (1major+362minor)pagefaults 0swaps
+8192000000 bytes (8.2 GB) copied, 71.0091 s, 115 MB/s
+0.07user 2.50system 1:11.00elapsed 3%CPU (0avgtext+0avgdata 840maxresident)k
+16010496inputs+0outputs (0major+251minor)pagefaults 0swaps
 ```
 
 3. CPU信息? 
 ```
-2个CPU,12个物理核，24个逻辑核，2.2GHz
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 0
+cpu cores	: 4
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
+
+processor	: 1
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 1
+cpu cores	: 4
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
+
+processor	: 2
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 2
+cpu cores	: 4
+apicid		: 2
+initial apicid	: 2
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
+
+processor	: 3
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 3
+cpu cores	: 4
+apicid		: 3
+initial apicid	: 3
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
 ```
 答：24核 2.2GHz
 
@@ -364,16 +472,16 @@ core file size          (blocks, -c) 0
 data seg size           (kbytes, -d) unlimited
 scheduling priority             (-e) 0
 file size               (blocks, -f) unlimited
-pending signals                 (-i) 386774
-max locked memory       (kbytes, -l) unlimited
+pending signals                 (-i) 31214
+max locked memory       (kbytes, -l) 64
 max memory size         (kbytes, -m) unlimited
-open files                      (-n) 655350
+open files                      (-n) 65535
 pipe size            (512 bytes, -p) 8
 POSIX message queues     (bytes, -q) 819200
 real-time priority              (-r) 0
-stack size              (kbytes, -s) 10240
+stack size              (kbytes, -s) 8192
 cpu time               (seconds, -t) unlimited
-max user processes              (-u) 386774
+max user processes              (-u) 4096
 virtual memory          (kbytes, -v) unlimited
 file locks                      (-x) unlimited
 ```
@@ -436,7 +544,7 @@ file locks                      (-x) unlimited
 7. 物理机内存是多少？
 
 ```
-96G
+8G
 ```
 
 8. 结果输出顺序咋样？
@@ -448,7 +556,19 @@ file locks                      (-x) unlimited
 9. 网络能力咋样？
 
 ```
-传输10G的单个大文件，速度在45MB/s
+在客户端执行iperf传输1G数据的结果（每秒传输100MB）：
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0- 1.0 sec   182 MBytes  1.53 Gbits/sec
+[  3]  1.0- 2.0 sec   103 MBytes   865 Mbits/sec
+[  3]  2.0- 3.0 sec  91.0 MBytes   763 Mbits/sec
+[  3]  3.0- 4.0 sec   100 MBytes   843 Mbits/sec
+[  3]  4.0- 5.0 sec  91.0 MBytes   763 Mbits/sec
+[  3]  5.0- 6.0 sec  98.9 MBytes   829 Mbits/sec
+[  3]  6.0- 7.0 sec  98.1 MBytes   823 Mbits/sec
+[  3]  7.0- 8.0 sec   104 MBytes   876 Mbits/sec
+[  3]  8.0- 9.0 sec  97.6 MBytes   819 Mbits/sec
+[  3]  9.0-10.0 sec  97.6 MBytes   819 Mbits/sec
+[  3]  0.0-10.2 sec  1.04 GBytes   879 Mbits/sec
 ```
 
 10. 结果中列的顺序怎样？
@@ -486,3 +606,19 @@ file locks                      (-x) unlimited
 ```
 会有
 ```
+
+
+16. 预热赛的答案能否提供?
+
+```
+可以提供，为了让选手更好的调试代码，解决问题。预热赛的答案提供如下：
+下载地址：https://space.dingtalk.com/c/ggHaACQzMTYwZjhlMi01Zjk5LTRmODMtODM2ZC1jYWFlNjlkYzg1ZWYCzhoZeDw
+```
+
+17. client端程序连不上server怎么办？
+
+```
+选手server端程序启动后，评测程序马上通知client端的评测程序启动选手的client端程序，此时如果server端程序还没有完全起来，就会导致连不上。
+因此，选手需要自己对client端程序做重试逻辑，或者干脆sleep一段时间（一般15秒肯定起来了，当然还是建议做重试，避免浪费时间）
+```
+
