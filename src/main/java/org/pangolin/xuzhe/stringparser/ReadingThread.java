@@ -110,10 +110,10 @@ public class ReadingThread extends Thread {
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
             logger.info("Worker Done! elapsed time: {} ms", (end-begin));
-              searchResult();
-            logger.info("Worker Done! elapsed time: {} ms", (end - begin));
+//              searchResult();
+//            logger.info("Worker Done! elapsed time: {} ms", (end - begin));
 //            maxPK();
-            searchTest();
+//            searchTest();
  //             searchTest(allIndexex);
         } /*catch (IOException e) {
             logger.info("{}", e);

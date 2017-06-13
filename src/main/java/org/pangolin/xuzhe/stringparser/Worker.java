@@ -50,7 +50,7 @@ public class Worker extends Thread {
 					System.out.println();
 				}
 				for(int i = 0; i < readCnt; ) {
-					System.out.println(String.format("%s : read pos:%d %d(%d,%d)", getName(), fileNo, begin+i, begin, end));
+//					System.out.println(String.format("%s : read pos:%d %d(%d,%d)", getName(), fileNo, begin+i, begin, end));
 					int n = 0, cnt = 0;
 					long beginTime = System.nanoTime();
 					int needRead = Math.min(readCnt-i, buffer.length);
@@ -82,8 +82,8 @@ public class Worker extends Thread {
 							lineBuilder.append(b);
 						} else {
 							int pos = currentPos;
-							String str = lineBuilder.toString();
-							process(str, fileNo, pos);
+//							String str = lineBuilder.toString();
+//							process(str, fileNo, pos);
 							currentPos += (lineBuilder.getSize()+1);
 							lineBuilder.clear();
 						}
@@ -118,7 +118,7 @@ public class Worker extends Thread {
 
 
     private void process(String line, int fileNo, int position) {
-		LogParser.parseToIndex(line, fileNo, position, localItemsBuffer);
+//		LogParser.parseToIndex(line, fileNo, position, localItemsBuffer);
 	}
 
 }

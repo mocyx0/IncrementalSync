@@ -27,7 +27,7 @@ public class LogParser {
 ////            indexes.appendIndex(pk, fileNo, position);
 //            // TODO: 添加针对PK被修改，查找该PK时仍然有记录的错误处理
 //            LocalLogIndex.appendIndex2(pk, fileNo, position);
-            appendIndex(out,fileNo, position);
+//            appendIndex(out,fileNo, position);
         } catch (Exception e) {
             System.out.println("parseToIndex 解析错误" + str);
             e.printStackTrace();
