@@ -3,11 +3,8 @@ package org.pangolin.xuzhe.stringparser;
 import com.koloboke.collect.hash.HashConfig;
 import com.koloboke.collect.map.hash.HashLongIntMap;
 import com.koloboke.collect.map.hash.HashLongIntMaps;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
-import net.sourceforge.sizeof.SizeOf;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by ubuntu on 17-6-8.
