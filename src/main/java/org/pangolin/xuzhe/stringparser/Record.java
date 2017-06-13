@@ -16,19 +16,17 @@ public class Record {
     private static final List<Long> list = new ArrayList<>();
     private boolean finished = false;
     private boolean deleted = false;
-    private int fileNo;
-    private long position;
+    private long logPosition;
     private static Map<Integer, byte[]> columnIDMap = new HashMap<>();  // key:id, value:columnBytes
     private static Map<Integer, Integer> columnHashMap = new HashMap<>(); // key:hashCode, value:id
     private static AtomicInteger nextID = new AtomicInteger(0);
 
-    public Record(Long pk, int fileNo, long position) {
+    public Record(Long pk, long logPosition) {
         if (pk == null) {
             throw new RuntimeException("主键值不可为null");
         }
             this.pk = pk;
-            this.fileNo = fileNo;
-            this.position = position;
+            this.logPosition = logPosition;
         }
 
     public void updateColumn(String columnName, Object value) {
@@ -46,17 +44,14 @@ public class Record {
     public static List<Long> getList() {
         return list;
     }
-    public void setFileNo(int fileNo) {
-        this.fileNo = fileNo;
-    }
-    public void setPosition(long position) {
-        this.position = position;
+
+    public void setLogPosition(long logPosition) {
+        this.logPosition = logPosition;
     }
 
-    public int getFileNo() {return fileNo;}
+    public long getLogPosition() {
 
-    public long getPosition() {
-        return position;
+        return logPosition;
     }
 
     public static Integer getColumnID(byte[] columnName, int len) {
@@ -133,8 +128,27 @@ public class Record {
 //        record.update(log,indexes);
 //        return record;
 //    }
-
-
+    public String[] updateInsertInfo(Log log){
+        String[] result = new String[50];
+        int length = log.columns.length;
+        ColumnLog columnLog = null;
+        for(int i = 0; i < length; i++){
+            if(i == 0){
+                result[i] = String.valueOf(this.pk);
+            }else{
+                columnLog = log.columns[i];
+                if (!values.containsKey(columnLog.columnInfo.name)) {
+                    if (columnLog.columnInfo.type == '1')
+                        result[i] = String.valueOf(columnLog.newLongValue);
+                    else
+                        result[i] = columnLog.newStringValue;
+                }else{
+                    result[i] = String.valueOf(values.get(columnLog.columnInfo.name));
+                }
+            }
+        }
+        return result;
+    }
     public void updateResult(Log log) {
         for (ColumnLog columnLog : log.columns) {
             if (!values.containsKey(columnLog.columnInfo.name)) {
@@ -146,11 +160,11 @@ public class Record {
         }
     }
 
-    public static Record createFromLastLog(Log log, LocalLogIndex indexes, int fileNo, long position) {
+    public static Record createFromLastLog(Log log, long logPosition) {
         Record record = null;
         for (ColumnLog columnLog : log.columns) {
             if (columnLog.columnInfo.isPK) {
-                record = new Record(columnLog.newLongValue, fileNo, position);
+                record = new Record(columnLog.newLongValue, logPosition);
             }
         }
         return record;

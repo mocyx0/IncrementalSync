@@ -1,6 +1,10 @@
 package org.pangolin.xuzhe.stringparser;
 
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+
 import static org.junit.Assert.*;
 /**
  * Created by ubuntu on 17-6-7.
@@ -9,7 +13,11 @@ public class LogParserTest {
     @Test
     public void testBasic() {
         String str = "|mysql-bin.00001717148759|1496736165000|middleware3|student|I|id:1:1|NULL|1|first_name:2:0|NULL|徐|last_name:2:0|NULL|依|sex:2:0|NULL|男|score:1:0|NULL|66|";
-        String[] items = str.split("\\|");
+        ArrayList<String> items = new ArrayList<>();
+        StringTokenizer tokenizer = new StringTokenizer(str, "|", false);
+        while (tokenizer.hasMoreElements()) {
+            items.add(tokenizer.nextToken());
+        }
         assertEquals(LogParser.getDatabaseName(items), "middleware3");
         assertEquals(LogParser.getTableName(items), "student");
         assertEquals(LogParser.getOpType(items), "I");
@@ -39,8 +47,8 @@ public class LogParserTest {
     @Test
     public void testParser() {
         String str = "|mysql-bin.00001717148759|1496736165000|middleware3|student|I|id:1:1|NULL|1|first_name:2:0|NULL|徐|last_name:2:0|NULL|依|sex:2:0|NULL|男|score:1:0|NULL|66|";
-        LocalLogIndex localIndex = new LocalLogIndex();
-        LogParser.parseToIndex(str, 1, 0, localIndex);
-        System.out.println(localIndex);
+        ArrayList<String> buffer = new ArrayList<>();
+        LogParser.parseToIndex(str, 1, 0, buffer);
+        System.out.println(buffer);
     }
 }
