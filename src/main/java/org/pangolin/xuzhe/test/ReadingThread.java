@@ -1,6 +1,7 @@
 package org.pangolin.xuzhe.test;
 
 import com.alibaba.middleware.race.sync.Server;
+import org.pangolin.yx.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -134,7 +135,11 @@ public class ReadingThread extends Thread {
 
 
     public static void main(String[] args) throws InterruptedException {
-        String[] fileNameArray = {"data/1.txt"};
+        Config.init();
+        String[] fileNameArray = new String[1];
+        for(int i = 0; i < fileNameArray.length; i++) {
+            fileNameArray[i] = Config.DATA_HOME + "/" + (i+1) + ".txt";
+        }
         Long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
