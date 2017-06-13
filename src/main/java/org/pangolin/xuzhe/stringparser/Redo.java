@@ -111,9 +111,11 @@ public class Redo {
         // TODO: 删除操作没有做处理
         r = Record.createFromLastLog(log, index);  //对最后一条log创建record
         if (log.op == 'U') {
-            updateResult(r, log, index);                        //无论该log的类型是什么都应该先进行result的更新
-            updateCurrentIdKey(log);
-            log = judgeUpdate(r, log);
+            if(log.columns[0].newLongValue == pk){
+                updateResult(r, log, index);                        //无论该log的类型是什么都应该先进行result的更新
+                updateCurrentIdKey(log);
+                log = judgeUpdate(r, log);
+            }
         }
         if (log.op == 'I') {
             result = r.updateInsertInfo(log);

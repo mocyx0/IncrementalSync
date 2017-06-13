@@ -21,10 +21,11 @@ public class LogParser {
             if (!getDatabaseName(out).equals(schemaName) || !getTableName(out).equals(tableName)) {
                 return;
             }
-            long pk = getPK(out);
-//            indexes.appendIndex(pk, fileNo, position);
-            // TODO: 添加针对PK被修改，查找该PK时仍然有记录的错误处理
-            LocalLogIndex.appendIndex2(pk, fileNo, position);
+//            long pk = getPK(out);
+////            indexes.appendIndex(pk, fileNo, position);
+//            // TODO: 添加针对PK被修改，查找该PK时仍然有记录的错误处理
+//            LocalLogIndex.appendIndex2(pk, fileNo, position);
+            appendIndex(out,fileNo, position);
         } catch (Exception e) {
             System.out.println("parseToIndex 解析错误" + str);
             e.printStackTrace();
@@ -47,17 +48,35 @@ public class LogParser {
         return items.get(4);
     }
 
-    // TODO 暂时假设主键在日志中是第一列，后期查看canel生成日志的源码验证
-    public static long getPK(ArrayList<String> items) {
-        String pk;
-        if(getOpType(items).charAt(0) == 'D') {
-            pk = getColumnAllInfoByIndex(items, 0)[1];
-
-        } else {
-            pk = getColumnAllInfoByIndex(items, 0)[2];
+    public static void appendIndex(ArrayList<String> items,int fileNo, int position){
+        String pk1 = null, pk2 = null;
+        char opType = getOpType(items).charAt(0);
+        String oldPk = getColumnAllInfoByIndex(items, 0)[1];
+        String newPk = getColumnAllInfoByIndex(items, 0)[2];
+        if(opType == 'D') {
+            pk1 = oldPk;
+        } else if(opType == 'U' && !oldPk.equals(newPk)){
+            pk1 = oldPk;
+            pk2 = newPk;
+        } else{
+            pk1 = newPk;
         }
-        return Long.parseLong(pk);
+            LocalLogIndex.appendIndex2(Long.parseLong(pk1), fileNo, position);
+        if(pk2 != null)
+            LocalLogIndex.appendIndex2(Long.parseLong(pk2), fileNo, position);
     }
+
+    // TODO 暂时假设主键在日志中是第一列，后期查看canel生成日志的源码验证
+//    public static long getPK(ArrayList<String> items) {
+//        String pk;
+//        if(getOpType(items).charAt(0) == 'D') {
+//            pk = getColumnAllInfoByIndex(items, 0)[1];
+//
+//        } else {
+//            pk = getColumnAllInfoByIndex(items, 0)[2];
+//        }
+//        return Long.parseLong(pk);
+//    }
 
     public static String[] getAllColumn(ArrayList<String> items) {
         int cnt = getColumnCount(items);

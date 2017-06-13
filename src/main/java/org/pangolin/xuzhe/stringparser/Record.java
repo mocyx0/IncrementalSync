@@ -128,7 +128,6 @@ public class Record {
 //        record.update(log,indexes);
 //        return record;
 //    }
-
     public String[] updateInsertInfo(Log log){
         String[] result = new String[50];
         int length = log.columns.length;
