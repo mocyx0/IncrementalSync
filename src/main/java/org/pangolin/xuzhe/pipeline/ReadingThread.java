@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
+import static org.pangolin.xuzhe.pipeline.ByteBufferPool.EMPTY_BUFFER;
 import static org.pangolin.xuzhe.pipeline.Constants.BUFFER_SIZE;
 import static org.pangolin.xuzhe.pipeline.Constants.WORKER_NUM;
 
@@ -17,6 +18,7 @@ import static org.pangolin.xuzhe.pipeline.Constants.WORKER_NUM;
 public class ReadingThread extends Thread {
     String[] fileNameArray;
     Parser[] parsers;
+    Filter filter;
     public ReadingThread(String[] fileNameArray) {
         super("ReadingThread");
         this.fileNameArray = fileNameArray;
@@ -27,6 +29,9 @@ public class ReadingThread extends Thread {
         for(int i = 0; i < WORKER_NUM; i++) {
             parsers[i].start();
         }
+        filter = new Filter();
+        filter.start();
+
     }
 
     @Override
@@ -35,6 +40,7 @@ public class ReadingThread extends Thread {
         int workerIndex = 0;
         FileInputStream fis;
         try {
+            long beginTime = System.currentTimeMillis();
             for (String fileName : fileNameArray) {
             	fis = new FileInputStream(new File(fileName));
                 FileChannel channel = fis.getChannel();
@@ -62,15 +68,19 @@ public class ReadingThread extends Thread {
                 channel.close();
                 fis.close();
             }
-
-            System.out.println("Reading Done!");
+            long endTime = System.currentTimeMillis();
+            System.out.println("Reading Done! " + (endTime-beginTime) + " ms");
             for(Parser parser : parsers) {
-                parser.appendBuffer(Parser.EMPTY_BUFFER);
+                parser.appendBuffer(EMPTY_BUFFER);
             }
             for(Parser parser : parsers) {
                 parser.join();
             }
-
+            endTime = System.currentTimeMillis();
+            System.out.println("Parser Done!" + (endTime-beginTime) + " ms");
+            filter.join();
+            endTime = System.currentTimeMillis();
+            System.out.println("Filter Done!" + (endTime-beginTime) + " ms");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -82,13 +92,13 @@ public class ReadingThread extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Config.init();
-        String[] fileNameArray = { Config.DATA_HOME + "/2.txt"};
+        String[] fileNameArray = { Config.DATA_HOME + "/3.txt"};
         Long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
 	    Long time2 = System.currentTimeMillis();
 	  //  readingThread.sleep(3000);
-	    System.out.println(time2 - time1);
+	    System.out.println("elapsed time:" + (time2 - time1));
     }
 }

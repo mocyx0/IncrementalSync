@@ -11,6 +11,7 @@ import static org.pangolin.xuzhe.pipeline.Constants.STRING_LIST_SIZE;
  * Created by ubuntu on 17-6-13.
  */
 public class StringArrayListPool {
+    public static final ArrayList<String> EMPTY_STRING_LIST = new ArrayList<>(1);
     private static StringArrayListPool instance = new StringArrayListPool();
     public static StringArrayListPool getInstance() {
         return instance;

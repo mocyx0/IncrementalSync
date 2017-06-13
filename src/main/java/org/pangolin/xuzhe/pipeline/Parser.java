@@ -10,18 +10,22 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.pangolin.xuzhe.pipeline.ByteBufferPool.EMPTY_BUFFER;
 import static org.pangolin.xuzhe.pipeline.Constants.STRING_LIST_SIZE;
+import static org.pangolin.xuzhe.pipeline.Filter.logStringListQueue;
+import static org.pangolin.xuzhe.pipeline.StringArrayListPool.EMPTY_STRING_LIST;
 
 /**
  * Created by ubuntu on 17-6-3.
  */
 public class Parser extends Thread {
 	Logger logger = LoggerFactory.getLogger(Server.class);
-	public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+
 	private Queue<ByteBuffer> buffers;
 	private static AtomicInteger workerNum = new AtomicInteger(0);
 	private int lineCnt = 0;
 	private StringArrayListPool stringListPool = StringArrayListPool.getInstance();
+
 	private ArrayList<String> currentStringList;
 	public Parser() {
 		super("Parser" + workerNum.incrementAndGet());
@@ -49,7 +53,11 @@ public class Parser extends Thread {
 					sleep(5);
 					continue;
 				}
-				if(buffer == EMPTY_BUFFER) break;
+				if(buffer == EMPTY_BUFFER) {
+					logStringListQueue.put(currentStringList);
+					logStringListQueue.put(EMPTY_STRING_LIST);
+					break;
+				}
 
 				long begin = System.nanoTime();
 				byte[] data = buffer.array();
@@ -80,7 +88,7 @@ public class Parser extends Thread {
 
 	private void process(String line) throws InterruptedException {
 		if(currentStringList.size() == STRING_LIST_SIZE) {
-			stringListPool.put(currentStringList);
+			logStringListQueue.put(currentStringList);
 			currentStringList = stringListPool.get();
 		}
 //		System.out.println(line);

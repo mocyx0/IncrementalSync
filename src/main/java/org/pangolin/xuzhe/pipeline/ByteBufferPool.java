@@ -11,6 +11,7 @@ import static org.pangolin.xuzhe.pipeline.Constants.POOL_SIZE;
  * Created by ubuntu on 17-6-3.
  */
 public class ByteBufferPool {
+    public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
     private static ByteBufferPool instance = new ByteBufferPool();
     public static ByteBufferPool getInstance() {
         return instance;
