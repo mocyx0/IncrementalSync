@@ -29,12 +29,11 @@ public class Util {
     public static void fillLogData(RandomAccessFile raf, LogRecord log) throws Exception {
 
         byte[] buffer = getReadBuffer();
-        if(log.offset<0){
+        if (log.offset < 0) {
             System.out.print(1);
         }
         raf.seek(log.offset);
         raf.read(buffer, 0, buffer.length);
-
         int l = 0;
         for (int i = 0; i < buffer.length; i++) {
             if (buffer[i] == '\n') {

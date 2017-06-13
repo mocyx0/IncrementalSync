@@ -28,6 +28,8 @@ public class MServer {
 
 
     private static void getResult() throws Exception {
+        // Thread.sleep(5000);
+
         long t1 = System.currentTimeMillis();
 
         LogParser parser = new LogParser();
@@ -51,7 +53,7 @@ public class MServer {
         RebuildResult result = rebuider.getResult();
         */
 
-
+        //System.exit(0);
         long t2 = System.currentTimeMillis();
         LogRebuilderLarge.init(data);
         LogRebuilderLarge.run();
@@ -139,6 +141,7 @@ public class MServer {
                 query.table = table;
                 query.start = startId;
                 query.end = endId;
+                //query.end = 2000000;
                 Config.queryData = query;
 
                 //开启网络服务
