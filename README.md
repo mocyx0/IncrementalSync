@@ -331,12 +331,10 @@ Java HotSpot(TM) 64-Bit Server VM (build 24.80-b11, mixed mode)
 ```
 $sudo fdisk -l /dev/sda5
 
-Disk /dev/sda5: 424.0 GB, 423999045632 bytes
-255 heads, 63 sectors/track, 51548 cylinders
-Units = cylinders of 16065 * 512 = 8225280 bytes
-Sector size (logical/physical): 512 bytes / 4096 bytes
-I/O size (minimum/optimal): 4096 bytes / 4096 bytes
-Disk identifier: 0x00000000
+Disk /dev/vda1: 128.8 GB, 128846921728 bytes, 251654144 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
 ```
 
 ```
@@ -344,21 +342,125 @@ Disk identifier: 0x00000000
 $sudo  time dd if=/dev/zero of=/data/test  bs=8k count=1000000
 1000000+0 records in
 1000000+0 records out
-8192000000 bytes (8.2 GB) copied, 18.6796 s, 439 MB/s
-0.19user 15.03system 0:18.80elapsed 80%CPU (0avgtext+0avgdata 3760maxresident)k
-1152inputs+16000000outputs (1major+360minor)pagefaults 0swaps
+8192000000 bytes (8.2 GB) copied, 56.1853 s, 146 MB/s
+
+real	0m56.186s
+user	0m0.086s
+sys	0m10.758s
 # 读性能
-$sudo time dd if=/dev/sda5  of=/dev/null bs=8k count=1000000
+$sudo time dd if=/dev/vda1  of=/dev/null bs=8k count=1000000
 1000000+0 records in
 1000000+0 records out
-8192000000 bytes (8.2 GB) copied, 25.6534 s, 319 MB/s
-0.13user 7.93system 0:25.65elapsed 31%CPU (0avgtext+0avgdata 3792maxresident)k
-16000320inputs+0outputs (1major+362minor)pagefaults 0swaps
+8192000000 bytes (8.2 GB) copied, 71.0091 s, 115 MB/s
+0.07user 2.50system 1:11.00elapsed 3%CPU (0avgtext+0avgdata 840maxresident)k
+16010496inputs+0outputs (0major+251minor)pagefaults 0swaps
 ```
 
 3. CPU信息? 
 ```
-2个CPU,12个物理核，24个逻辑核，2.2GHz
+processor	: 0
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 0
+cpu cores	: 4
+apicid		: 0
+initial apicid	: 0
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
+
+processor	: 1
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 1
+cpu cores	: 4
+apicid		: 1
+initial apicid	: 1
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
+
+processor	: 2
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 2
+cpu cores	: 4
+apicid		: 2
+initial apicid	: 2
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
+
+processor	: 3
+vendor_id	: GenuineIntel
+cpu family	: 6
+model		: 79
+model name	: Intel(R) Xeon(R) CPU E5-2682 v4 @ 2.50GHz
+stepping	: 1
+microcode	: 0x1
+cpu MHz		: 2499.994
+cache size	: 40960 KB
+physical id	: 0
+siblings	: 4
+core id		: 3
+cpu cores	: 4
+apicid		: 3
+initial apicid	: 3
+fpu		: yes
+fpu_exception	: yes
+cpuid level	: 13
+wp		: yes
+flags		: fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc rep_good nopl eagerfpu pni pclmulqdq ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm rdseed adx smap xsaveopt
+bogomips	: 4999.98
+clflush size	: 64
+cache_alignment	: 64
+address sizes	: 46 bits physical, 48 bits virtual
+power management:
 ```
 答：24核 2.2GHz
 
@@ -370,16 +472,16 @@ core file size          (blocks, -c) 0
 data seg size           (kbytes, -d) unlimited
 scheduling priority             (-e) 0
 file size               (blocks, -f) unlimited
-pending signals                 (-i) 386774
-max locked memory       (kbytes, -l) unlimited
+pending signals                 (-i) 31214
+max locked memory       (kbytes, -l) 64
 max memory size         (kbytes, -m) unlimited
-open files                      (-n) 655350
+open files                      (-n) 65535
 pipe size            (512 bytes, -p) 8
 POSIX message queues     (bytes, -q) 819200
 real-time priority              (-r) 0
-stack size              (kbytes, -s) 10240
+stack size              (kbytes, -s) 8192
 cpu time               (seconds, -t) unlimited
-max user processes              (-u) 386774
+max user processes              (-u) 4096
 virtual memory          (kbytes, -v) unlimited
 file locks                      (-x) unlimited
 ```
@@ -442,7 +544,7 @@ file locks                      (-x) unlimited
 7. 物理机内存是多少？
 
 ```
-48G
+8G
 ```
 
 8. 结果输出顺序咋样？
@@ -454,7 +556,19 @@ file locks                      (-x) unlimited
 9. 网络能力咋样？
 
 ```
-传输10G的单个大文件，速度在45MB/s
+在客户端执行iperf传输1G数据的结果（每秒传输100MB）：
+[ ID] Interval       Transfer     Bandwidth
+[  3]  0.0- 1.0 sec   182 MBytes  1.53 Gbits/sec
+[  3]  1.0- 2.0 sec   103 MBytes   865 Mbits/sec
+[  3]  2.0- 3.0 sec  91.0 MBytes   763 Mbits/sec
+[  3]  3.0- 4.0 sec   100 MBytes   843 Mbits/sec
+[  3]  4.0- 5.0 sec  91.0 MBytes   763 Mbits/sec
+[  3]  5.0- 6.0 sec  98.9 MBytes   829 Mbits/sec
+[  3]  6.0- 7.0 sec  98.1 MBytes   823 Mbits/sec
+[  3]  7.0- 8.0 sec   104 MBytes   876 Mbits/sec
+[  3]  8.0- 9.0 sec  97.6 MBytes   819 Mbits/sec
+[  3]  9.0-10.0 sec  97.6 MBytes   819 Mbits/sec
+[  3]  0.0-10.2 sec  1.04 GBytes   879 Mbits/sec
 ```
 
 10. 结果中列的顺序怎样？
