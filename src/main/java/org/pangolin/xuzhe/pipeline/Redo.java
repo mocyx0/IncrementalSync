@@ -18,53 +18,42 @@ public class Redo {
     public Record redo(String logInfo){
         Record r = null;
         Log log = Log.parser(logInfo);
-//        if(log.op == 'D'){
-//            if(!pkMap.containsKey(log.columns[0].oldLongValue))
-//                pkMap.put(log.columns[0].oldLongValue, null);
-//        }
-        if(log.op != 'D'){
+
+        if(log.op == 'D') {
+            return r;
+        }else{
             long newPk = log.columns[0].newLongValue;
             if((newPk <= beginPk || newPk >= endPk) && !pkMap.containsKey(newPk)){
                 return r;
             }
-        }
-        if (log.op == 'U') {
-            updateCurrentIdKey(log);
-            r = pkMap.get(log.getCurrentNewkey());
-            if(r == null){
-                r = Record.createFromLastLog(log);
-                pkMap.put(log.getCurrentNewkey(),r);
+            if (log.op == 'U') {
+                long oldPk = log.columns[0].oldLongValue;
+                r = updateRecord(log, newPk);
+                if(oldPk != newPk){
+                    pkMap.remove(newPk);
+                    pkMap.put(oldPk,r);
+                }
             }
-            r.updateResult(log);
-            if(log.getCurrentOldKey() != log.getCurrentNewkey()){
-                pkMap.remove(log.getCurrentNewkey());
-                pkMap.put(log.getCurrentOldKey(),r);
-            }
-        }
-        if(log.op == 'I'){
-            r = pkMap.get(log.columns[0].newLongValue);
-            if(r == null){
-                r = Record.createFromLastLog(log);
-                pkMap.put(log.getCurrentNewkey(),r);
-            }
-            r.updateResult(log);
-            r.setLog(log);
+            if(log.op == 'I'){
+                r = updateRecord(log, newPk);
+                r.setLog(log);
 //            resualt = r.updateInsertInfo(log);
-            pkMap.remove(log.columns[0].newLongValue);
-            return r;
+                pkMap.remove(newPk);
+                return r;
+            }
         }
         return null;
     }
 
-
-    private void updateCurrentIdKey(Log log){
-        for (ColumnLog columnLog : log.columns) {
-            if (columnLog.columnInfo.isPK) {
-                log.setCurrentOldKey(columnLog.oldLongValue);
-                log.setCurrentNewkey(columnLog.newLongValue);
-                break;
-            }
+    private Record updateRecord(Log log, long newPk) {
+        Record r;
+        r = pkMap.get(newPk);
+        if(r == null){
+            r = new Record(newPk);
+            pkMap.put(newPk,r);
         }
+        r.updateResult(log);
+        return r;
     }
 
 }
