@@ -89,18 +89,17 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
             ArrayList<DumpBlock> arr = blocks.get(i);
             for (DumpBlock block : arr) {
                 //打印一部分输出
-                /*
                 if (printLineCount < Config.PRINT_RESULT_LINE) {
                     String s = new String(buffer, (int) block.pos, block.length);
                     String[] ss = s.split("\\n");
                     int j = 0;
                     while (j < ss.length && printLineCount < Config.PRINT_RESULT_LINE) {
-                        logger.info(ss[j]);
+                        //    logger.info(ss[j]);
                         printLineCount++;
                         j++;
                     }
+                    logger.info(s);
                 }
-                */
                 //raf.write(buffer.array(), (int) block.pos, block.length);
                 raf.write(buffer, (int) block.pos, block.length);
             }
@@ -122,7 +121,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
         //logger.info("thread name " + Thread.currentThread().getName());
 
         ByteBuf result = (ByteBuf) msg;
-        logger.info(String.format("channelRead size:%d", result.readableBytes()));
+        //logger.info(String.format("channelRead size:%d", result.readableBytes()));
         int readlLen = result.readableBytes();
         result.readBytes(buffer, writeOff, result.readableBytes());
         writeOff += readlLen;

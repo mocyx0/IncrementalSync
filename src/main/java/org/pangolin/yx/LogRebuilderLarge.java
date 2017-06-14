@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yangxiao on 2017/6/11.
- * 分块压缩输出
+ *
  */
 public class LogRebuilderLarge {
     private static AliLogData aliLogData;
@@ -191,7 +191,6 @@ public class LogRebuilderLarge {
 
     public static void run() throws Exception {
         int thCount = Config.CPU_COUNT;
-        thCount = 4;
         latch = new CountDownLatch(thCount);
         long len = Config.queryData.end - Config.queryData.start - 1;
         long blockLen = len / thCount;
