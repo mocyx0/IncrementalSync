@@ -70,6 +70,9 @@ public class ResultWriter {
             }
         } else {
         */
+        byte[] data = new byte[buffer.limit()];
+        buffer.get(data);
+
         Channel channel = NetServerHandler.getClientChannel();
         if (channel == null) {
             Config.serverLogger.info("client channel is empty");
@@ -77,9 +80,9 @@ public class ResultWriter {
             if (buffer.limit() == 0) {
                 Config.serverLogger.info("buffer limit =0");
             }
-            ByteBuf byteBuf = Unpooled.wrappedBuffer(buffer.array(), buffer.arrayOffset(), buffer.limit());
+            ByteBuf byteBuf = Unpooled.wrappedBuffer(data, 0, data.length);
             channel.writeAndFlush(byteBuf);
-            Config.serverLogger.info("channel send data");
+
         }
     }
 

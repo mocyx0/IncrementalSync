@@ -60,12 +60,12 @@ public class MServer {
         long t3 = System.currentTimeMillis();
         logger.info("rebuild done");
         logger.info(String.format("cost time  index:%d   rebuild:%d", t2 - t1, t3 - t2));
+        logger.info(String.format("parse log count: %d", Util.parseLogCount.get()));
         logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
         logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
         logger.info(String.format("read load count: %d", Util.readLogCount.get()));
-        logger.info(String.format("out put line : %d", LogRebuilderLarge.outputCount.get()));
+        logger.info(String.format("out put line : %d,  byte %d", LogRebuilderLarge.outputCount.get(), LogRebuilderLarge.sendSize.get()));
     }
-
 
     private static void doTest() throws Exception {
         logger.info("doTest start");

@@ -53,7 +53,8 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
     private static int printLineCount = 0;
 
     private void dumpToFile() throws Exception {
-        logger.info("start dump");
+        logger.info(String.format("start dump recv size %d", writeOff));
+
         ByteBuffer bf = ByteBuffer.wrap(buffer);
         bf.position(writeOff);
 
@@ -64,6 +65,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
             if (index == 0) {
                 break;
             } else {
+                int seq = bf.getInt();
                 int size = bf.getInt();
                 if (!blocks.containsKey(index)) {
                     blocks.put(index, new ArrayList<DumpBlock>());
@@ -73,8 +75,13 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
                 newBlock.pos = bf.position();
                 newBlock.length = size;
                 arr.add(newBlock);
-                bf.position(bf.position() + size);
+                if (size > 1000) {
+                    //logger.info(String.format("block size %d", bf.position() + size));
+                }
 
+
+                bf.position(bf.position() + size);
+                //logger.info(String.format("index %d ,seq %d , block size %d , new pos %d", index, seq, size, bf.position()));
             }
         }
         //write to file
@@ -82,6 +89,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
             ArrayList<DumpBlock> arr = blocks.get(i);
             for (DumpBlock block : arr) {
                 //打印一部分输出
+                /*
                 if (printLineCount < Config.PRINT_RESULT_LINE) {
                     String s = new String(buffer, (int) block.pos, block.length);
                     String[] ss = s.split("\\n");
@@ -92,12 +100,14 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
                         j++;
                     }
                 }
+                */
                 //raf.write(buffer.array(), (int) block.pos, block.length);
                 raf.write(buffer, (int) block.pos, block.length);
             }
         }
+        logger.info(String.format("end dump,file size:%d", raf.length()));
         raf.close();
-        logger.info("end dump");
+
     }
 
     //
@@ -108,7 +118,9 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
 
     // 接收server端的消息，并打印出来
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public synchronized void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        //logger.info("thread name " + Thread.currentThread().getName());
+
         ByteBuf result = (ByteBuf) msg;
         logger.info(String.format("channelRead size:%d", result.readableBytes()));
         int readlLen = result.readableBytes();

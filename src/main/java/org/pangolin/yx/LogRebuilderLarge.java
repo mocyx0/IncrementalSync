@@ -18,6 +18,8 @@ public class LogRebuilderLarge {
 
     public static int BUFFER_SIZE = 1024 * 1024;
 
+    public static AtomicInteger sendSize = new AtomicInteger();
+
     public static void init(AliLogData aliLogData) {
         LogRebuilderLarge.aliLogData = aliLogData;
 
@@ -30,6 +32,7 @@ public class LogRebuilderLarge {
         long end;//close
         int index;
         long curId;
+        AtomicInteger seq = new AtomicInteger();
 
         private ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
         ByteBuffer newBuffer = ByteBuffer.allocate(BUFFER_SIZE + 128);
@@ -61,11 +64,14 @@ public class LogRebuilderLarge {
                         newBuffer.clear();
                         //write index and limit
                         newBuffer.putInt(index);
+                        newBuffer.putInt(seq.incrementAndGet());
                         newBuffer.putInt(buffer.limit());
                         newBuffer.put(buffer);
                         newBuffer.flip();
 
                         ResultWriter.writeBuffer(newBuffer);
+                        //Config.serverLogger.info(String.format("channel send data index %d, seq %d,size %d, real size %d", index, seq.get(), buffer.limit(), newBuffer.limit()));
+                        sendSize.addAndGet(newBuffer.limit());
                     }
                 }
             } catch (Exception e) {
@@ -167,6 +173,11 @@ public class LogRebuilderLarge {
                 try {
                     getRecord(curId);
                     curId++;
+                    /* 每行都输出  用于测试
+                    if (buffer.position() != 0) {
+                        break;
+                    }
+                    */
                 } catch (BufferOverflowException e) {
                     buffer.position(oldPos);
                     break;
