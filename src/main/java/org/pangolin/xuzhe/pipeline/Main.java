@@ -7,11 +7,8 @@ import java.util.ArrayList;
  */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        Thread t1 = new Thread(new ReadThread());
-        Thread t2 = new Thread(new Filter());
-
+        Thread t1 = new Thread(new Client());
         t1.start();
-         t2.start();
 
 
     }

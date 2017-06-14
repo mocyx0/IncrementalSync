@@ -1,5 +1,9 @@
 package org.pangolin.xuzhe.pipeline;
 
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -16,9 +20,13 @@ public class Filter extends Thread {
     public static final BlockingQueue<ArrayList<String>> dealtResult = new ArrayBlockingQueue<ArrayList<String>>(100);
     @Override
     public void run() {
-        long beginPk = 12;
-        long endPk = 20;
+        long beginPk = 600;
+        long endPk = 700;
+        BufferedWriter bw;
         try {
+
+               bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/G:/研究生/AliCompetition/quarter-final/home/data/hehe.txt")));
+
             StringArrayListPool stringArrayListPool = StringArrayListPool.getInstance();
             ArrayList<String> out = stringArrayListPool.get();
             ArrayList<String> storeResults = stringArrayListPool.get();
@@ -26,7 +34,6 @@ public class Filter extends Thread {
             boolean flag = false;
             LogParser.updatePkSet(beginPk,endPk);
             while (true) {
-
                 readList = logStringListQueue.take();
                 if(readList == EMPTY_STRING_LIST) {
                     break;
@@ -34,7 +41,8 @@ public class Filter extends Thread {
                 for (String scanResult : readList) {
                     flag = LogParser.isBelongsToClient(scanResult, out);
                     if (flag == true) {
-//                        System.out.println(scanResult);
+                         System.out.println(scanResult);
+                        bw.write(scanResult + "\n");
                         if (storeResults.size() == STRING_LIST_SIZE) {
 //                            dealtResult.put(storeResults);
                             stringArrayListPool.put(storeResults);
@@ -51,7 +59,8 @@ public class Filter extends Thread {
                     storeResults = stringArrayListPool.get();
                 }
             }
-        } catch (InterruptedException e) {
+            bw.close();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
