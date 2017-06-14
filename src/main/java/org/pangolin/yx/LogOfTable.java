@@ -3,7 +3,6 @@ package org.pangolin.yx;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -49,7 +48,7 @@ class LogOfTable {
     */
 
     private void putToBufferRaw(ByteBuffer buffer, LogRecord record) throws Exception {
-        buffer.putInt(record.offset);
+        buffer.putInt(record.offsetInBlock);
         //buffer.putInt(record.length);
         buffer.putInt(record.preLogOff);
         /*
@@ -57,13 +56,13 @@ class LogOfTable {
         if (record.opType == Config.OP_TYPE_UPDATE) {
             buffer.putLong(record.preId);
             buffer.putLong(record.id);
-            buffer.putLong(record.offset);
+            buffer.putLong(record.offsetInFile);
             buffer.putInt(record.length);
             buffer.putInt(record.preLogOff);
 
         } else if (record.opType == Config.OP_TYPE_INSERT) {
             buffer.putLong(record.id);
-            buffer.putLong(record.offset);
+            buffer.putLong(record.offsetInFile);
             buffer.putInt(record.length);
             //buffer.putInt(record.preLogOff);
         } else {
@@ -74,7 +73,7 @@ class LogOfTable {
 
     private LogRecord readFromBuffer(ByteBuffer buffer) throws Exception {
         LogRecord record = new LogRecord();
-        record.offset = buffer.getInt();
+        record.offsetInBlock = buffer.getInt();
         //record.length = buffer.getInt();
         record.preLogOff = buffer.getInt();
         return record;
@@ -84,13 +83,13 @@ class LogOfTable {
         if (record.opType == Config.OP_TYPE_UPDATE) {
             record.preId = buffer.getLong();
             record.id = buffer.getLong();
-            record.offset = buffer.getLong();
+            record.offsetInFile = buffer.getLong();
             record.length = buffer.getInt();
             record.preLogOff = buffer.getInt();
         } else if (record.opType == Config.OP_TYPE_INSERT) {
             record.preId = -1;
             record.id = buffer.getLong();
-            record.offset = buffer.getLong();
+            record.offsetInFile = buffer.getLong();
             record.length = buffer.getInt();
             record.preLogOff = -1;
         } else {
@@ -138,7 +137,9 @@ class LogOfTable {
         if (logOff.containsKey(id)) {
             //return logArray.get(logOff.get(id));
             int off = logOff.get(id);
-            return getLog(off);
+            LogRecord record = getLog(off);
+
+            return record;
         } else {
             return null;
         }

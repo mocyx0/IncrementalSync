@@ -146,7 +146,7 @@ public class LogRebuilderLarge {
                     }
                     LogRecord lastLog = logOfTable.getLogById(targetId);
                     while (lastLog != null) {
-                        lastLog.logPath = blockLog.fileBlock.path;
+                        LogParser.fillFileInfo(lastLog, blockLog);
                         logs.add(lastLog);
                         //读取log信息
                         RandomAccessFile raf = getLogFile(lastLog.logPath);
@@ -205,6 +205,7 @@ public class LogRebuilderLarge {
             //index =0 表示结束
             Thread th = new Thread(new Worker(s, e, i + 1));
             th.start();
+
         }
         latch.await();
         ByteBuffer bf = ByteBuffer.allocate(16);

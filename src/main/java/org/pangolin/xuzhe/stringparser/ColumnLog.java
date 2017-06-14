@@ -63,7 +63,7 @@ public class ColumnLog {
 //        } catch (UnsupportedEncodingException e) {
 //
 //        }
-//        int next = offset,  i = offset, j;
+//        int next = offsetInBlock,  i = offsetInBlock, j;
 ////        i = findNext(bytes, next, limit);
 //        j = i;
 //        // 找到:的坐标，用于抽取出列名，类型，是否主键

@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,7 +23,8 @@ public class LogParserTest {
     }
 
 
-    private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
+    //private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
+    private static ArrayList<LogBlock> logBlocks = new ArrayList<>();
     private static final AliLogData aliLogData = new AliLogData();
     private static AtomicInteger insertCount = new AtomicInteger();
     private static AtomicInteger updateCount = new AtomicInteger();
@@ -37,28 +35,59 @@ public class LogParserTest {
 
     private static ConcurrentHashMap<String, OpCount> tableOpCount = new ConcurrentHashMap<>();
 
+    private static long allLogFileLength() {
+        long len = 0;
+        int fileIndex = 1;
+        while (true) {
+            String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
+            File file = new File(path);
+            if (file.exists()) {
+                len += file.length();
+            } else {
+                break;
+            }
+            fileIndex++;
+        }
+        return len;
+    }
 
-    private static void splitLogFile() {
+    private static void splitLogFile(int n) {
+        long totalLength = allLogFileLength();
+        long blockLength = totalLength / n;
+
         int fileIndex = 1;
         int blockIndex = 0;
+        long curLen = 0;
+        LogBlock logBlock = new LogBlock();
+        logBlock.index = blockIndex;
         while (true) {
             String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
             File file = new File(path);
             if (file.exists()) {
                 long off = 0;
                 while (off < file.length()) {
-                    FileBlock newBlock = new FileBlock();
-                    newBlock.path = path;
-                    newBlock.index = blockIndex++;
-                    newBlock.length = (int) Math.min(Config.BLOCK_SIZE, file.length() - off);
-                    newBlock.offset = off;
-                    off += Config.BLOCK_SIZE;
-                    fileBlocks.add(newBlock);
+                    long mapLen = Math.min(blockLength - curLen, file.length() - off);
+                    FileBlock newFileBlock = new FileBlock();
+                    newFileBlock.path = path;
+                    newFileBlock.length = mapLen;
+                    newFileBlock.offsetInFile = off;
+                    newFileBlock.offInBlock = (int) curLen;
+                    logBlock.fileBlocks.add(newFileBlock);
+                    curLen += mapLen;
+                    off += mapLen;
+                    if (curLen == blockLength) {
+                        //new block
+                        logBlocks.add(logBlock);
+                        blockIndex++;
+                        logBlock = new LogBlock();
+                        logBlock.index = blockIndex;
+                        curLen = 0;
+                    }
                 }
-                fileIndex++;
             } else {
                 break;
             }
+            fileIndex++;
         }
     }
 
@@ -93,22 +122,26 @@ public class LogParserTest {
     }
 
     private static class Worker implements Runnable {
+        private LogBlock logBlock;
+
+        Worker(LogBlock logBlock) {
+            this.logBlock = logBlock;
+        }
+
         @Override
         public void run() {
             try {
-                while (true) {
-                    FileBlock block = fileBlocks.poll();
-                    if (block == null) {
-                        break;
-                    } else {
-                        BlockLog blockLog = parseLogBlock(block);
-                        synchronized (aliLogData) {
-                            aliLogData.blockLogs.add(blockLog);
-                        }
-                        //logger.info(String.format("Worker parse done, file: %s index: %d", block.path, block.index));
-                        latch.countDown();
+                BlockLog blockLog = new BlockLog();
+                blockLog.logBlock = logBlock;
+                for (FileBlock fb : logBlock.fileBlocks) {
+                    parseLogBlock(fb, blockLog);
+                    synchronized (aliLogData) {
+                        aliLogData.blockLogs.add(blockLog);
                     }
                 }
+                latch.countDown();
+                logger.info("worker done");
+
             } catch (Exception e) {
                 logger.info("{}", e);
                 System.exit(0);
@@ -122,12 +155,8 @@ public class LogParserTest {
 
     private static CountDownLatch latch;
 
-    private static BlockLog parseLogBlock(FileBlock block) throws Exception {
-        BlockLog blockLog = new BlockLog();
-        blockLog.fileBlock = block;
-        LineReader lineReader = new LineReader(block.path, block.offset, block.length);
-
-
+    private static BlockLog parseLogBlock(FileBlock block, BlockLog blockLog) throws Exception {
+        LineReader lineReader = new LineReader(block.path, block.offsetInFile, block.length);
         ReadLineInfo line = lineReader.readLine();
         int lineIndex = 0;
         try {
@@ -151,15 +180,15 @@ public class LogParserTest {
     public static AliLogData parseLog() throws Exception {
         logger = LoggerFactory.getLogger(Server.class);
         long t1 = System.currentTimeMillis();
-        splitLogFile();
-        latch = new CountDownLatch(fileBlocks.size());
-        int cpu = Runtime.getRuntime().availableProcessors();
-        cpu = 1;
-        for (int i = 0; i < cpu; i++) {
-            Thread th = new Thread(new Worker());
+        splitLogFile(Config.CPU_COUNT);
+
+        latch = new CountDownLatch(logBlocks.size());
+        for (int i = 0; i < logBlocks.size(); i++) {
+            Thread th = new Thread(new Worker(logBlocks.get(i)));
             th.start();
         }
         latch.await();
+
         long t2 = System.currentTimeMillis();
         logger.info(String.format("parser test done ,cost time %d", t2 - t1));
         logger.info(String.format("line:%d update:%d insert:%d delete:%d ", lineCount.get(), updateCount.get(), insertCount.get(), deleteCount.get()));

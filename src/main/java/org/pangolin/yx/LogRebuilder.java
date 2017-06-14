@@ -46,7 +46,8 @@ public class LogRebuilder {
             LogRecord lastLog = logOfTable.getLogById(targetId);
             //
             while (lastLog != null) {
-                lastLog.logPath = blockLog.fileBlock.path;
+                LogParser.fillFileInfo(lastLog,blockLog);
+
                 re.add(lastLog);
                 if (lastLog.preLogOff != -1) {
                     lastLog = logOfTable.getLog(lastLog.preLogOff);

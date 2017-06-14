@@ -83,8 +83,12 @@ public class MServer {
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
-
         logger.info("doTest done");
+        //
+        ByteBuffer bf = ByteBuffer.allocate(16);
+        bf.putInt(0);
+        bf.flip();
+        ResultWriter.writeBuffer(bf);
     }
 
 
@@ -96,6 +100,7 @@ public class MServer {
                 //运行我们的程序
                 if (Config.TEST_MODE.equals("test")) {
                     doTest();
+
                 } else if (Config.TEST_MODE.equals("real")) {
                     getResult();
                 } else if (Config.TEST_MODE.equals("mix")) {

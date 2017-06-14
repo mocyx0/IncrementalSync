@@ -5,9 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,7 +56,8 @@ class BlockLog {
     TableInfo tableInfo = null;
     //HashMap<String, LogOfTable> logInfos = new HashMap<>();
     LogOfTable logOfTable = new LogOfTable();
-    FileBlock fileBlock;
+    //FileBlock fileBlock;
+    LogBlock logBlock;
 
     public void indexDone() {
         if (logOfTable != null) {
@@ -67,17 +66,25 @@ class BlockLog {
     }
 }
 
+class LogBlock {
+    ArrayList<FileBlock> fileBlocks = new ArrayList<>();
+    int index;
+}
+
 class FileBlock {
     String path;
     int index;
-    long offset;
-    int length;
+    long offsetInFile;
+    long length;
+    //整体off
+    int offInBlock;
 }
+
 
 class LogRecord {
     //序列化区域
     //file info
-    public int offset;
+    public int offsetInBlock;//这是在这个logblock中的偏移
     public int preLogOff;
 
     //非序列化
@@ -85,8 +92,8 @@ class LogRecord {
     public byte opType;
     public long preId;
     public long id;
-    //上一条关联日志在记录中的索引
-    public String logPath;
+    public long localOff = 0;//文件中的偏移
+    public String logPath;//上一条关联日志在记录中的索引
     //public int preLogIndex = -1;
     //只有在rebuild时才会有数据
     public ArrayList<LogColumnInfo> columns = null;
@@ -95,34 +102,90 @@ class LogRecord {
 
 public class LogParser {
     private static Logger logger = LoggerFactory.getLogger(Server.class);
-    private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
+    //private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
+    private static ArrayList<LogBlock> logBlocks = new ArrayList<>();
     private static final AliLogData aliLogData = new AliLogData();
     private static AtomicInteger insertCount = new AtomicInteger();
     private static AtomicInteger updateCount = new AtomicInteger();
     private static AtomicInteger deleteCount = new AtomicInteger();
     private static ArrayList<String> filePathArray = new ArrayList<>();
 
-    private static void splitLogFile() {
+    private static ArrayList<Long> fileLengths = new ArrayList<>();
+    private static ArrayList<String> filePaths = new ArrayList<>();
+
+    //根据offset 填写对应的文件和本地偏移
+    public static void fillFileInfo(LogRecord logRecord, BlockLog blockLog) {
+        long off = logRecord.offsetInBlock;
+        LogBlock logBlock = blockLog.logBlock;
+        for (int i = 0; i < logBlock.fileBlocks.size(); i++) {
+            FileBlock fileBlock = logBlock.fileBlocks.get(i);
+            if (off < fileBlock.offInBlock + fileBlock.length) {
+                //in this file
+                logRecord.logPath = fileBlock.path;
+                logRecord.localOff = off - fileBlock.offInBlock + fileBlock.offsetInFile;
+                break;
+            }
+        }
+    }
+
+    private static long allLogFileLength() {
+        long len = 0;
+        int fileIndex = 1;
+        while (true) {
+            String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
+            File file = new File(path);
+            if (file.exists()) {
+                len += file.length();
+                fileLengths.add(file.length());
+                filePaths.add(path);
+            } else {
+                break;
+            }
+            fileIndex++;
+        }
+        return len;
+    }
+
+    private static void splitLogFile(int n) {
+        long totalLength = allLogFileLength();
+        long blockLength = totalLength / n;
+
         int fileIndex = 1;
         int blockIndex = 0;
+        long curLen = 0;
+        LogBlock logBlock = new LogBlock();
+        logBlock.index = blockIndex;
         while (true) {
             String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
             File file = new File(path);
             if (file.exists()) {
                 long off = 0;
                 while (off < file.length()) {
-                    FileBlock newBlock = new FileBlock();
-                    newBlock.path = path;
-                    newBlock.index = blockIndex++;
-                    newBlock.length = (int) Math.min(Config.BLOCK_SIZE, file.length() - off);
-                    newBlock.offset = off;
-                    off += Config.BLOCK_SIZE;
-                    fileBlocks.add(newBlock);
+                    long mapLen = Math.min(blockLength - curLen, file.length() - off);
+                    FileBlock newFileBlock = new FileBlock();
+                    newFileBlock.path = path;
+                    newFileBlock.length = mapLen;
+                    newFileBlock.offsetInFile = off;
+                    //只要每个block小于2G 这就是ok的
+                    newFileBlock.offInBlock = (int) curLen;
+                    logBlock.fileBlocks.add(newFileBlock);
+                    //logBlock.fileBlockLength.add(mapLen);
+                    //logBlock.filePaths.add(path);
+                    curLen += mapLen;
+                    off += mapLen;
+                    if (curLen == blockLength) {
+                        //new block
+                        logBlocks.add(logBlock);
+                        blockIndex++;
+                        logBlock = new LogBlock();
+                        logBlock.index = blockIndex;
+                        curLen = 0;
+                    }
                 }
-                fileIndex++;
             } else {
                 break;
             }
+            fileIndex++;
         }
     }
 
@@ -139,7 +202,7 @@ public class LogParser {
         }
     }
 
-    private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog) throws Exception {
+    private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog, FileBlock fileBlock) throws Exception {
         String line = lineInfo.line;
         StringParser parser = new StringParser(line, 0);
         String uid = Util.getNextToken(parser, '|');
@@ -192,13 +255,17 @@ public class LogParser {
         LogRecord linfo = new LogRecord();
 
         linfo.opType = stringToOp(op);
-        linfo.logPath = blockLog.fileBlock.path;
-        linfo.offset = lineInfo.off;
+        //linfo.logPath = blockLog.fileBlock.path;
+        linfo.offsetInBlock = (int) (lineInfo.off + fileBlock.offInBlock - fileBlock.offsetInFile);
         linfo.length = lineInfo.length;
         if (op.equals("U")) {
             linfo.id = Long.parseLong(cinfo.newValue);
             linfo.preId = Long.parseLong(cinfo.oldValue);
-            updateCount.incrementAndGet();
+            if (updateCount.incrementAndGet() == 1) {
+                //打印第一条update
+                logger.info(lineInfo.line);
+            }
+
         } else if (op.equals("I")) {
             linfo.id = Long.parseLong(cinfo.newValue);
             insertCount.incrementAndGet();
@@ -212,21 +279,25 @@ public class LogParser {
     }
 
     private static class Worker implements Runnable {
+        private LogBlock logBlock;
+
+        Worker(LogBlock logBlock) {
+            this.logBlock = logBlock;
+        }
+
         @Override
         public void run() {
             try {
-                while (true) {
-                    FileBlock block = fileBlocks.poll();
-                    if (block == null) {
-                        break;
-                    } else {
-                        BlockLog blockLog = parseLogBlock(block);
-                        synchronized (aliLogData) {
-                            aliLogData.blockLogs.add(blockLog);
-                        }
-                        latch.countDown();
-                    }
+                BlockLog blockLog = new BlockLog();
+                blockLog.logBlock = logBlock;
+                for (FileBlock fb : logBlock.fileBlocks) {
+                    parseLogBlock(fb, blockLog);
                 }
+                synchronized (aliLogData) {
+                    aliLogData.blockLogs.add(blockLog);
+                }
+                blockLog.indexDone();
+                latch.countDown();
                 logger.info("worker done");
 
             } catch (Exception e) {
@@ -239,20 +310,16 @@ public class LogParser {
     private static CountDownLatch latch;
 
 
-    private static BlockLog parseLogBlock(FileBlock block) throws Exception {
-        BlockLog blockLog = new BlockLog();
-        blockLog.fileBlock = block;
-        LineReader lineReader = new LineReader(block.path, block.offset, block.length);
+    private static void parseLogBlock(FileBlock block, BlockLog blockLog) throws Exception {
+        LineReader lineReader = new LineReader(block.path, block.offsetInFile, block.length);
         ReadLineInfo line = lineReader.readLine();
         int lineIndex = 1;
         while (line.line != null) {
             Util.parseLogCount.incrementAndGet();
-            parseLine(line, blockLog);
+            parseLine(line, blockLog, block);
             line = lineReader.readLine();
             lineIndex++;
         }
-        blockLog.indexDone();
-        return blockLog;
     }
 
     private static void sortBlock() {
@@ -267,19 +334,19 @@ public class LogParser {
         Collections.sort(aliLogData.blockLogs, new Comparator<BlockLog>() {
             @Override
             public int compare(BlockLog o1, BlockLog o2) {
-                return o1.fileBlock.index - o2.fileBlock.index;
+                return o1.logBlock.index - o2.logBlock.index;
             }
         });
     }
 
     public static AliLogData parseLog() throws Exception {
 
-        splitLogFile();
-        latch = new CountDownLatch(fileBlocks.size());
-        int cpu = Config.CPU_COUNT;
-        logger.info(String.format("cpu count %d", cpu));
-        for (int i = 0; i < cpu; i++) {
-            Thread th = new Thread(new Worker());
+        splitLogFile(Config.CPU_COUNT);
+
+        latch = new CountDownLatch(logBlocks.size());
+
+        for (int i = 0; i < logBlocks.size(); i++) {
+            Thread th = new Thread(new Worker(logBlocks.get(i)));
             th.start();
         }
         latch.await();

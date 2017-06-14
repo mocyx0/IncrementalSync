@@ -61,7 +61,7 @@ public class Log {
 
     public static int getLineLength(byte[] data, int offset, int limit) {
         byte[] oneLine = new byte[Constants.LINE_MAX_LENGTH];
-//        System.err.println("debug:\n"+getString(data, offset, limit));
+//        System.err.println("debug:\n"+getString(data, offsetInBlock, limit));
         int len = -1;
         --offset;
         while(++offset < limit && (oneLine[++len] = data[offset]) != '\n')
@@ -95,8 +95,8 @@ public class Log {
 //        System.out.println("elapsed time: " + (end-begin)/1000000.0 + "ms");
 //    }
 
-//    public static Log parseLogDebug(byte[] bytes, int offset, int limit) {
-//        int next = offset, i;
+//    public static Log parseLogDebug(byte[] bytes, int offsetInBlock, int limit) {
+//        int next = offsetInBlock, i;
 //        if(bytes[next] == '|') ++next;
 //        i = findNext(bytes, next, limit);
 //        System.out.println(String.format("%2d   binaryID : %s", i, getString(bytes, next, i)));
@@ -127,9 +127,9 @@ public class Log {
 //        return null;
 //    }
 //
-//    public static Log parseLog(byte[] bytes, int offset, int limit) {
+//    public static Log parseLog(byte[] bytes, int offsetInBlock, int limit) {
 //        Log log = new Log();
-//        int next = offset, i;
+//        int next = offsetInBlock, i;
 //        if(bytes[next] == '|') ++next;
 //        next = findNext(bytes, next, limit) + 1; // binaryID
 //        next = findNext(bytes, next, limit) + 1; // timestamp
@@ -147,16 +147,16 @@ public class Log {
 //    }
 //
 //    /**
-//     * 搜索bytes数组中[offset, limit）范围内，以|分割后的第一个字符串，返回字符串尾部的下一个位置在bytes中的索引
+//     * 搜索bytes数组中[offsetInBlock, limit）范围内，以|分割后的第一个字符串，返回字符串尾部的下一个位置在bytes中的索引
 //     * @param bytes 源数据
-//     * @param offset 起始搜索位置
+//     * @param offsetInBlock 起始搜索位置
 //     * @param limit 搜索终止位置，不搜索该位置
 //     * @return 终止符的位置，一般为'|'的位置
 //     */
-//    public static int findNext(byte[] bytes, int offset, int limit) {
-//        while(++offset < limit && bytes[offset] != '|')
+//    public static int findNext(byte[] bytes, int offsetInBlock, int limit) {
+//        while(++offsetInBlock < limit && bytes[offsetInBlock] != '|')
 //            ;
-//        return offset;
+//        return offsetInBlock;
 //    }
 
     public static String getString(byte[] bytes, int offset, int limit) {

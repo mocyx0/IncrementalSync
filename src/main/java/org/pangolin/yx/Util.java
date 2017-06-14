@@ -3,7 +3,6 @@ package org.pangolin.yx;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -29,10 +28,10 @@ public class Util {
     public static void fillLogData(RandomAccessFile raf, LogRecord log) throws Exception {
 
         byte[] buffer = getReadBuffer();
-        if (log.offset < 0) {
+        if (log.offsetInBlock < 0) {
             System.out.print(1);
         }
-        raf.seek(log.offset);
+        raf.seek(log.localOff);
         raf.read(buffer, 0, buffer.length);
         int l = 0;
         for (int i = 0; i < buffer.length; i++) {
