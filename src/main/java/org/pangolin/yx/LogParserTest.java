@@ -161,7 +161,7 @@ public class LogParserTest {
         }
         latch.await();
         long t2 = System.currentTimeMillis();
-        logger.info("parser test done ,cost time", t2 - t1);
+        logger.info(String.format("parser test done ,cost time %d", t2 - t1));
         logger.info(String.format("line:%d update:%d insert:%d delete:%d ", lineCount.get(), updateCount.get(), insertCount.get(), deleteCount.get()));
         for (String s : tableOpCount.keySet()) {
             OpCount opCount = tableOpCount.get(s);
