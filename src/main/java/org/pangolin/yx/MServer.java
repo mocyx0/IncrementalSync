@@ -64,7 +64,7 @@ public class MServer {
         logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
         logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
         logger.info(String.format("read load count: %d", Util.readLogCount.get()));
-        logger.info(String.format("out put line : %d", LogRebuilderLarge.outputCount.get()));
+        logger.info(String.format("out put line : %d,  byte %d", LogRebuilderLarge.outputCount.get(), LogRebuilderLarge.sendSize.get()));
     }
 
     private static void doTest() throws Exception {
