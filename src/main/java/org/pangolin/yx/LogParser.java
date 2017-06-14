@@ -211,6 +211,11 @@ public class LogParser {
         String uid = Util.getNextToken(parser, '|');
         String time = Util.getNextToken(parser, '|');
         String scheme = Util.getNextToken(parser, '|');
+        if (!scheme.equals("middleware5")) {
+            logger.info("ERROR ", scheme);
+            System.exit(0);
+        }
+
         String table = Util.getNextToken(parser, '|');
         if (!scheme.equals(Config.queryData.scheme)) {
             return;

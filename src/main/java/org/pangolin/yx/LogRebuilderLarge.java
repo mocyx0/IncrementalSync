@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yangxiao on 2017/6/11.
- *
  */
 public class LogRebuilderLarge {
     private static AliLogData aliLogData;
@@ -68,7 +67,6 @@ public class LogRebuilderLarge {
                         newBuffer.putInt(buffer.limit());
                         newBuffer.put(buffer);
                         newBuffer.flip();
-
                         ResultWriter.writeBuffer(newBuffer);
                         //Config.serverLogger.info(String.format("channel send data index %d, seq %d,size %d, real size %d", index, seq.get(), buffer.limit(), newBuffer.limit()));
                         sendSize.addAndGet(newBuffer.limit());
