@@ -151,9 +151,9 @@ public class LogRebuilderLarge {
                         logs.add(lastLog);
                         //读取log信息
                         RandomAccessFile raf = getLogFile(lastLog.logPath);
-                        Util.fillLogData(raf, lastLog);
+                        String sline = Util.fillLogData(raf, lastLog);
                         if (lastLog.id != testId) {
-                            Config.serverLogger.info(String.format("id not equal in %d", testId));
+                            Config.serverLogger.info(String.format("id not equal in %d  %s", testId, sline));
                             //System.exit();
                         }
                         testId = lastLog.preId;

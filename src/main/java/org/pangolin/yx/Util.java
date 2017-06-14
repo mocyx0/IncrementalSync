@@ -25,7 +25,7 @@ public class Util {
         return re;
     }
 
-    public static void fillLogData(RandomAccessFile raf, LogRecord log) throws Exception {
+    public static String fillLogData(RandomAccessFile raf, LogRecord log) throws Exception {
 
         byte[] buffer = getReadBuffer();
         if (log.offsetInBlock < 0) {
@@ -75,6 +75,7 @@ public class Util {
         }
         //done
         readLogCount.incrementAndGet();
+        return line;
     }
 
     public static LogColumnInfo getNextColumnInfo(StringParser parser) {
