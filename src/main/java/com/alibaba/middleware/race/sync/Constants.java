@@ -42,7 +42,7 @@ public interface Constants {
 
     int PRECACHE_DELAY = 10000;
     int PRECACHE_THREAD = 3;
-    int CPU_COUNT = 16;
+    int CPU_COUNT = 12;
 
     long BLOCK_SIZE = 1024 * 1024 * 1024 * 2;
 }

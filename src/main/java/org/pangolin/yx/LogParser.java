@@ -314,7 +314,7 @@ public class LogParser {
                 }
                 blockLog.indexDone();
                 latch.countDown();
-                logger.info("worker done");
+                logger.info(String.format("worker done index %d  line %d", logBlock.index, logBlock.lineCount));
 
             } catch (Exception e) {
                 e.printStackTrace();
