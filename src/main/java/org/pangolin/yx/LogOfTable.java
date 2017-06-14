@@ -170,11 +170,11 @@ class LogOfTable {
             putToBufferRaw(buffer, record);
             re = writeOff + pos;
         } catch (BufferOverflowException e) {
-            re = writeOff;
             buffer.position(pos);
             newBufferBlock();
             buffer = datas.get(datas.size() - 1);
             putToBufferRaw(buffer, record);
+            re = writeOff;//从新的地址开始
         }
         return re;
     }

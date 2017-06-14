@@ -153,7 +153,7 @@ public class LogRebuilderLarge {
                         RandomAccessFile raf = getLogFile(lastLog.logPath);
                         String sline = Util.fillLogData(raf, lastLog);
                         if (lastLog.id != testId) {
-                            Config.serverLogger.info(String.format("id not equal in %d  %s", testId, sline));
+                            Config.serverLogger.info(String.format("id not equal in %d rawid %d %s", testId, id, sline));
                             //System.exit();
                         }
                         testId = lastLog.preId;

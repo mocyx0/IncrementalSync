@@ -245,6 +245,7 @@ public class LogParser {
                     info.columns.add(cinfo.name);
                     if (cinfo.isPk == 1) {
                         info.pk = cinfo.name;
+
                     }
                     cinfo = Util.getNextColumnInfo(parser);
                 }
