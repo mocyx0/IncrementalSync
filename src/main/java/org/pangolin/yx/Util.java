@@ -14,7 +14,7 @@ public class Util {
     private static int MAX_LINE_SIZE = 2048;
 
     public static AtomicInteger readLogCount = new AtomicInteger();
-
+    public static AtomicInteger parseLogCount = new AtomicInteger();
     private static ThreadLocal<byte[]> readBuffers = new ThreadLocal<>();
 
     private static byte[] getReadBuffer() {

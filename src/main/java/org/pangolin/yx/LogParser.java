@@ -246,6 +246,7 @@ public class LogParser {
         ReadLineInfo line = lineReader.readLine();
         int lineIndex = 1;
         while (line.line != null) {
+            Util.parseLogCount.incrementAndGet();
             parseLine(line, blockLog);
             line = lineReader.readLine();
             lineIndex++;

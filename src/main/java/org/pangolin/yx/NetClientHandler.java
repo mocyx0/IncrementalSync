@@ -96,8 +96,9 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
                 raf.write(buffer, (int) block.pos, block.length);
             }
         }
+        logger.info(String.format("end dump,file size:%d", raf.length()));
         raf.close();
-        logger.info("end dump");
+
     }
 
     //
@@ -108,7 +109,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
 
     // 接收server端的消息，并打印出来
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+    public synchronized void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ByteBuf result = (ByteBuf) msg;
         logger.info(String.format("channelRead size:%d", result.readableBytes()));
         int readlLen = result.readableBytes();

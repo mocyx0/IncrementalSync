@@ -37,8 +37,12 @@ public interface Constants {
     // 结果文件的命名
     String RESULT_FILE_NAME = "Result.rs";
 
+
     //
+
     int PRECACHE_DELAY = 10000;
     int PRECACHE_THREAD = 3;
     int CPU_COUNT = 4;
+
+    long BLOCK_SIZE = 1024 * 1024 * 1024 * 2;
 }

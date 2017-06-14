@@ -36,6 +36,8 @@ public class Config {
             PRECACHE_DELAY = Constants.PRECACHE_DELAY;
             PRECACHE_THREAD = Constants.PRECACHE_THREAD;
 
+            BLOCK_SIZE = Constants.BLOCK_SIZE;
+
         } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
             DATA_HOME = "/home/ubuntu/alitest/data";
@@ -60,7 +62,7 @@ public class Config {
     // 工作主目录
     public static String TESTER_HOME = "D:/tmp/testhome";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/log";
+    public static String DATA_HOME = "D:/tmp/amimid/logali_multi";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
     public static String RESULT_NAME = "Result.rs";
@@ -75,7 +77,7 @@ public class Config {
     // server端口
     public static Integer SERVER_PORT = 5527;
 
-    public static long BLOCK_SIZE = 1024 * 1024 * 1024 * 2;
+    public static long BLOCK_SIZE = 1024 * 1024 * 256;
 
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
