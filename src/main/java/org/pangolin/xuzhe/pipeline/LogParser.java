@@ -52,8 +52,8 @@ public class LogParser {
         String oldPk = getColumnAllInfoByIndex(items, 0)[1];
         String newPk = getColumnAllInfoByIndex(items, 0)[2];
         if(opType == 'U'){
-            if(!oldPk.equals(newPk) && pkSet.contains(Long.parseLong(oldPk))){
-                pkSet.remove(Long.parseLong(oldPk));
+            if(!oldPk.equals(newPk) && pkSet.contains(Long.parseLong(newPk))){
+                pkSet.remove(Long.parseLong(newPk));
                 if(!pkSet.contains(Long.parseLong(oldPk)))
                     pkSet.add(Long.parseLong(oldPk));
                 return true;
