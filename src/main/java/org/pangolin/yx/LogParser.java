@@ -161,7 +161,10 @@ public class LogParser {
         while (true) {
             String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
             File file = new File(path);
+
             if (file.exists()) {
+                logger.info(String.format("last mod %d", file.lastModified()));
+
                 long off = 0;
                 while (off < file.length()) {
                     long mapLen = Math.min(blockLength - curLen, file.length() - off);
@@ -211,10 +214,13 @@ public class LogParser {
         String uid = Util.getNextToken(parser, '|');
         String time = Util.getNextToken(parser, '|');
         String scheme = Util.getNextToken(parser, '|');
+
+        /*
         if (!scheme.equals("middleware5")) {
             logger.info("ERROR ", scheme);
             System.exit(0);
         }
+        */
 
         String table = Util.getNextToken(parser, '|');
         if (!scheme.equals(Config.queryData.scheme)) {

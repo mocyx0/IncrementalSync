@@ -1,6 +1,8 @@
 package org.pangolin.yx;
 
 
+import com.alibaba.middleware.race.sync.Constants;
+
 import java.io.RandomAccessFile;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
@@ -129,6 +131,7 @@ public class LogRebuilderLarge {
 
         private void getRecord(long id) throws Exception {
             long targetId = id;
+            long testId = id;
             int blockIndex = aliLogData.blockLogs.size() - 1;
             ArrayList<LogRecord> logs = new ArrayList<>();
 
@@ -149,6 +152,11 @@ public class LogRebuilderLarge {
                         //读取log信息
                         RandomAccessFile raf = getLogFile(lastLog.logPath);
                         Util.fillLogData(raf, lastLog);
+                        if (lastLog.id != testId) {
+                            Config.serverLogger.info(String.format("id not equal in %d", testId));
+                            //System.exit();
+                        }
+                        testId = lastLog.preId;
                         if (lastLog.preLogOff != -1) {
                             lastLog = logOfTable.getLog(lastLog.preLogOff);
                         } else {

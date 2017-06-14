@@ -62,7 +62,7 @@ public class Config {
     // 工作主目录
     public static String TESTER_HOME = "D:/tmp/testhome";
     // 赛题数据
-    public static String DATA_HOME = "D:/tmp/amimid/logali_multi";
+    public static String DATA_HOME = "C:/tmp/log10g";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
     public static String RESULT_NAME = "Result.rs";
@@ -98,7 +98,7 @@ public class Config {
     //precache开始后多久开始执行日志分析
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
-    public static int CPU_COUNT = 4;
+    public static int CPU_COUNT = 8;
 
     //
     public static Logger serverLogger = LoggerFactory.getLogger(Server.class);
