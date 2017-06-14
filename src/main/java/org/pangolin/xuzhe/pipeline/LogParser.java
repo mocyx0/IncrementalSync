@@ -51,20 +51,26 @@ public class LogParser {
         char opType = getOpType(items).charAt(0);
         String oldPk = getColumnAllInfoByIndex(items, 0)[1];
         String newPk = getColumnAllInfoByIndex(items, 0)[2];
-        if(opType == 'U'){
-            if(!oldPk.equals(newPk) && pkSet.contains(Long.parseLong(newPk))){
-                pkSet.remove(Long.parseLong(newPk));
-                if(!pkSet.contains(Long.parseLong(oldPk)))
-                    pkSet.add(Long.parseLong(oldPk));
-                return true;
+        if(opType == 'D' && pkSet.contains(Long.parseLong(oldPk))){
+            pkSet.remove(Long.parseLong(oldPk));
+            return true;
+        }else if(opType == 'U'){
+            if(!oldPk.equals(newPk)){
+                if(pkSet.contains(Long.parseLong(newPk))){
+                    pkSet.remove(Long.parseLong(newPk));
+                    if(!pkSet.contains(Long.parseLong(oldPk)))
+                        pkSet.add(Long.parseLong(oldPk));
+                    return true;
+                }else{
+                    if(pkSet.contains(Long.parseLong(oldPk))){
+                        pkSet.remove(Long.parseLong(oldPk));
+                    }
+                }
             }else if(oldPk.equals(newPk) && pkSet.contains(Long.parseLong(oldPk))){
                 return true;
             }
         }else if(opType == 'I' && pkSet.contains(Long.parseLong(newPk))){
                 return true;
-        }else if(opType == 'D' && pkSet.contains(Long.parseLong(oldPk))){
-            pkSet.remove(Long.parseLong(oldPk));
-            return true;
         }
 //        char opType = getOpType(items).charAt(0);
 //        String oldPk = getColumnAllInfoByIndex(items, 0)[1];

@@ -49,7 +49,6 @@ public class ReadingThread extends Thread {
                 int lastReadCnt;
                 int remain = (int)fileSize;
                 while(true) {
-
                     ByteBuffer buffer = pool.get();
                     if(remain < BUFFER_SIZE) {
                         buffer.put((byte)'\n');
@@ -92,7 +91,7 @@ public class ReadingThread extends Thread {
 
     public static void main(String[] args) throws InterruptedException {
         Config.init();
-        String[] fileNameArray = { Config.DATA_HOME + "/3.txt"};
+        String[] fileNameArray = { Config.DATA_HOME + "/canal.txt"};
         Long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();

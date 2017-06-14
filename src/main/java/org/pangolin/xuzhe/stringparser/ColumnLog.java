@@ -5,7 +5,7 @@ import org.pangolin.xuzhe.Column;
 /**
  * Created by ubuntu on 17-6-6.
  */
-public class ColumnLog {
+public class ColumnLog extends org.pangolin.xuzhe.pipeline.ColumnLog {
     public enum Type {
         String,
         Number
