@@ -39,6 +39,6 @@ public interface Constants {
 
     //
     int PRECACHE_DELAY = 10000;
-    int PRECACHE_THREAD = 5;
-    int CPU_COUNT = 12;
+    int PRECACHE_THREAD = 3;
+    int CPU_COUNT = 4;
 }
