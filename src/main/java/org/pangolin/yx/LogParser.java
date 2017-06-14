@@ -131,6 +131,7 @@ public class LogParser {
     private static long allLogFileLength() {
         long len = 0;
         int fileIndex = 1;
+        long totalLen = 0;
         while (true) {
             String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
             File file = new File(path);
@@ -138,11 +139,13 @@ public class LogParser {
                 len += file.length();
                 fileLengths.add(file.length());
                 filePaths.add(path);
+                totalLen += file.length();
             } else {
                 break;
             }
             fileIndex++;
         }
+        logger.info(String.format("file total len %d", totalLen));
         return len;
     }
 
