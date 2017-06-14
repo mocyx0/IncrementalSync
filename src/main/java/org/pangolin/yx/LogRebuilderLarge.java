@@ -130,6 +130,7 @@ public class LogRebuilderLarge {
         }
 
         private void getRecord(long id) throws Exception {
+
             long targetId = id;
             long testId = id;
             int blockIndex = aliLogData.blockLogs.size() - 1;

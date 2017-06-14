@@ -69,6 +69,7 @@ class BlockLog {
 class LogBlock {
     ArrayList<FileBlock> fileBlocks = new ArrayList<>();
     int index;
+    int lineCount = 0;
 }
 
 class FileBlock {
@@ -330,6 +331,8 @@ public class LogParser {
         ReadLineInfo line = lineReader.readLine();
         int lineIndex = 1;
         while (line.line != null) {
+            blockLog.logBlock.lineCount++;
+
             Util.parseLogCount.incrementAndGet();
             parseLine(line, blockLog, block);
             line = lineReader.readLine();
@@ -365,6 +368,15 @@ public class LogParser {
             th.start();
         }
         latch.await();
+
+        StringBuilder info = new StringBuilder();
+        info.append("block lines:");
+        for (int i = 0; i < logBlocks.size(); i++) {
+            info.append(logBlocks.get(i).lineCount);
+            info.append(" ");
+        }
+        logger.info(info.toString());
+
         sortBlock();
         return aliLogData;
 
