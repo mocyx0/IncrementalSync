@@ -94,11 +94,10 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
                     String[] ss = s.split("\\n");
                     int j = 0;
                     while (j < ss.length && printLineCount < Config.PRINT_RESULT_LINE) {
-                        //    logger.info(ss[j]);
+                        logger.info(ss[j]);
                         printLineCount++;
                         j++;
                     }
-                    logger.info(s);
                 }
                 //raf.write(buffer.array(), (int) block.pos, block.length);
                 raf.write(buffer, (int) block.pos, block.length);
