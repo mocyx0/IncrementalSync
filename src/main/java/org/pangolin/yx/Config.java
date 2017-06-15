@@ -40,6 +40,8 @@ public class Config {
 
             COPY_DATA = Constants.COPY_DATA;
 
+            NOT_CHECK_SCHEME = Constants.NOT_CHECK_SCHEME;
+
         } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
             DATA_HOME = "/home/ubuntu/alitest/data";
@@ -99,6 +101,8 @@ public class Config {
 
     public static boolean COPY_DATA = false;
 
+    public static boolean NOT_CHECK_SCHEME = false;
+
     //precache开始后多久开始执行日志分析
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
@@ -106,7 +110,6 @@ public class Config {
 
     //
     public static Logger serverLogger = LoggerFactory.getLogger(Server.class);
-
 
 }
 

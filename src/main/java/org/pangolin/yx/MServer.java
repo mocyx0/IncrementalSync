@@ -54,6 +54,9 @@ public class MServer {
         //read log
         AliLogData data = parser.parseLog();
         logger.info("parseLog done");
+        logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
+        logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
+        logger.info(String.format("insert %d udpate %d delete %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get()));
         //rebuild
         /*
         LogRebuilder rebuider = new LogRebuilder(data);
@@ -68,11 +71,9 @@ public class MServer {
         logger.info("rebuild done");
         logger.info(String.format("cost time  index:%d   rebuild:%d", t2 - t1, t3 - t2));
         // logger.info(String.format("parse log count: %d", Util.parseLogCount.get()));
-        logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
-        logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
         logger.info(String.format("read load count: %d", Util.readLogCount.get()));
         logger.info(String.format("out put line : %d,  byte %d", LogRebuilderLarge.outputCount.get(), LogRebuilderLarge.sendSize.get()));
-        logger.info(String.format("insert %d udpate %d delete %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get()));
+
 
     }
 

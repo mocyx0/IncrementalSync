@@ -90,7 +90,7 @@ public class FileCopy {
             newRaf.close();
         } else {
             int thcount = Config.CPU_COUNT;
-            thcount = 1;//只允许单线程读取
+            //thcount = 1;//只允许单线程读取
             latch = new CountDownLatch(thcount);
             for (String path : files) {
                 File file = new File(path);

@@ -224,15 +224,16 @@ public class LogParser {
         */
 
         String table = Util.getNextToken(parser, '|');
- /*
-        if (!scheme.equals(Config.queryData.scheme)) {
-            return;
+        if (!Config.NOT_CHECK_SCHEME) {
+            if (!scheme.equals(Config.queryData.scheme)) {
+                return;
+            }
+
+            if (!table.equals(Config.queryData.table)) {
+                return;
+            }
         }
 
-        if (!table.equals(Config.queryData.table)) {
-            return;
-        }
-*/
         String op = Util.getNextToken(parser, '|');
 
         //table的第一条insert记录包含所有列, 我们记录下元信息
