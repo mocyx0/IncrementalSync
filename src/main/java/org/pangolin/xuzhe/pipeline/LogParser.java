@@ -1,5 +1,7 @@
 package org.pangolin.xuzhe.pipeline;
 
+import com.koloboke.collect.set.hash.HashLongSets;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
@@ -12,12 +14,14 @@ import static org.pangolin.xuzhe.stringparser.Constants.tableName;
  * Created by ubuntu on 17-6-7.
  */
 public class LogParser {
-    private static final Set<Long> pkSet = new HashSet<>();
+    private static final Set<Long> pkSet = HashLongSets.newMutableSet(2000000);
+
     public static void updatePkSet(long beginPk, long endPk){
         for(long i = endPk - 1; i > beginPk ;i--){
             pkSet.add(i);
         }
     }
+
     public static boolean isBelongsToClient(String str,ArrayList<String> out ) {
         try {
             out.clear();

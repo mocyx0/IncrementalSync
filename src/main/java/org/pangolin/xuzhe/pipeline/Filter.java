@@ -1,5 +1,7 @@
 package org.pangolin.xuzhe.pipeline;
 
+import org.pangolin.yx.Config;
+
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -12,7 +14,7 @@ import static org.pangolin.xuzhe.pipeline.Constants.STRING_LIST_SIZE;
 import static org.pangolin.xuzhe.pipeline.StringArrayListPool.EMPTY_STRING_LIST;
 
 
-/**
+/** TODO 统计一下在各个主键范围的个数，考虑使用位图索引作为PK set
  * Created by 29146 on 2017/6/13.
  */
 public class Filter extends Thread {
@@ -25,7 +27,7 @@ public class Filter extends Thread {
         BufferedWriter bw;
         try {
 
-               bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("/G:/研究生/AliCompetition/quarter-final/home/data/hehe.txt")));
+               bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(Config.MIDDLE_HOME + "/hehe.txt")));
 
             StringArrayListPool stringArrayListPool = StringArrayListPool.getInstance();
             ArrayList<String> out = stringArrayListPool.get();
