@@ -6,14 +6,14 @@ import java.util.Arrays;
 /**
  * Created by ubuntu on 17-6-12.
  */
-public class MyReverseOrderStringBuilder {
+public class MyStringBuilder {
     byte[] value;
-    int remain;
-    public MyReverseOrderStringBuilder(int size) {
+    int count;
+    public MyStringBuilder(int size) {
         value = new byte[size];
-        remain = value.length;
+        count = 0;
     }
-    public MyReverseOrderStringBuilder() {
+    public MyStringBuilder() {
         this(200);
     }
     private void ensureCapacityInternal(int minimumCapacity) {
@@ -22,7 +22,7 @@ public class MyReverseOrderStringBuilder {
     }
 
     void expandCapacity(int minimumCapacity) {
-        int newCapacity = value.length * 2;
+        int newCapacity = value.length * 2 + 2;
         if (newCapacity - minimumCapacity < 0)
             newCapacity = minimumCapacity;
         if (newCapacity < 0) {
@@ -30,24 +30,17 @@ public class MyReverseOrderStringBuilder {
                 throw new OutOfMemoryError();
             newCapacity = Integer.MAX_VALUE;
         }
-        byte[] newValue = new byte[newCapacity];
-        System.arraycopy(value, 0, newValue, value.length, value.length);
-        remain = newValue.length-(value.length-remain);
-        value = newValue;
+        value = Arrays.copyOf(value, newCapacity);
     }
 
     public void append(byte b) {
-//        try {
-            ensureCapacityInternal((value.length - remain) + 1);
-            value[--remain] = b;
-//        } catch (ArrayIndexOutOfBoundsException e) {
-//            e.printStackTrace();
-//        }
+        ensureCapacityInternal(count + 1);
+        value[count++] = b;
     }
 
     public String toString() {
         try {
-            return new String(value, remain, value.length-remain, "utf-8");
+            return new String(value, 0, count, "utf-8");
         } catch (UnsupportedEncodingException e) {
 
         }
@@ -55,10 +48,10 @@ public class MyReverseOrderStringBuilder {
     }
 
     public void clear() {
-        remain = value.length;
+        count = 0;
     }
 
     public int getSize() {
-        return value.length - remain;
+        return count;
     }
 }
