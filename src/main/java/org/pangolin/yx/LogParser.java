@@ -164,7 +164,6 @@ public class LogParser {
             File file = new File(path);
 
             if (file.exists()) {
-                logger.info(String.format("last mod %d", file.lastModified()));
 
                 long off = 0;
                 while (off < file.length()) {
@@ -248,7 +247,6 @@ public class LogParser {
                     info.columns.add(cinfo.name);
                     if (cinfo.isPk == 1) {
                         info.pk = cinfo.name;
-
                     }
                     cinfo = Util.getNextColumnInfo(parser);
                 }

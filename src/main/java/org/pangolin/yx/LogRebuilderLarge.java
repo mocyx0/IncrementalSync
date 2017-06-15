@@ -134,7 +134,12 @@ public class LogRebuilderLarge {
             long targetId = id;
             long testId = id;
             int blockIndex = aliLogData.blockLogs.size() - 1;
-            ArrayList<LogRecord> logs = new ArrayList<>();
+            //ArrayList<LogRecord> logs = new ArrayList<>();
+
+            ArrayList<String> data = new ArrayList<>();
+            TableInfo tinfo = aliLogData.tableInfo;
+            int dataCount = tinfo.columns.size();
+            HashMap<String, String> values = new HashMap<>();
 
             while (blockIndex >= 0) {
                 BlockLog blockLog = aliLogData.blockLogs.get(blockIndex);
@@ -149,10 +154,24 @@ public class LogRebuilderLarge {
                     LogRecord lastLog = logOfTable.getLogById(targetId);
                     while (lastLog != null) {
                         LogParser.fillFileInfo(lastLog, blockLog);
-                        logs.add(lastLog);
+                        //logs.add(lastLog);
                         //读取log信息
                         RandomAccessFile raf = getLogFile(lastLog.logPath);
                         String sline = Util.fillLogData(raf, lastLog);
+
+                        for (LogColumnInfo colInfo : lastLog.columns) {
+                            if (!values.containsKey(colInfo.name)) {
+                                values.put(colInfo.name, colInfo.newValue);
+                            }
+                        }
+                        if (values.size() == dataCount) {
+                            for (String colName : tinfo.columns) {
+                                data.add(values.get(colName));
+                            }
+                            writeToBuffer(buffer, data);
+                            return;
+                        }
+
                         if (lastLog.id != testId) {
                             Config.serverLogger.info(String.format("id not equal in %d rawid %d %s", testId, id, sline));
                             //System.exit();
@@ -169,8 +188,8 @@ public class LogRebuilderLarge {
                 }
                 blockIndex--;
             }
-            ArrayList<String> strs = getRecordData(logs);
-            writeToBuffer(buffer, strs);
+            // ArrayList<String> strs = getRecordData(logs);
+            //writeToBuffer(buffer, strs);
         }
 
         public void nextData() throws Exception {
