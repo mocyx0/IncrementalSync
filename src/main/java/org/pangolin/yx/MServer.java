@@ -72,6 +72,8 @@ public class MServer {
         logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
         logger.info(String.format("read load count: %d", Util.readLogCount.get()));
         logger.info(String.format("out put line : %d,  byte %d", LogRebuilderLarge.outputCount.get(), LogRebuilderLarge.sendSize.get()));
+        logger.info(String.format("insert %d udpate %d delete %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get()));
+
     }
 
     private static void doTest() throws Exception {

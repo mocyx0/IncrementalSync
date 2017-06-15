@@ -106,9 +106,9 @@ public class LogParser {
     //private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
     private static ArrayList<LogBlock> logBlocks = new ArrayList<>();
     private static final AliLogData aliLogData = new AliLogData();
-    private static AtomicInteger insertCount = new AtomicInteger();
-    private static AtomicInteger updateCount = new AtomicInteger();
-    private static AtomicInteger deleteCount = new AtomicInteger();
+    public static AtomicInteger insertCount = new AtomicInteger();
+    public static AtomicInteger updateCount = new AtomicInteger();
+    public static AtomicInteger deleteCount = new AtomicInteger();
     private static ArrayList<String> filePathArray = new ArrayList<>();
 
     private static ArrayList<Long> fileLengths = new ArrayList<>();
