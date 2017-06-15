@@ -38,6 +38,8 @@ public class Config {
 
             BLOCK_SIZE = Constants.BLOCK_SIZE;
 
+            COPY_DATA = Constants.COPY_DATA;
+
         } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
             DATA_HOME = "/home/ubuntu/alitest/data";

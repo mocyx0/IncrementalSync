@@ -33,6 +33,7 @@ public class MServer {
 
         if (Config.COPY_DATA) {
             ArrayList<String> files = Util.logFiles(Config.DATA_HOME);
+            logger.info("start copy");
             FileCopy.copyFile(files, Config.MIDDLE_HOME, false);
         }
 
