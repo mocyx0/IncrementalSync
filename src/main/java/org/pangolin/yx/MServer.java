@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 /**
  * Created by yangxiao on 2017/6/4.
@@ -29,6 +30,11 @@ public class MServer {
 
     private static void getResult() throws Exception {
         // Thread.sleep(5000);
+
+        if (Config.COPY_DATA) {
+            ArrayList<String> files = Util.logFiles(Config.DATA_HOME);
+            FileCopy.copyFile(files, Config.MIDDLE_HOME, false);
+        }
 
         long t1 = System.currentTimeMillis();
 
@@ -60,7 +66,7 @@ public class MServer {
         long t3 = System.currentTimeMillis();
         logger.info("rebuild done");
         logger.info(String.format("cost time  index:%d   rebuild:%d", t2 - t1, t3 - t2));
-       // logger.info(String.format("parse log count: %d", Util.parseLogCount.get()));
+        // logger.info(String.format("parse log count: %d", Util.parseLogCount.get()));
         logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
         logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
         logger.info(String.format("read load count: %d", Util.readLogCount.get()));

@@ -134,7 +134,7 @@ public class LogParser {
         int fileIndex = 1;
         long totalLen = 0;
         while (true) {
-            String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
+            String path = Config.MIDDLE_HOME + "/" + fileIndex + ".txt";
             File file = new File(path);
             if (file.exists()) {
                 len += file.length();
@@ -160,7 +160,7 @@ public class LogParser {
         LogBlock logBlock = new LogBlock();
         logBlock.index = blockIndex;
         while (true) {
-            String path = Config.DATA_HOME + "/" + fileIndex + ".txt";
+            String path = Config.MIDDLE_HOME + "/" + fileIndex + ".txt";
             File file = new File(path);
 
             if (file.exists()) {

@@ -2,6 +2,8 @@ package org.pangolin.yx;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -119,6 +121,19 @@ public class Util {
         return files;
     }
 
+    public static ArrayList<MappedByteBuffer> mapFile(RandomAccessFile raf, FileChannel.MapMode mode) throws Exception {
+        int mmapSize = Integer.MAX_VALUE;
+        ArrayList<MappedByteBuffer> mmaps = new ArrayList<>();
+        long totalSize = raf.length();
+        long mapLen = 0;
+        while (mapLen < totalSize) {
+            int len = (int) Math.min(mmapSize, totalSize - mapLen);
+            MappedByteBuffer mmap = raf.getChannel().map(mode, mapLen, len);
+            mmaps.add(mmap);
+            mapLen += len;
+        }
+        return mmaps;
+    }
 
 }
 

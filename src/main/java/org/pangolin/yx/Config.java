@@ -71,7 +71,7 @@ public class Config {
     // 日志级别
     public static String LOG_LEVEL = "INFO";
     // 中间结果目录
-    public static String MIDDLE_HOME = "D:/tmp/amimid/middle";
+    public static String MIDDLE_HOME = "C:/tmp/log10g1";
     //
     public static String LOG_HOME = "D:/tmp/testhome/logs/" + TEAMCODE;
     // server端口
@@ -94,6 +94,8 @@ public class Config {
     public static byte OP_TYPE_DELETE = 1;
     public static byte OP_TYPE_INSERT = 2;
     public static byte OP_TYPE_UPDATE = 3;
+
+    public static boolean COPY_DATA = false;
 
     //precache开始后多久开始执行日志分析
     public static int PRECACHE_DELAY = 3000;
