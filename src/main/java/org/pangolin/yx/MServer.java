@@ -7,6 +7,7 @@ import io.netty.channel.Channel;
 import org.pangolin.xuzhe.test.IOPerfTest;
 import org.pangolin.xuzhe.test.ReadingThread;
 import org.pangolin.yx.nixu.NXServer;
+import org.pangolin.yx.zhengxu.ZXServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ public class MServer {
         System.setProperty("app.logging.level", Config.LOG_LEVEL);
     }
 
-    private static WorkerServer workerServer = new NXServer();
+    private static WorkerServer workerServer = new ZXServer();
 
 
     private static class Worker implements Runnable {
