@@ -1,10 +1,12 @@
 package org.pangolin.yx.nixu;
 
+import com.alibaba.middleware.race.sync.Client;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.WorkerClient;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -26,7 +28,7 @@ public class NXClient implements WorkerClient {
     }
 
     public NXClient() throws Exception {
-        logger = Config.serverLogger;
+        logger = LoggerFactory.getLogger(Client.class);
         String path = Config.RESULT_HOME + "/" + Config.RESULT_NAME;
         File f = new File(path);
         if (f.exists()) {
