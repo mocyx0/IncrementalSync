@@ -1,6 +1,9 @@
-package org.pangolin.yx;
+package org.pangolin.yx.nixu;
 
 import com.alibaba.middleware.race.sync.Server;
+import org.pangolin.yx.Config;
+import org.pangolin.yx.Util;
+import org.pangolin.yx.nixu.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,11 +98,11 @@ public class LogParserTest {
     private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog) throws Exception {
         String line = lineInfo.line;
         StringParser parser = new StringParser(line, 0);
-        String uid = Util.getNextToken(parser, '|');
-        String time = Util.getNextToken(parser, '|');
-        String scheme = Util.getNextToken(parser, '|');
-        String table = Util.getNextToken(parser, '|');
-        String op = Util.getNextToken(parser, '|');
+        String uid = NXUtil.getNextToken(parser, '|');
+        String time = NXUtil.getNextToken(parser, '|');
+        String scheme = NXUtil.getNextToken(parser, '|');
+        String table = NXUtil.getNextToken(parser, '|');
+        String op = NXUtil.getNextToken(parser, '|');
 
         String hashKey = scheme + " " + table;
         if (!tableOpCount.containsKey(hashKey)) {

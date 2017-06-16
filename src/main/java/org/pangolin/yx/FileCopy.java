@@ -14,6 +14,7 @@ import java.util.concurrent.CountDownLatch;
 
 /**
  * Created by yangxiao on 2017/6/15.
+ * 文件拷贝
  */
 public class FileCopy {
 

@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yangxiao on 2017/6/8.
+ * <p>
  * 注意我们不需要实现remove,size 因为我们不用到这个操作
  */
 public class LinearHashing {

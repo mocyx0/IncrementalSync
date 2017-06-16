@@ -1,6 +1,7 @@
-package org.pangolin.yx;
+package org.pangolin.yx.nixu;
 
 import com.alibaba.middleware.race.sync.Server;
+import org.pangolin.yx.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,12 +45,6 @@ class StringParser {
     }
 }
 
-
-class AliLogData {
-    //HashMap<String, TableInfo> tableInfos = new HashMap<>();
-    TableInfo tableInfo;
-    ArrayList<BlockLog> blockLogs = new ArrayList<>();
-}
 
 class BlockLog {
     //HashMap<String, TableInfo> tableInfos = new HashMap<>();
@@ -212,9 +207,9 @@ public class LogParser {
     private static void parseLine(ReadLineInfo lineInfo, BlockLog blockLog, FileBlock fileBlock) throws Exception {
         String line = lineInfo.line;
         StringParser parser = new StringParser(line, 0);
-        String uid = Util.getNextToken(parser, '|');
-        String time = Util.getNextToken(parser, '|');
-        String scheme = Util.getNextToken(parser, '|');
+        String uid = NXUtil.getNextToken(parser, '|');
+        String time = NXUtil.getNextToken(parser, '|');
+        String scheme = NXUtil.getNextToken(parser, '|');
 
         /*
         if (!scheme.equals("middleware5")) {
@@ -223,7 +218,7 @@ public class LogParser {
         }
         */
 
-        String table = Util.getNextToken(parser, '|');
+        String table = NXUtil.getNextToken(parser, '|');
         if (!Config.NOT_CHECK_SCHEME) {
             if (!scheme.equals(Config.queryData.scheme)) {
                 return;
@@ -234,7 +229,7 @@ public class LogParser {
             }
         }
 
-        String op = Util.getNextToken(parser, '|');
+        String op = NXUtil.getNextToken(parser, '|');
 
         //table的第一条insert记录包含所有列, 我们记录下元信息
         if (op.equals("I")) {
@@ -243,13 +238,13 @@ public class LogParser {
                 TableInfo info = new TableInfo();
                 info.scheme = scheme;
                 info.table = table;
-                LogColumnInfo cinfo = Util.getNextColumnInfo(parser);
+                LogColumnInfo cinfo = NXUtil.getNextColumnInfo(parser);
                 while (cinfo != null) {
                     info.columns.add(cinfo.name);
                     if (cinfo.isPk == 1) {
                         info.pk = cinfo.name;
                     }
-                    cinfo = Util.getNextColumnInfo(parser);
+                    cinfo = NXUtil.getNextColumnInfo(parser);
                 }
                 blockLog.tableInfo = info;
                 parser.off = off;
@@ -257,12 +252,12 @@ public class LogParser {
         }
 
         //解析到主键为止
-        LogColumnInfo cinfo = Util.getNextColumnInfo(parser);
+        LogColumnInfo cinfo = NXUtil.getNextColumnInfo(parser);
         while (cinfo != null) {
             if (cinfo.isPk == 1) {
                 break;
             }
-            cinfo = Util.getNextColumnInfo(parser);
+            cinfo = NXUtil.getNextColumnInfo(parser);
         }
 
         if (cinfo == null) {
@@ -337,7 +332,7 @@ public class LogParser {
         while (line.line != null) {
             blockLog.logBlock.lineCount++;
 
-            Util.parseLogCount.incrementAndGet();
+            NXUtil.parseLogCount.incrementAndGet();
             parseLine(line, blockLog, block);
             line = lineReader.readLine();
             lineIndex++;

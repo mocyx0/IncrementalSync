@@ -8,12 +8,6 @@ import org.slf4j.LoggerFactory;
  * Created by yangxiao on 2017/6/4.
  */
 
-class QueryData {
-    String scheme;
-    String table;
-    long start;
-    long end;
-}
 
 
 public class Config {
