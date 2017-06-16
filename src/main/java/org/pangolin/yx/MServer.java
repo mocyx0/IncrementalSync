@@ -56,7 +56,7 @@ public class MServer {
         logger.info("parseLog done");
         logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
         logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
-        logger.info(String.format("insert %d udpate %d delete %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get()));
+        logger.info(String.format("insert %d udpate %d delete %d   pkUpdate %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get(), LogParser.pkUpdateCount.get()));
         //rebuild
         /*
         LogRebuilder rebuider = new LogRebuilder(data);

@@ -108,6 +108,7 @@ public class LogParser {
     private static final AliLogData aliLogData = new AliLogData();
     public static AtomicInteger insertCount = new AtomicInteger();
     public static AtomicInteger updateCount = new AtomicInteger();
+    public static AtomicInteger pkUpdateCount = new AtomicInteger();
     public static AtomicInteger deleteCount = new AtomicInteger();
     private static ArrayList<String> filePathArray = new ArrayList<>();
 
@@ -277,6 +278,9 @@ public class LogParser {
         if (op.equals("U")) {
             linfo.id = Long.parseLong(cinfo.newValue);
             linfo.preId = Long.parseLong(cinfo.oldValue);
+            if (!cinfo.newValue.equals(cinfo.oldValue)) {
+                pkUpdateCount.incrementAndGet();
+            }
             if (updateCount.incrementAndGet() == 1) {
                 //打印第一条update
                 logger.info(lineInfo.line);
