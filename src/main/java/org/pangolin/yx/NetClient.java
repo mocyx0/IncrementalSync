@@ -36,9 +36,10 @@ public class NetClient {
             });
 
             // Start the client.
-            int n = 10;
+            int n = 10000;
             while (n > 0) {
                 n--;
+                logger.info("try connect");
                 try {
                     ChannelFuture f = b.connect(host, Config.SERVER_PORT).sync();
                     // Wait until the connection is closed.
@@ -46,8 +47,9 @@ public class NetClient {
                     System.exit(0);
                 } catch (Exception e) {
                     logger.info("{}", e);
+
                 }
-                Thread.sleep(5000);
+                Thread.sleep(1000);
             }
 
 

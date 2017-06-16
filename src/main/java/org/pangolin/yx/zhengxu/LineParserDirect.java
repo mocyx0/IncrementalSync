@@ -1,6 +1,5 @@
 package org.pangolin.yx.zhengxu;
 
-import javafx.scene.control.Tab;
 import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
 import org.slf4j.Logger;

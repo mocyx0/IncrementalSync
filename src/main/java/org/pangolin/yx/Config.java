@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
  */
 
 
-
 public class Config {
     private static String runtime = "yx";
 
