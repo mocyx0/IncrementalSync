@@ -1,8 +1,5 @@
-package org.pangolin.yx;
+package org.pangolin.yx.nixu;
 
-import java.io.DataInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**

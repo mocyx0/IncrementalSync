@@ -1,7 +1,9 @@
-package org.pangolin.yx;
+package org.pangolin.yx.nixu;
 
 
-import com.alibaba.middleware.race.sync.Constants;
+import org.pangolin.yx.Config;
+import org.pangolin.yx.ResultWriter;
+import org.pangolin.yx.Util;
 
 import java.io.RandomAccessFile;
 import java.nio.BufferOverflowException;
@@ -157,7 +159,7 @@ public class LogRebuilderLarge {
                         //logs.add(lastLog);
                         //读取log信息
                         RandomAccessFile raf = getLogFile(lastLog.logPath);
-                        String sline = Util.fillLogData(raf, lastLog);
+                        String sline = NXUtil.fillLogData(raf, lastLog);
 
                         for (LogColumnInfo colInfo : lastLog.columns) {
                             if (!values.containsKey(colInfo.name)) {

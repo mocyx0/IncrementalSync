@@ -1,4 +1,7 @@
-package org.pangolin.yx;
+package org.pangolin.yx.nixu;
+
+import org.pangolin.yx.Config;
+import org.pangolin.yx.Util;
 
 import java.io.RandomAccessFile;
 import java.util.*;
@@ -54,7 +57,7 @@ public class LogRebuilder {
                 } else {
                     //这是单个block的第一条日志,上一条日志需要根据preid去查找
                     RandomAccessFile raf = getLogFile(lastLog.logPath);
-                    Util.fillLogData(raf, lastLog);
+                    NXUtil.fillLogData(raf, lastLog);
                     targetId = lastLog.preId;
                     break;
                 }
@@ -89,7 +92,7 @@ public class LogRebuilder {
             ArrayList<LogRecord> logs = kv.getValue();
             for (LogRecord v : logs) {
                 RandomAccessFile raf = getLogFile(v.logPath);
-                Util.fillLogData(raf, v);
+                NXUtil.fillLogData(raf, v);
             }
         }
     }

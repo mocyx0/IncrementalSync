@@ -1,4 +1,8 @@
-package org.pangolin.yx;
+package org.pangolin.yx.nixu;
+
+import org.pangolin.yx.Config;
+import org.pangolin.yx.LinearHashing;
+import org.pangolin.yx.nixu.LogRecord;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
@@ -14,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 
-class LogOfTable {
+public class LogOfTable {
     public static AtomicInteger TOTAL_MEM = new AtomicInteger();
 
     private static int LOG_TYPE_UPDATE = 1;
