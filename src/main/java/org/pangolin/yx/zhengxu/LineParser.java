@@ -62,9 +62,23 @@ public class LineParser {
     private static Logger logger;
     public static TableInfo tableInfo = new TableInfo();
     private static long lineCount = 0;
+    private static LineReader lineReader;
 
     static {
         logger = Config.serverLogger;
+    }
+
+    public static void init(ArrayList<String> paths) throws Exception {
+        lineReader = new LineReader(paths);
+    }
+
+    public static LogRecord nextLine() throws Exception {
+        LineInfo lineInfo = lineReader.nextLine();
+        if (lineInfo != null) {
+            return parseLine(lineInfo);
+        } else {
+            return null;
+        }
     }
 
     //返回token的长度
@@ -200,7 +214,7 @@ public class LineParser {
         logger.info(colValue.toString());
     }
 
-    public static LogRecord parseLine(LineInfo lineInfo) {
+    private static LogRecord parseLine(LineInfo lineInfo) {
 
 
         lineCount++;

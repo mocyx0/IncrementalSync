@@ -6,6 +6,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.pangolin.yx.nixu.NXClient;
+import org.pangolin.yx.zhengxu.ZXClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
 
 
     NetClientHandler() throws Exception {
-        workerClient = new NXClient();
+        workerClient = new ZXClient();
 
     }
 
