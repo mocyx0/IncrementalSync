@@ -9,11 +9,11 @@ import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
 /**
  * Created by 29146 on 2017/6/16.
  */
-public class LogIndex {
+public final class LogIndex {
     private long[] oldPk;
     private long[] newPk;
     private byte[] logType;
-    private int[] hashColumnName;   //列名的hash值
+    private int[][] hashColumnName;   //列名的hash值
     private short[][] columnLen;
     private short[][] columnNewValues;          //列值
     private short[] columnSize;
@@ -29,9 +29,9 @@ public class LogIndex {
         oldPk = new long[LOGINDEX_SIZE];
         newPk = new long[LOGINDEX_SIZE];
         logType = new byte[LOGINDEX_SIZE];
-        hashColumnName = new int[LOGINDEX_SIZE];
-        columnLen = new short[columnCount][LOGINDEX_SIZE];
-        columnNewValues = new short[columnCount][LOGINDEX_SIZE];
+        hashColumnName = new int[LOGINDEX_SIZE][columnCount];
+        columnLen = new short[LOGINDEX_SIZE][columnCount];
+        columnNewValues = new short[LOGINDEX_SIZE][columnCount];
         columnSize = new short[LOGINDEX_SIZE];
         logSize = 0;
         this.pool = pool;
@@ -46,28 +46,32 @@ public class LogIndex {
         this.byteBuffer = byteBuffer;
     }
 
-    public int[] getHashColumnName() {
-        return hashColumnName;
+    public int[] getHashColumnName(int logIndex) {
+        return hashColumnName[logIndex];
     }
 
     public int getLogSize() {
         return logSize;
     }
 
-    public long[] getOldPk() {
+    public long[] getOldPks() {
         return oldPk;
     }
 
-    public long[] getNewPk() {
-        return newPk;
+    public long getNewPk(int logIndex) {
+        return newPk[logIndex];
     }
 
-    public byte[] getLogType() {
-        return logType;
+    public byte getLogType(int logIndex) {
+        return logType[logIndex];
     }
 
-    public short[][] getColumnNewValues() {
-        return columnNewValues;
+    public short[] getColumnValueLens(int logIndex) {
+        return columnLen[logIndex];
+    }
+
+    public short[] getColumnNewValues(int logIndex) {
+        return columnNewValues[logIndex];
     }
 
     public short getColumnSize(int logIndex) {
