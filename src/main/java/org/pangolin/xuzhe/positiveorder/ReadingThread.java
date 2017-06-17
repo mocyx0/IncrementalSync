@@ -13,6 +13,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.pangolin.xuzhe.positiveorder.Constants.LINE_MAX_LENGTH;
 import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
+import static org.pangolin.xuzhe.positiveorder.Constants.REDO_NUM;
 import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
 
 /**
@@ -21,6 +22,7 @@ import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
 public class ReadingThread extends Thread {
     String[] fileNameArray;
     Parser[] parsers;
+    Redo[] redos;
     Schema schema;
     public static final CountDownLatch parserLatch = new CountDownLatch(1);
 //    Filter filter;
@@ -28,11 +30,18 @@ public class ReadingThread extends Thread {
         super("ReadingThread");
         this.fileNameArray = fileNameArray;
         parsers = new Parser[PARSER_NUM];
+        redos = new Redo[REDO_NUM];
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i] = new Parser(i);
         }
+        for(int i = 0;  i < REDO_NUM; i++){
+            redos[i] = new Redo(parsers, 1, 100);
+        }
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i].start();
+        }
+        for(int i = 0; i < REDO_NUM; i++) {
+            redos[i].start();
         }
 //        filter = new Filter();
 //        filter.start();

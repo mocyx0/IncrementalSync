@@ -10,6 +10,7 @@ import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
  * Created by 29146 on 2017/6/16.
  */
 public final class LogIndex {
+    public static final LogIndex EMPTY_LOG_INDEX = new LogIndex(0, null);
     private long[] oldPk;
     private long[] newPk;
     private byte[] logType;
@@ -88,6 +89,10 @@ public final class LogIndex {
         return columnSize[logIndex];
     }
 
+    public void setColumnSize(int logIndex, int columnSize) {
+        this.columnSize[logIndex] = (short)columnSize;
+    }
+
 
     public void reset() {
         logSize = 0;
@@ -96,6 +101,7 @@ public final class LogIndex {
     public synchronized void release() {
         if(refCount.decrementAndGet() == 0) {
             try {
+                ReadBufferPool.getInstance().put(byteBuffer);
                 pool.put(this);
             } catch (InterruptedException e) {
                 e.printStackTrace();

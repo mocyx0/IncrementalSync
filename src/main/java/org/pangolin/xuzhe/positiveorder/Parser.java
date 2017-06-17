@@ -48,6 +48,8 @@ public class Parser extends Thread {
 
 	}
 
+
+
 	public LogIndex getLogIndexQueueHeaderByRedoId(int redoId) throws InterruptedException {
 		--redoId;
 		return logIndexBlockingQueueArray[redoId].take();
@@ -68,13 +70,18 @@ public class Parser extends Thread {
 			while(true) {
 				ByteBuffer buffer = this.buffers.take();
 //				logger.info("{} buffer.size:{}", getName(), buffers.size());
-				if(buffer == EMPTY_BUFFER) break;
+				if(buffer == EMPTY_BUFFER) {
+					for(int r = 0; r < REDO_NUM; r++) {
+						logIndexBlockingQueueArray[r].put(LogIndex.EMPTY_LOG_INDEX);
+					}
+					break;
+				}
 
 				long begin = System.nanoTime();
 				process(buffer);
 
 				long end = System.nanoTime();
-				pool.put(buffer);
+//				pool.put(buffer);
 			}
 			//logger.info("{} done!", Thread.currentThread().getName());
 		} catch (InterruptedException e) {
@@ -183,6 +190,7 @@ public class Parser extends Thread {
 						columnValueLens[columnIndex] = (short)(newValueEnd-newValueBegin);
 						++columnIndex;
 					}
+					logIndex.setColumnSize(logItemIndex, columnIndex);
 				} else {
 
 				}
@@ -271,5 +279,9 @@ public class Parser extends Thread {
 
 	public void setSchema(Schema schema) {
 		this.schema = schema;
+	}
+
+	public int getParserNo() {
+		return parserNo;
 	}
 }

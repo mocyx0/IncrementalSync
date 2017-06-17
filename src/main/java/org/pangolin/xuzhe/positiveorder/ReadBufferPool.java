@@ -26,11 +26,13 @@ public class ReadBufferPool {
     }
 
     public ByteBuffer get() throws InterruptedException {
+        System.out.println("ReadBufferPool get:" + pool.size());
         return pool.take();
     }
 
     public void put(ByteBuffer buffer) throws InterruptedException {
         buffer.clear();
+        System.out.println("ReadBufferPool put:" + pool.size());
         pool.put(buffer);
     }
 }

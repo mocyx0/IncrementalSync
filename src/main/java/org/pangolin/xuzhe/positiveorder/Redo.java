@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.pangolin.xuzhe.positiveorder.Constants.*;
+import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
+import static org.pangolin.xuzhe.positiveorder.Constants.REDO_NUM;
+import static org.pangolin.xuzhe.positiveorder.ReadingThread.parserLatch;
 
 
 /**
@@ -19,8 +21,11 @@ public class Redo extends Thread {
     //   private ByteBufferPool byteBufferPool = ByteBufferPool.getInstance();
     private long beginPk;
     private long endPk;
-
-    public  Redo(long beginPk, long endPk){
+    private Parser[] parser;
+    int redoId = redo.incrementAndGet();
+    public  Redo(Parser[] parser, long beginPk, long endPk){
+        setName("Redo" + redoId);
+        this.parser = parser;
         this.beginPk = beginPk;
         this.endPk = endPk;
         pkPos = new long[(int)(this.endPk - this.endPk - 1)/64 + 1];
@@ -50,7 +55,13 @@ public class Redo extends Thread {
 
     @Override
     public void run() {
-        int redoNum = redo.incrementAndGet();
+
+        try {
+            parserLatch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Schema schema = Schema.getInstance();
 
 //        long interval = (endPk - beginPk + 1)/REDO_NUM;
 //        long currentBeginPk = interval * (redoNum - 1) + beginPk;
@@ -64,26 +75,38 @@ public class Redo extends Thread {
 //         System.out.println(Thread.currentThread().getName() + ":" + currentBeginPk + " " + currentEndPk);
 
         long count = 0;
+        LogIndex logIndex = null;
         while(true){
             int parserNum = (int)(count % PARSER_NUM);
-
             //获取对应parser对象的logIndex
-            LogIndex logIndex = null;
+            try {
+                logIndex = parser[parserNum].getLogIndexQueueHeaderByRedoId(redoId);
+                if(logIndex == LogIndex.EMPTY_LOG_INDEX) {
+                    break;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
             byteBuffer = logIndex.getByteBuffer().duplicate();
             try {
                 for (int i = 0; i < logIndex.getLogSize(); i++) {
                     byte logType = logIndex.getLogType(i);
                     if (logType == 'I') {
-                        insertResualt(pkMap, logIndex, i, redoNum);
+                        insertResualt(pkMap, logIndex, i, redoId);
                     } else if (logType == 'U') {
                         updateResualt(pkMap, logIndex, i);
                     } else {
                         deleteResualt(pkMap, logIndex, i);
                     }
                 }
+                logIndex.release();
+                System.out.println("LogIndex Done!" + count);
+                count++;
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
         }
 
 
@@ -126,8 +149,8 @@ public class Redo extends Thread {
 
     private void insertResualt(Map<Long, Record> pkMap, LogIndex logIndex, int index, int redoNum) throws InterruptedException {
         long newPk = logIndex.getNewPk(index);
-        if (newPk <= beginPk || newPk >= endPk)
-            return;
+//        if (newPk <= beginPk || newPk >= endPk)
+//            return;
         //      int logSize = logIndex.getLogSize();
         //每个pk对应到不同的线程
         if(newPk % REDO_NUM == (redoNum - 1)){
@@ -138,12 +161,18 @@ public class Redo extends Thread {
             int columnPos = logIndex.getColumnNewValues(index)[i];
             int columnLen = logIndex.getColumnValueLens(index)[i];
 
+
 //            record.getColumnName().add(hashColumnName);
-            ByteBuffer columnByteBuffer = ByteBuffer.allocate(columnLen);
-            byteBuffer.position(columnPos);
+            ByteBuffer columnByteBuffer = ByteBuffer.allocate(8);
+//            byteBuffer.position(columnPos);
+//            byte[] stg = new byte[columnLen];
+
             System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
+//            System.out.println(new String(columnByteBuffer.array()));
             columnByteBuffer.limit(columnLen);
+            String sf = new String(columnByteBuffer.array());
             record.getColumnValue().add(columnByteBuffer);
+ //           byte[] sg = new byte[columnLen];
         }
         pkMap.put(newPk, record);
     }

@@ -8,6 +8,14 @@ import java.util.Map;
  * Created by ubuntu on 17-6-17.
  */
 public class Schema {
+    private static Schema instance;
+    public static Schema getInstance() {
+        if(instance == null) {
+            throw new RuntimeException("请先设置columnCount");
+        }
+        return instance;
+    }
+
     int[] coloumHashCode;
     byte[] columnDataType;
     Map<Integer, Integer> columnHash2NoMap;
@@ -19,7 +27,20 @@ public class Schema {
         columnHash2NoMap = new HashMap<>();
     }
 
-    public static Schema generateFromInsertLog(byte[] data) {
+    /**
+     * 通过Column的序号0,1,2,3..获取列的数据类型，
+     * 1对应数字类型，2对应字符串类型
+     * @param columnId
+     * @return
+     */
+    public byte getColumnTypeById(int columnId) {
+        return columnDataType[columnId];
+    }
+
+    public static synchronized Schema generateFromInsertLog(byte[] data) {
+        if(instance != null) {
+            throw new RuntimeException("columnCount被重复设置");
+        }
         int itemIndex = 0;
         for(int i = 0; i < data.length; ++i) {
             byte b = data[i];
@@ -67,7 +88,7 @@ public class Schema {
                 }
             }
         }
-        System.out.println(columnCount);
+        instance = s;
         return s;
 
     }
