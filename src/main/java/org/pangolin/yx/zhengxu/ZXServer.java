@@ -229,7 +229,7 @@ public class ZXServer implements WorkerServer {
 
     @Override
     public void doData() throws Exception {
-        Thread.sleep(3000);
+        //Thread.sleep(3000);
         //首先读取列信息
         LineParser.readTableInfo();
         //开启rebuilder线程
