@@ -63,6 +63,7 @@ public class LineParser {
     public static long lineCount = 0;
     private static LineReader lineReader;
     public static int maxColSize = 0;
+    public static int maxLineSize = 0;
     public static long updateCount = 0;
     public static long insertCount = 0;
     public static long deleteCount = 0;
@@ -79,12 +80,13 @@ public class LineParser {
     public static LogRecord nextLine() throws Exception {
         LineInfo lineInfo = lineReader.nextLine();
         if (lineInfo != null) {
+            maxLineSize = Math.max(maxLineSize, lineInfo.data.length);
             LogRecord re = parseLine(lineInfo);
             //printLogRecord(re);
             return re;
         } else {
-            logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d",
-                    lineCount, insertCount, updateCount, deleteCount, pkUpdate, maxColSize));
+            logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d lineMax",
+                    lineCount, insertCount, updateCount, deleteCount, pkUpdate, maxColSize, maxLineSize));
             return null;
         }
     }
@@ -99,6 +101,14 @@ public class LineParser {
             end++;
         }
         return end - off;
+    }
+
+    public static void readTableInfo() throws Exception {
+        ArrayList<String> path = new ArrayList<>();
+        path.add(Config.DATA_HOME + "/1.txt");
+        LineReader lineReader = new LineReader(path);
+        LineInfo lineInfo = lineReader.nextLine();
+        parseTableInfo(lineInfo);
     }
 
     //parse the fisrt log to get table info
@@ -237,10 +247,6 @@ public class LineParser {
 
 
         lineCount++;
-        if (lineCount == 1) {
-            parseTableInfo(lineInfo);
-
-        }
         LogRecord re = parseLineReal(lineInfo);
         re.seq = lineCount;
         /*

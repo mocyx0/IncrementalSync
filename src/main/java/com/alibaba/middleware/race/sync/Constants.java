@@ -48,4 +48,7 @@ public interface Constants {
     boolean COPY_DATA = true;
 
     boolean NOT_CHECK_SCHEME = true;
+
+    int REBUILDER_THREAD = 14;
+    int PARSER_THREAD = 2;
 }

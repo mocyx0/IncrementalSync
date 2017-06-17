@@ -59,7 +59,7 @@ public class Config {
     // 工作主目录
     public static String TESTER_HOME = "D:/tmp/testhome";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/log10g";
+    public static String DATA_HOME = "C:/tmp/logVSmall";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
     public static String RESULT_NAME = "Result.rs";
@@ -100,7 +100,10 @@ public class Config {
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 8;
+    public static int REBUILDER_THREAD = 1;
+    public static int PARSER_THREAD = 1;
 
+    public static int MAX_COL_SIZE = 6;
     //
     public static Logger serverLogger = LoggerFactory.getLogger(Server.class);
 
