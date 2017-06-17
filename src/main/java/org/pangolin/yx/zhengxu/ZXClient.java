@@ -29,16 +29,16 @@ public class ZXClient implements WorkerClient {
 
     @Override
     public void onActive() throws Exception {
-
+        logger.info("onActive");
     }
 
     @Override
     public void onData(ByteBuf data, ChannelHandlerContext ctx) throws Exception {
-        Thread.sleep(60000);
-        logger.info("hello");
-        ctx.channel().close().sync();
-        raf.write(1);
+        logger.info("onData");
+        raf.write('1');
         raf.close();
+        logger.info("closed");
+        ctx.channel().close().sync();
         System.exit(0);
     }
 }

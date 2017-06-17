@@ -39,9 +39,8 @@ public class ZXServer implements WorkerServer {
 
     }
 
-    @Override
-    public void doData() throws Exception {
-        startRebuilder();
+    private void startParser() throws Exception {
+        long t1 = System.currentTimeMillis();
         ArrayList<String> paths = Util.logFiles(Config.DATA_HOME);
         LineParser.init(paths);
         long line = 0;
@@ -56,7 +55,37 @@ public class ZXServer implements WorkerServer {
             //logQueues.get(block).put(logRecord);
             logRecord = LineParser.nextLine();
         }
-        logger.info(String.format("parse end, line:%d", line));
+        long t2 = System.currentTimeMillis();
+        logger.info(String.format("parse end, cost:%d", t2 - t1));
+    }
+
+    private void startParser1() throws Exception {
+        long t1 = System.currentTimeMillis();
+        ArrayList<String> paths = Util.logFiles(Config.DATA_HOME);
+        LineParserDirect.init(paths);
+        long line = 0;
+        LogRecord logRecord = LineParserDirect.nextLine();
+        while (logRecord != null) {
+            line++;
+            long id = logRecord.id;
+            if (logRecord.opType == 'D') {
+                id = logRecord.preId;
+            }
+            int block = (int) (id % queueCount);
+            //logQueues.get(block).put(logRecord);
+            logRecord = LineParserDirect.nextLine();
+        }
+        long t2 = System.currentTimeMillis();
+        logger.info(String.format("parse end, cost:%d", t2 - t1));
+    }
+
+    @Override
+    public void doData() throws Exception {
+        startRebuilder();
+
+        startParser();
+
+        startParser1();
 
         ByteBuffer buffer = ByteBuffer.allocate(16);
         buffer.put((byte) 0);

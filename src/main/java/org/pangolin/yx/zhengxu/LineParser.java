@@ -60,8 +60,13 @@ class TableInfo {
 public class LineParser {
     private static Logger logger;
     public static TableInfo tableInfo = new TableInfo();
-    private static long lineCount = 0;
+    public static long lineCount = 0;
     private static LineReader lineReader;
+    public static int maxColSize = 0;
+    public static long updateCount = 0;
+    public static long insertCount = 0;
+    public static long deleteCount = 0;
+    public static long pkUpdate = 0;
 
     static {
         logger = Config.serverLogger;
@@ -74,8 +79,12 @@ public class LineParser {
     public static LogRecord nextLine() throws Exception {
         LineInfo lineInfo = lineReader.nextLine();
         if (lineInfo != null) {
-            return parseLine(lineInfo);
+            LogRecord re = parseLine(lineInfo);
+            //printLogRecord(re);
+            return re;
         } else {
+            logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d",
+                    lineCount, insertCount, updateCount, deleteCount, pkUpdate, maxColSize));
             return null;
         }
     }
@@ -162,6 +171,13 @@ public class LineParser {
         logRecord.opType = op;
         pos = pos + 1 + nextToken(lineInfo.data, pos, '|');//op
 
+        if (op == 'I') {
+            insertCount++;
+        } else if (op == 'U') {
+            updateCount++;
+        } else if (op == 'D') {
+            deleteCount++;
+        }
 
         while (pos < lineInfo.data.length) {
             int namePos = pos;
@@ -184,12 +200,16 @@ public class LineParser {
                 } else if (op == 'U') {
                     logRecord.id = parseLong(lineInfo.data, newPos, newLen);
                     logRecord.preId = parseLong(lineInfo.data, oldPos, oldLen);
+                    if (logRecord.id != logRecord.preId) {
+                        pkUpdate++;
+                    }
                 }
             } else {
                 int byteIndex = tableInfo.getColumnIndex(lineInfo.data, namePos, nameLen);
                 logRecord.columnData[colWriteIndex++] = (short) byteIndex;
                 logRecord.columnData[colWriteIndex++] = (short) newPos;
                 logRecord.columnData[colWriteIndex++] = (short) newLen;
+                maxColSize = Math.max(newLen, maxColSize);
             }
         }
         return logRecord;

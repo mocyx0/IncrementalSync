@@ -16,9 +16,16 @@ import java.util.HashMap;
 
 
 public class LineParserDirect {
+    public static long lineCount = 0;
+    public static int maxColSize = 0;
+    public static long updateCount = 0;
+    public static long insertCount = 0;
+    public static long deleteCount = 0;
+    public static long pkUpdate = 0;
+
+
     private static Logger logger;
     public static TableInfo tableInfo = new TableInfo();
-    private static long lineCount = 0;
 
     static {
         logger = Config.serverLogger;
@@ -175,13 +182,14 @@ public class LineParserDirect {
                 logRecord.columnData[colWriteIndex++] = (short) byteIndex;
                 logRecord.columnData[colWriteIndex++] = (short) newPos;
                 logRecord.columnData[colWriteIndex++] = (short) newLen;
+                maxColSize = Math.max(newLen, maxColSize);
             }
-
         }
 
         int len = pos - bufferReadPos;
         bufferReadPos = pos;
         offInFile += len;
+
         return logRecord;
     }
 
@@ -201,11 +209,6 @@ public class LineParserDirect {
             colValue.append(" ");
         }
         logger.info(colValue.toString());
-    }
-
-    private static void nextBlock() {
-        bufferReadPos = 0;
-
     }
 
     public static LogRecord nextLine() throws Exception {
@@ -231,6 +234,8 @@ public class LineParserDirect {
                 fileIndex++;
                 offInFile = 0;
                 if (fileIndex >= fileSizes.size()) {
+                    logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d",
+                            lineCount, insertCount, updateCount, deleteCount, pkUpdate, maxColSize));
                     return null;
                 }
             }
@@ -243,8 +248,20 @@ public class LineParserDirect {
             bufferReadPos = 0;
             re = parseLineReal();
         }
-
         re.seq = lineCount;
+
+        if (re.opType == 'U') {
+            updateCount++;
+            if (re.preId != re.id) {
+                pkUpdate++;
+            }
+        } else if (re.opType == 'I') {
+            insertCount++;
+        } else if (re.opType == 'D') {
+            deleteCount++;
+        }
+
+
         return re;
     }
 
