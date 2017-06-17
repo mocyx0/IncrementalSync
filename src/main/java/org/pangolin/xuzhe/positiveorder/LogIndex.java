@@ -15,7 +15,7 @@ public final class LogIndex {
     private byte[] logType;
     private int[][] hashColumnName;   //列名的hash值
     private short[][] columnLen;
-    private short[][] columnNewValues;          //列值
+    private int[][] columnNewValues;          //列值
     private short[] columnSize;
     private int logSize;
     private ByteBuffer byteBuffer;
@@ -31,10 +31,20 @@ public final class LogIndex {
         logType = new byte[LOGINDEX_SIZE];
         hashColumnName = new int[LOGINDEX_SIZE][columnCount];
         columnLen = new short[LOGINDEX_SIZE][columnCount];
-        columnNewValues = new short[LOGINDEX_SIZE][columnCount];
+        columnNewValues = new int[LOGINDEX_SIZE][columnCount];
         columnSize = new short[LOGINDEX_SIZE];
         logSize = 0;
         this.pool = pool;
+    }
+
+    public void setLogSize(int logSize) {
+        this.logSize = logSize;
+    }
+
+    public void addNewLog(long oldPK, long newPK, byte logType, int logItemIndex) {
+        this.oldPk[logItemIndex] = oldPK;
+        this.newPk[logItemIndex] = newPK;
+        this.logType[logItemIndex] = logType;
     }
 
     public ByteBuffer getByteBuffer() {
@@ -70,7 +80,7 @@ public final class LogIndex {
         return columnLen[logIndex];
     }
 
-    public short[] getColumnNewValues(int logIndex) {
+    public int[] getColumnNewValues(int logIndex) {
         return columnNewValues[logIndex];
     }
 
