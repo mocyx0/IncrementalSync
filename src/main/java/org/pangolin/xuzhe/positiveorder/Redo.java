@@ -66,6 +66,7 @@ public class Redo extends Thread {
         long count = 0;
         while(true){
             int parserNum = (int)(count % PARSER_NUM);
+
             //获取对应parser对象的logIndex
             LogIndex logIndex = null;
             byteBuffer = logIndex.getByteBuffer().duplicate();

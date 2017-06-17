@@ -171,7 +171,7 @@ public class ReadingThread extends Thread {
     public static void main(String[] args) throws Exception {
         Config.init();
 //        String fileBaseName = Config.DATA_HOME + "/small_";
-        String fileBaseName = Config.DATA_HOME + "/ram/";
+        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
         int fileCnt = 0;
         for(int i = 1; i <= 10; i++) {
             String fileName = fileBaseName + i + ".txt";
