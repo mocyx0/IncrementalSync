@@ -6,6 +6,8 @@ import org.pangolin.yx.Config;
  * Created by ubuntu on 17-6-3.
  */
 public class Constants {
+
+    static final int REDO_NUM = 4;
     static final int BUFFER_SIZE = 128*1024;
     static final int PARSER_NUM = 2;
     static final int POOL_SIZE = PARSER_NUM*2;
