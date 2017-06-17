@@ -31,8 +31,7 @@ public class Parser extends Thread {
 	Logger logger = LoggerFactory.getLogger(Server.class);
 
 	private BlockingQueue<ByteBuffer> buffers;
-	private MyStringBuilder lineBuilder = new MyStringBuilder(200);
-	private static ReentrantLock readLock = new ReentrantLock();
+	private ArrayBlockingQueue<LogIndex>[] logIndexBlockingQueueArray;
 	private int parserNo;
 	public int readLineCnt = 0;
 	public int readBytesCnt = 0;
@@ -42,7 +41,16 @@ public class Parser extends Thread {
 		this.setName("Parser" + parserNo);
 		this.parserNo = parserNo;
 		this.buffers = new ArrayBlockingQueue<ByteBuffer>(PARSER_BLOCKING_QUEUE_SIZE);
+		logIndexBlockingQueueArray = new ArrayBlockingQueue[REDO_NUM];
+		for(int i = 0; i < REDO_NUM; i++) {
+			logIndexBlockingQueueArray[i] = new ArrayBlockingQueue<LogIndex>(PARSER_BLOCKING_QUEUE_SIZE);
+		}
 
+	}
+
+	public LogIndex getLogIndexQueueHeaderByRedoId(int redoId) throws InterruptedException {
+		--redoId;
+		return logIndexBlockingQueueArray[redoId].take();
 	}
 
 	public void appendBuffer(ByteBuffer buffer) throws InterruptedException {
@@ -189,7 +197,10 @@ public class Parser extends Thread {
 			}
 		}
 		logIndex.setLogSize(logItemIndex+1);
-		logIndexPool.put(logIndex);
+		for(int j = 0; j < REDO_NUM; j++) {
+			logIndexBlockingQueueArray[j].put(logIndex);
+		}
+//		logIndexPool.put(logIndex);
 //		int currentReadBytesCnt = readBytesCnt-lastReadBytesCnt;
 //		if(currentReadBytesCnt != dataSize) {
 //			i++;
