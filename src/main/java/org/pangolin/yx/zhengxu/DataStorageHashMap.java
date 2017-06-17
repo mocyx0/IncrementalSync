@@ -12,8 +12,8 @@ public class DataStorageHashMap implements DataStorage {
 
     TableInfo tableInfo;
 
-    private static int CELL_SIZE;
-    private static int CELL_COUNT;
+    public int CELL_SIZE;
+    public int CELL_COUNT;
 
     DataStorageHashMap(TableInfo tableInfo) {
         this.tableInfo = tableInfo;
@@ -21,11 +21,29 @@ public class DataStorageHashMap implements DataStorage {
         CELL_COUNT = tableInfo.columnName.length - 1;
     }
 
-    private static class Node {
+    public static class Node {
         Node next;
         long seq;
         long preid;
+        boolean valid = true;
         byte[] bytes;
+    }
+
+    //seq=-1 表示不关心seq
+    public Node getNode(long id, long seq) {
+        if (data.containsKey(id)) {
+            Node node = data.get(id);
+            if (seq == -1) {
+                return node;
+            } else {
+                while (node != null && node.seq >= seq) {
+                    node = node.next;
+                }
+                return node;
+            }
+        } else {
+            return null;
+        }
     }
 
     HashMap<Long, Node> data = new HashMap<>();
@@ -100,11 +118,11 @@ public class DataStorageHashMap implements DataStorage {
                     data.put(id, node.next);
                 }
             }
+        } else if (logRecord.opType == 'X') {
+            long id = logRecord.id;
+            Node node = data.get(id);
+            node.valid = false;
         }
     }
 
-    @Override
-    public void writeBuffer(long id, ByteBuffer buffer) {
-
-    }
 }

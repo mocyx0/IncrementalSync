@@ -35,6 +35,10 @@ public class Config {
 
             NOT_CHECK_SCHEME = Constants.NOT_CHECK_SCHEME;
 
+            REBUILDER_THREAD = Constants.REBUILDER_THREAD;
+            COLLECTOR_THREAD = Constants.COLLECTOR_THREAD;
+
+
         } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
             DATA_HOME = "/home/ubuntu/alitest/data";
@@ -59,7 +63,7 @@ public class Config {
     // 工作主目录
     public static String TESTER_HOME = "D:/tmp/testhome";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/logVSmall";
+    public static String DATA_HOME = "C:/tmp/logfinal";
     // 结果文件目录
     public static String RESULT_HOME = "D:/tmp/amimid/result";
     public static String RESULT_NAME = "Result.rs";
@@ -99,9 +103,11 @@ public class Config {
     //precache开始后多久开始执行日志分析
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
-    public static int CPU_COUNT = 8;
-    public static int REBUILDER_THREAD = 1;
+    public static int CPU_COUNT = 4;
+    public static int REBUILDER_THREAD = 3;
+    public static int COLLECTOR_THREAD = 4;
     public static int PARSER_THREAD = 1;
+
 
     public static int MAX_COL_SIZE = 6;
     //

@@ -14,14 +14,18 @@ public class Rebuilder implements Runnable {
     CountDownLatch latch;
     LinkedBlockingQueue<ArrayList<LogRecord>> queue;
     Logger logger;
-    DataStorage dataStorage ;
+    DataStorage dataStorage;
     private int logCount = 0;
 
-    public Rebuilder(LinkedBlockingQueue<ArrayList<LogRecord>> queue, CountDownLatch latch,TableInfo tableInfo) {
+    public Rebuilder(LinkedBlockingQueue<ArrayList<LogRecord>> queue, CountDownLatch latch, TableInfo tableInfo) {
         this.queue = queue;
         this.latch = latch;
         logger = Config.serverLogger;
         dataStorage = new DataStorageHashMap(tableInfo);
+    }
+
+    DataStorage getDataStorage() {
+        return dataStorage;
     }
 
     @Override

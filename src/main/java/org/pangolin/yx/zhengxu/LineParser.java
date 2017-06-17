@@ -15,7 +15,7 @@ class LogRecord {
     byte[] lineData;
     long id = -1;
     long preId = -1;
-    byte opType;
+    byte opType=0;
     short[] columnData;//两个字节一个单位 位置+长度  位置=0表示结束
     long seq;//log sequence
 }
