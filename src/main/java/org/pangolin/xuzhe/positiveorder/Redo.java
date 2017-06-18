@@ -13,12 +13,12 @@ import static org.pangolin.xuzhe.positiveorder.ReadingThread.parserLatch;
  * Created by 29146 on 2017/6/16.
  */
 public class Redo extends Thread {
-    private Map<Long, Record> pkMap = new HashMap<>();
-    private ByteBuffer byteBuffer;
+    public MyLong2ObjHashMap pkMap = new MyLong2ObjHashMap(10000000/REDO_NUM, 0.99f);
+    private byte[] dataSrc;
     private long[] pkPos;
-    private List<Record> records = new ArrayList<>((1000*10000)/64);
+//    private List<Record> records = new ArrayList<>((1000*10000)/64);
     private static AtomicInteger redo = new AtomicInteger(0);
-
+    public static AtomicInteger allocatedBufferCount = new AtomicInteger(0);
     //   private ByteBufferPool byteBufferPool = ByteBufferPool.getInstance();
     private Parser[] parser;
     int redoId = redo.incrementAndGet();
@@ -65,7 +65,7 @@ public class Redo extends Thread {
                 }
 
 
-                byteBuffer = logIndex.getByteBuffer().duplicate();
+                dataSrc = logIndex.getByteBuffer().array();
                 try {
                     for (int i = 0; i < logIndex.getLogSize(); i++) {
                         byte logType = logIndex.getLogType(i);
@@ -85,8 +85,7 @@ public class Redo extends Thread {
                 }
 
             }
-
-            searchResult();
+            System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -115,12 +114,12 @@ public class Redo extends Thread {
         posPk[blockBumber] = value;
     }
 
-    private void deleteResualt(Map<Long, Record> pkMap, LogIndex logIndex, int index) throws InterruptedException {
+    private void deleteResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index) throws InterruptedException {
         long oldPk = logIndex.getOldPks()[index];
         pkMap.remove(oldPk);
     }
 
-    private void updateResualt(Map<Long, Record> pkMap, LogIndex logIndex, int index) throws InterruptedException {
+    private void updateResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index) throws InterruptedException {
         long oldPk = logIndex.getOldPks()[index];
         if (!pkMap.containsKey(oldPk)) {
             return;
@@ -129,18 +128,20 @@ public class Redo extends Thread {
         long newPk = logIndex.getNewPk(index);
         short columnSize = logIndex.getColumnSize(index);
         for (int i = 0; i < columnSize; i++) {
-            int pos = logIndex.getHashColumnName(index)[i];
-            ByteBuffer columnByteBuffer = record.getColumnValue().get(pos);
+            int columnIndex = logIndex.getHashColumnName(index)[i];
+//            ByteBuffer columnByteBuffer = record.getColumnValue().get(pos);
 
             int columnPos = logIndex.getColumnNewValues(index)[i];
             int columnLen = logIndex.getColumnValueLens(index)[i];
-            if (columnLen > columnByteBuffer.capacity()) {
+            record.setColumnValue(columnIndex, dataSrc, columnPos, columnLen);
+//            if (columnLen > columnByteBuffer.capacity()) {
                 //重新申请一个更大长度的byteBuffer
-                columnByteBuffer = ByteBuffer.allocate(columnLen);
-            }
-            byteBuffer.position(columnPos);
-            System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
-            columnByteBuffer.limit(columnLen);
+//                columnByteBuffer = ByteBuffer.allocate(columnLen);
+//                allocatedBufferCount.incrementAndGet();
+//            }
+//            byteBuffer.position(columnPos);
+//            System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
+//            columnByteBuffer.limit(columnLen);
         }
         if (oldPk != newPk) {
             pkMap.remove(oldPk);
@@ -148,7 +149,7 @@ public class Redo extends Thread {
         }
     }
 
-    private void insertResualt(Map<Long, Record> pkMap, LogIndex logIndex, int index, int redoNum) throws InterruptedException {
+    private void insertResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index, int redoNum) throws InterruptedException {
         long newPk = logIndex.getNewPk(index);
 //        if (newPk <= beginPk || newPk >= endPk)
 //            return;
@@ -158,35 +159,23 @@ public class Redo extends Thread {
             short columnSize = logIndex.getColumnSize(index);
             Record record = new Record(newPk, columnSize);
             for (int i = 0; i < columnSize; i++) {
-    //            int hashColumnName = logIndex.getHashColumnName()[index][i];
+                int columnIndex = logIndex.getHashColumnName(index)[i];
                 int columnPos = logIndex.getColumnNewValues(index)[i];
                 int columnLen = logIndex.getColumnValueLens(index)[i];
+                record.setColumnValue(columnIndex, dataSrc, columnPos, columnLen);
+//                allocatedBufferCount.incrementAndGet();
+//                ByteBuffer columnByteBuffer = ByteBuffer.allocate(8);
 
+//                System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
 
-                ByteBuffer columnByteBuffer = ByteBuffer.allocate(8);
-
-                System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
-
-                columnByteBuffer.limit(columnLen);
-                String sf = new String(columnByteBuffer.array());
-                record.getColumnValue().add(columnByteBuffer);
+//                columnByteBuffer.limit(columnLen);
+//                String sf = new String(columnByteBuffer.array());
+//                record.getColumnValue().add(columnByteBuffer);
 
             }
             pkMap.put(newPk, record);
         }
     }
 
-    public void searchResult() {
-        Scanner scanner = new Scanner(System.in);
-        while(scanner.hasNext()) {
-            String line = scanner.nextLine().trim();
-            if(line.startsWith("quit")) break;
-            Long pk = Long.valueOf(line);
-            Record record = pkMap.get(pk);
 
-            if(record != null) {
-                System.out.println(record);
-            }
-        }
-    }
 }
