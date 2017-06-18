@@ -1,11 +1,17 @@
 package org.pangolin.xuzhe.positiveorder;
 
+import com.alibaba.middleware.race.sync.Server;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import org.pangolin.xuzhe.positiveorder.Parser;
 import org.pangolin.yx.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
@@ -19,6 +25,7 @@ import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
+    private static Logger logger = LoggerFactory.getLogger(Server.class);
     public static long beginId = 0;
     public static long endId = 0;
 
@@ -106,7 +113,7 @@ public class ReadingThread extends Thread {
                 fis.close();
             }
             long endTime = System.currentTimeMillis();
-            System.out.println("Reading Done! " + (endTime-beginTime) + " ms");
+            logger.info("Reading Done! " + (endTime-beginTime) + " ms");
             for(Parser parser : parsers) {
                 parser.appendBuffer(EMPTY_BUFFER);
             }
@@ -114,12 +121,12 @@ public class ReadingThread extends Thread {
                 parser.join();
             }
             endTime = System.currentTimeMillis();
-            System.out.println("Parser Done!" + (endTime-beginTime) + " ms");
+            logger.info("Parser Done!" + (endTime-beginTime) + " ms");
             for(Redo redo : redos) {
                 redo.join();
             }
             endTime = System.currentTimeMillis();
-            System.out.println("Redo Done!" + (endTime-beginTime) + " ms");
+            logger.info("Redo Done!" + (endTime-beginTime) + " ms");
             int totalLine = 0;
             int totalReadBytes = 0;
             for(int i = 0; i < PARSER_NUM; i++) {
@@ -130,18 +137,25 @@ public class ReadingThread extends Thread {
 
             endTime = System.currentTimeMillis();
             //  readingThread.sleep(3000);
-            System.out.println("TOTALLINE:" + totalLine);
-            System.out.println("TOTALByte:" + totalReadBytes);
-            System.out.println("elapsed time:" + (endTime - beginTime));
-            if(totalLine != 108796978) {
-                System.out.println("read line count error!" + totalLine);
-            }
-            this.saveResultToFile("Result.rs", beginId, endId);
+            logger.info("TOTALLINE:" + totalLine);
+            logger.info("TOTALByte:" + totalReadBytes);
+            logger.info("elapsed time:" + (endTime - beginTime));
+//            if(totalLine != 108796978) {
+            logger.info("read line count " + totalLine);
+//            }
+            ByteBuf buf = Unpooled.directBuffer(20<<20);
+
+//            this.saveResultToFile("Result.rs", beginId, endId);
+            beginTime = System.currentTimeMillis();
+            saveResultToByteBuf(buf, beginId, endId);
+            ResultSenderHandler.sendResult(buf);
+            logger.info("Send to client elapsed time: " + totalLine);
+            endTime = System.currentTimeMillis();
 //            this.searchResult();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.info("{}", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.info("{}", e);
         }
     }
 
@@ -203,6 +217,28 @@ public class ReadingThread extends Thread {
         writer.close();
         long endTime = System.currentTimeMillis();
         System.out.println("save to file elapsed time:" + (endTime-beginTime));
+    }
+
+    public void saveResultToByteBuf(ByteBuf buf, long begin, long end) {
+//        buf.writeChar('R');
+        long beginTime = System.currentTimeMillis();
+        buf.writeInt(0);
+        for(begin++; begin < end; begin++) {
+            for(int i = 0; i < REDO_NUM; i++) {
+                Record record = redos[i].pkMap.get(begin);
+
+                if (record != null) {
+                    buf.writeCharSequence(record.toString(), Charset.forName("utf-8"));
+                    buf.writeByte('\n');
+                }
+            }
+        }
+        int len = buf.readableBytes();
+        buf.writerIndex(0);
+        buf.writeInt(len-4);
+        buf.writerIndex(len);
+        long endTime = System.currentTimeMillis();
+        logger.info("save to buf elapsed time:{}", (endTime-beginTime));
     }
 
     public void searchResult() {
