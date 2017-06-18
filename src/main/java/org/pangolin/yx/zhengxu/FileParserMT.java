@@ -175,6 +175,7 @@ public class FileParserMT implements FileParser {
         @Override
         public void run() {
             try {
+                int selfLineCount = 0;
                 while (true) {
                     FileBlock fileBlock = fileBlocks.take();
                     if (fileBlock.buffer == null) {
@@ -190,6 +191,7 @@ public class FileParserMT implements FileParser {
                             LogRecord logRecord = nextLine(fileBlock.buffer);
                             logRecords.add(logRecord);
                             lineCount.incrementAndGet();
+                            selfLineCount++;
                         }
                         //System.out.println(lineCount);
                         synchronized (FileParserMT.class) {
@@ -207,6 +209,7 @@ public class FileParserMT implements FileParser {
                         }
                     }
                 }
+                logger.info(String.format("ParseThread  line:%d ", selfLineCount));
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("{}", e);
