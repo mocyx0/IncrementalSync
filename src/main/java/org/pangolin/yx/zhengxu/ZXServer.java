@@ -174,20 +174,23 @@ public class ZXServer implements WorkerServer {
     public void doData() throws Exception {
         //Thread.sleep(3000);
         //首先读取列信息
+        long t1 = System.currentTimeMillis();
         LineParser.readTableInfo();
         //开启rebuilder线程
         startRebuilder();
         //解析线程
         fileParser.run(logQueues);
         latch.await();
-        logger.info("Rebuild done");
+        long t2 = System.currentTimeMillis();
+        logger.info(String.format("Rebuild done cost %d", t2 - t1));
         ArrayList<DataStorage> dataStorages = new ArrayList<>();
         for (Rebuilder rebuilder : rebuilders) {
             dataStorages.add(rebuilder.getDataStorage());
         }
         startCollector(dataStorages);
         //
-        logger.info("collect done");
+        long t3 = System.currentTimeMillis();
+        logger.info(String.format("collect done cost %d", t3 - t2));
         //直接读取
         //startParser1();
 

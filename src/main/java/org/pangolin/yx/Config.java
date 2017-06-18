@@ -37,6 +37,7 @@ public class Config {
 
             REBUILDER_THREAD = Constants.REBUILDER_THREAD;
             COLLECTOR_THREAD = Constants.COLLECTOR_THREAD;
+            PARSER_THREAD = Constants.PARSER_THREAD;
 
 
         } else if (runtime.equals("xuzhe")) {
