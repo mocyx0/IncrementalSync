@@ -51,18 +51,18 @@ public class Server {
             printInput(args);
             ReadingThread.beginId = Long.parseLong(args[2]);
             ReadingThread.endId = Long.parseLong(args[3]);
-            String fileBaseName = Config.DATA_HOME + "/ram/canal_splited.txt";
+            String fileBaseName = Config.DATA_HOME + "/";
 //        String fileBaseName = Config.DATA_HOME + "/small_";
 //        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
             int fileCnt = 0;
-            for(int i = 0; i < 10; i++) {
-                String fileName = fileBaseName + i;
+            for(int i = 1; i <= 10; i++) {
+                String fileName = fileBaseName + i + ".txt";
                 File f = new File(fileName);
                 if(f.exists()) fileCnt++;
             }
             String[] fileNames = new String[fileCnt];
-            for(int i = 0; i < fileCnt; i++) {
-                fileNames[i] = fileBaseName + i;
+            for(int i = 1; i <= fileCnt; i++) {
+                fileNames[i] = fileBaseName + i + ".txt";
             }
             long time1 = System.currentTimeMillis();
             ReadingThread readingThread = new ReadingThread(fileNames);
