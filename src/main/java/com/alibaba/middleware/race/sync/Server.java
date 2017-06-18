@@ -1,8 +1,12 @@
 package com.alibaba.middleware.race.sync;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.pangolin.xuzhe.positiveorder.ReadingThread;
+import org.pangolin.xuzhe.positiveorder.ResultSenderHandler;
+import org.pangolin.yx.Config;
 import org.pangolin.yx.MServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,20 +44,43 @@ public class Server {
         Logger logger = LoggerFactory.getLogger(Server.class);
         try {
             logger.info("server start");
-            MServer.main(args);
+//            MServer.main(args);
+            Config.init();
+            initProperties();
 
-        /*
-        initProperties();
+            printInput(args);
+            ReadingThread.beginId = Long.parseLong(args[2]);
+            ReadingThread.endId = Long.parseLong(args[3]);
+            String fileBaseName = Config.DATA_HOME + "/ram/canal_splited.txt";
+//        String fileBaseName = Config.DATA_HOME + "/small_";
+//        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
+            int fileCnt = 0;
+            for(int i = 0; i < 10; i++) {
+                String fileName = fileBaseName + i;
+                File f = new File(fileName);
+                if(f.exists()) fileCnt++;
+            }
+            String[] fileNames = new String[fileCnt];
+            for(int i = 0; i < fileCnt; i++) {
+                fileNames[i] = fileBaseName + i;
+            }
+            long time1 = System.currentTimeMillis();
+            ReadingThread readingThread = new ReadingThread(fileNames);
+            readingThread.start();
 
-        printInput(args);
-        Logger logger = LoggerFactory.getLogger(Server.class);
+//        /*
+
+//        Logger logger = LoggerFactory.getLogger(Server.class);
         Server server = new Server();
-        for (int i = 0; i < 100; i++) {
+//        for (int i = 0; i < 100; i++) {
             logger.info("com.alibaba.middleware.race.sync.Server is running....");
-        }
+//        }
 
         server.startServer(5527);
-        */
+            readingThread.join();
+            long time2 = System.currentTimeMillis();
+            System.out.println("elapsed time:" + (time2 - time1) + "ms");
+//        */
         } catch (Exception e) {
             logger.info("{}", e);
         }
@@ -98,7 +125,7 @@ public class Server {
                         @Override
                         public void initChannel(SocketChannel ch) throws Exception {
                             // 注册handler
-                            ch.pipeline().addLast(new ServerDemoInHandler());
+                            ch.pipeline().addLast(new ResultSenderHandler());
                             // ch.pipeline().addLast(new ServerDemoOutHandler());
                         }
                     })

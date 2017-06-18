@@ -1,5 +1,8 @@
 package com.alibaba.middleware.race.sync;
 
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import org.pangolin.xuzhe.positiveorder.ClientResultReceiverHandler;
+import org.pangolin.yx.Config;
 import org.pangolin.yx.MClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,28 +17,37 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
 
+import java.net.ConnectException;
+
 /**
  * Created by wanshao on 2017/5/25.
  */
 public class Client {
-
+    static Logger logger = LoggerFactory.getLogger(Client.class);
     private final static int port = Constants.SERVER_PORT;
     // idle时间
     private static String ip;
     private EventLoopGroup loop = new NioEventLoopGroup();
 
     public static void main(String[] args) throws Exception {
-        MClient.main(args);
-        /*
+//        MClient.main(args);
+//        /*
+
+        Config.init();
         initProperties();
-        Logger logger = LoggerFactory.getLogger(Client.class);
+
+        logger.info("mclient start");
+        logger.info("args: ");
+        for (String s : args) {
+            logger.info(s);
+        }
         logger.info("Welcome to Client");
         // 从args获取server端的ip
         ip = args[0];
         Client client = new Client();
-        Thread.sleep(20000);
+//        Thread.sleep(20000);
         client.connect(ip, port);
-        */
+//        */
     }
 
     /**
@@ -66,17 +78,27 @@ public class Client {
 
                 @Override
                 public void initChannel(SocketChannel ch) throws Exception {
-                    ch.pipeline().addLast(new IdleStateHandler(10, 0, 0));
-                    ch.pipeline().addLast(new ClientIdleEventHandler());
-                    ch.pipeline().addLast(new ClientDemoInHandler());
+//                    ch.pipeline().addLast(new IdleStateHandler(10, 0, 0));
+//                    ch.pipeline().addLast(new ClientIdleEventHandler());
+                    ch.pipeline().addFirst("decoder", new LengthFieldBasedFrameDecoder(1000000000,0,4,0,4));
+                    ch.pipeline().addLast(new ClientResultReceiverHandler());
                 }
             });
 
             // Start the client.
-            ChannelFuture f = b.connect(host, port).sync();
+            int counter = 100;
+            while (counter > 0) {
+                try {
+                    counter--;
+                    ChannelFuture f = b.connect(host, port).sync();
 
-            // Wait until the connection is closed.
-            f.channel().closeFuture().sync();
+                    // Wait until the connection is closed.
+                    f.channel().closeFuture().sync();
+                } catch (Exception e) {
+                    logger.info("建立连接失败", e);
+                    Thread.sleep(5000);
+                }
+            }
         } finally {
             workerGroup.shutdownGracefully();
         }

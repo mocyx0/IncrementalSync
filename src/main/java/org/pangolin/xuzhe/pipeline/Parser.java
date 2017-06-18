@@ -180,16 +180,16 @@ public class Parser extends Thread {
 
 
 //		byte[] raw = new byte[end - begin];
-		byte[] subRaw = new byte[end - i];
+//		byte[] subRaw = new byte[end - i];
 		int mark = currentBuffer.position();
 //		currentBuffer.position(rawBegin);
 //		currentBuffer.get(raw);
-		currentBuffer.position(rawBegin+(i-begin));
-		currentBuffer.get(subRaw);
-		currentBuffer.position(mark);
+//		currentBuffer.position(rawBegin+(i-begin));
+//		currentBuffer.get(subRaw);
+//		currentBuffer.position(mark);
 //		String s = new String(raw);
-		String s2 = new String(subRaw);
-		System.out.println(s2);
+//		String s2 = new String(subRaw);
+//		System.out.println(s2);
 		++readLineCnt;
 		readByteCnt += (end-begin+1);
 	}
