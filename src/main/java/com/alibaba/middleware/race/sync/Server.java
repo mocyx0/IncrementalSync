@@ -21,6 +21,8 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 
+import static com.alibaba.middleware.race.sync.Constants.SERVER_PORT;
+
 /**
  * 服务器类，负责push消息到client Created by wanshao on 2017/5/25.
  */
@@ -62,7 +64,8 @@ public class Server {
             }
             String[] fileNames = new String[fileCnt];
             for(int i = 1; i <= fileCnt; i++) {
-                fileNames[i] = fileBaseName + i + ".txt";
+                fileNames[i-1] = fileBaseName + i + ".txt";
+                logger.info("fileName:{}", fileNames[i-1]);
             }
             long time1 = System.currentTimeMillis();
             ReadingThread readingThread = new ReadingThread(fileNames);
@@ -76,7 +79,7 @@ public class Server {
             logger.info("com.alibaba.middleware.race.sync.Server is running....");
 //        }
 
-        server.startServer(5527);
+        server.startServer(SERVER_PORT);
             readingThread.join();
             long time2 = System.currentTimeMillis();
             System.out.println("elapsed time:" + (time2 - time1) + "ms");
