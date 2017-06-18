@@ -167,7 +167,8 @@ public class ZXServer implements WorkerServer {
         ResultWriter.writeBuffer(buffer);
     }
 
-    FileParser fileParser = new FileParserSimple();
+    //FileParser fileParser = new FileParserSimple();
+    FileParser fileParser = new FileParserMT();
 
     @Override
     public void doData() throws Exception {

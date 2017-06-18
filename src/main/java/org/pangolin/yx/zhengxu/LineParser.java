@@ -15,8 +15,8 @@ class LogRecord {
     byte[] lineData;
     long id = -1;
     long preId = -1;
-    byte opType=0;
-    short[] columnData;//两个字节一个单位 位置+长度  位置=0表示结束
+    byte opType = 0;
+    short[] columnData;//三个一个单位  列索引, 位置, 长度
     long seq;//log sequence
 }
 
@@ -150,10 +150,11 @@ public class LineParser {
             sb.append(" ");
         }
         logger.info(sb.toString());
-        tableInfo.columnName = new byte[columns.size()][];
+        GlobalData.tableInfo.columnName = new byte[columns.size()][];
         for (int i = 0; i < columns.size(); i++) {
-            tableInfo.columnName[i] = columns.get(i);
+            GlobalData.tableInfo.columnName[i] = columns.get(i);
         }
+        tableInfo = GlobalData.tableInfo;
     }
 
     private static long parseLong(byte[] data, int off, int len) {

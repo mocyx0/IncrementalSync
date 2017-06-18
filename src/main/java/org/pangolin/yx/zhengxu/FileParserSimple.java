@@ -100,10 +100,7 @@ public class FileParserSimple implements FileParser {
             blockData.buffQueue = new ArrayList<>(BUFFER_SIZE);
             blockDatas.add(blockData);
         }
-
-
         Thread th = new Thread(new ParserThread());
         th.start();
-
     }
 }

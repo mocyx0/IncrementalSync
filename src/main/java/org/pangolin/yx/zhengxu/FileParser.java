@@ -7,5 +7,5 @@ import java.util.ArrayList;
  * 解析日志并将日志传入对应的queue
  */
 public interface FileParser {
-    void run(LogQueues queues);
+    void run(LogQueues queues)throws Exception;
 }

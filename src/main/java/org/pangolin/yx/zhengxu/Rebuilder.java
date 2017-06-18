@@ -11,6 +11,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Created by yangxiao on 2017/6/17.
  */
 public class Rebuilder implements Runnable {
+    //啥也不做 用于测试
+    private boolean DO_REBUILD = false;
+
     CountDownLatch latch;
     LinkedBlockingQueue<ArrayList<LogRecord>> queue;
     Logger logger;
@@ -36,9 +39,11 @@ public class Rebuilder implements Runnable {
                 if (logRecord.size() == 0) {
                     break;
                 } else {
-                    for (LogRecord log : logRecord) {
-                        logCount++;
-                        dataStorage.doLog(log);
+                    if (DO_REBUILD) {
+                        for (LogRecord log : logRecord) {
+                            logCount++;
+                            dataStorage.doLog(log);
+                        }
                     }
                 }
             }

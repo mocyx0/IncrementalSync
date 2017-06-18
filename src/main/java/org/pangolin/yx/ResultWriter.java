@@ -50,7 +50,7 @@ public class ResultWriter {
     }
     */
 
-    private  static RandomAccessFile raf = null;
+    private static RandomAccessFile raf = null;
 
     public synchronized static void writeBuffer(ByteBuffer buffer) throws Exception {
         /*
@@ -76,6 +76,7 @@ public class ResultWriter {
         Channel channel = NetServerHandler.getClientChannel();
         if (channel == null) {
             Config.serverLogger.info("client channel is empty");
+
         } else {
             if (buffer.limit() == 0) {
                 Config.serverLogger.info("buffer limit =0");
