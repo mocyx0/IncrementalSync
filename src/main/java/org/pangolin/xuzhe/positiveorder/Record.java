@@ -29,4 +29,13 @@ public class Record {
     public List<ByteBuffer> getColumnValue() {
         return columnValue;
     }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append(pk);
+        for(ByteBuffer buffer : columnValue) {
+            sb.append('\t').append(new String(buffer.array(), 0, buffer.limit()));
+        }
+        return sb.toString();
+    }
 }
