@@ -48,13 +48,18 @@ public class Parser extends Thread {
 
 	}
 
+
+
 	public LogIndex getLogIndexQueueHeaderByRedoId(int redoId) throws InterruptedException {
 		--redoId;
-		return logIndexBlockingQueueArray[redoId].take();
+		LogIndex index =  logIndexBlockingQueueArray[redoId].take();
+//		System.out.println(Thread.currentThread().getName() + " take a LogIndex");
+		return index;
 	}
 
 	public void appendBuffer(ByteBuffer buffer) throws InterruptedException {
 		this.buffers.put(buffer);
+//		System.out.println("ReadingThread append a ReadBuffer");
 	}
 
 	@Override
@@ -68,13 +73,18 @@ public class Parser extends Thread {
 			while(true) {
 				ByteBuffer buffer = this.buffers.take();
 //				logger.info("{} buffer.size:{}", getName(), buffers.size());
-				if(buffer == EMPTY_BUFFER) break;
+				if(buffer == EMPTY_BUFFER) {
+					for(int r = 0; r < REDO_NUM; r++) {
+						logIndexBlockingQueueArray[r].put(LogIndex.EMPTY_LOG_INDEX);
+					}
+					break;
+				}
 
 				long begin = System.nanoTime();
 				process(buffer);
 
 				long end = System.nanoTime();
-				pool.put(buffer);
+//				pool.put(buffer);
 			}
 			//logger.info("{} done!", Thread.currentThread().getName());
 		} catch (InterruptedException e) {
@@ -121,20 +131,31 @@ public class Parser extends Thread {
 					// 直接跳过  id:1:1
 					i += 9; // after:  NULL|11|first_na..
 					if (op == 'I') {
+						oldPK = -1;
 						i += 5;  // after: 11|first_name:2:0|NULL|阮
 					} else {
-						oldPK = data[i++];
+//						oldPK = data[i++];
+						oldPK = 0;
 						while ((b = data[i]) != '|') {
 							oldPK = oldPK * 10 + (b - '0');
 							++i;
 						}
 						++i;
 					}
-					newPK = 0;
-					while ((b = data[i]) != '|') {
-						newPK = newPK * 10 + (b - '0');
-						++i;
+					if(op == 'D') {
+						newPK = -1;
+					} else {
+						newPK = 0;
+						while ((b = data[i]) != '|') {
+							newPK = newPK * 10 + (b - '0');
+							++i;
+						}
 					}
+//					if(oldPK != -1 && oldPK != newPK) {
+//						System.out.println(oldPK);
+//					}
+//					if( oldPK != -1 && newPK != -1 &&(oldPK < 0 || newPK < 0))
+//						System.out.println();
 					--i; // after:
 					itemIndex += 3;
 					logIndex.addNewLog(oldPK, newPK, op, logItemIndex);
@@ -183,6 +204,7 @@ public class Parser extends Thread {
 						columnValueLens[columnIndex] = (short)(newValueEnd-newValueBegin);
 						++columnIndex;
 					}
+					logIndex.setColumnSize(logItemIndex, columnIndex);
 				} else {
 
 				}
@@ -196,9 +218,10 @@ public class Parser extends Thread {
 				++logItemIndex;
 			}
 		}
-		logIndex.setLogSize(logItemIndex+1);
+		logIndex.setLogSize(logItemIndex);
 		for(int j = 0; j < REDO_NUM; j++) {
 			logIndexBlockingQueueArray[j].put(logIndex);
+//			System.out.println(getName() + " put a LogIndex into LogIndexQueue");
 		}
 //		logIndexPool.put(logIndex);
 //		int currentReadBytesCnt = readBytesCnt-lastReadBytesCnt;
@@ -271,5 +294,9 @@ public class Parser extends Thread {
 
 	public void setSchema(Schema schema) {
 		this.schema = schema;
+	}
+
+	public int getParserNo() {
+		return parserNo;
 	}
 }

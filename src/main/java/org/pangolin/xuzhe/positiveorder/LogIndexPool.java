@@ -33,11 +33,16 @@ public class LogIndexPool {
     }
 
     public LogIndex get() throws InterruptedException {
-        return pool.take();
+//        System.out.println(Thread.currentThread().getName() + " LogIndexPool get, remain:" + pool.size());
+        LogIndex index =  pool.take();
+//        System.out.println(Thread.currentThread().getName() + " get a LogIndex");
+        return index;
     }
 
     public void put(LogIndex buffer) throws InterruptedException {
         buffer.reset();
+//        System.out.println(Thread.currentThread().getName() + " LogIndexPool put:" + pool.size());
         pool.put(buffer);
+//        System.out.println(Thread.currentThread().getName() + " put a LogIndex");
     }
 }

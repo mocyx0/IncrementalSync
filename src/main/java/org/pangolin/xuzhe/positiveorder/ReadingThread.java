@@ -3,24 +3,28 @@ package org.pangolin.xuzhe.positiveorder;
 import org.pangolin.xuzhe.positiveorder.Parser;
 import org.pangolin.yx.Config;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 
 import static org.pangolin.xuzhe.positiveorder.Constants.LINE_MAX_LENGTH;
 import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
+import static org.pangolin.xuzhe.positiveorder.Constants.REDO_NUM;
 import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
 
 /**
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
+    public static long beginId = 0;
+    public static long endId = 0;
+
     String[] fileNameArray;
     Parser[] parsers;
+    Redo[] redos;
     Schema schema;
     public static final CountDownLatch parserLatch = new CountDownLatch(1);
 //    Filter filter;
@@ -28,11 +32,18 @@ public class ReadingThread extends Thread {
         super("ReadingThread");
         this.fileNameArray = fileNameArray;
         parsers = new Parser[PARSER_NUM];
+        redos = new Redo[REDO_NUM];
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i] = new Parser(i);
         }
+        for(int i = 0;  i < REDO_NUM; i++){
+            redos[i] = new Redo(parsers);
+        }
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i].start();
+        }
+        for(int i = 0; i < REDO_NUM; i++) {
+            redos[i].start();
         }
 //        filter = new Filter();
 //        filter.start();
@@ -102,6 +113,13 @@ public class ReadingThread extends Thread {
             for(Parser parser : parsers) {
                 parser.join();
             }
+            endTime = System.currentTimeMillis();
+            System.out.println("Parser Done!" + (endTime-beginTime) + " ms");
+            for(Redo redo : redos) {
+                redo.join();
+            }
+            endTime = System.currentTimeMillis();
+            System.out.println("Redo Done!" + (endTime-beginTime) + " ms");
             int totalLine = 0;
             int totalReadBytes = 0;
             for(int i = 0; i < PARSER_NUM; i++) {
@@ -115,9 +133,11 @@ public class ReadingThread extends Thread {
             System.out.println("TOTALLINE:" + totalLine);
             System.out.println("TOTALByte:" + totalReadBytes);
             System.out.println("elapsed time:" + (endTime - beginTime));
-            if(totalLine != 14787781) {
-                System.out.println("read line count error!");
+            if(totalLine != 108796978) {
+                System.out.println("read line count error!" + totalLine);
             }
+            this.saveResultToFile("Result.rs", beginId, endId);
+//            this.searchResult();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -167,26 +187,72 @@ public class ReadingThread extends Thread {
         return currentLimit - i;
     }
 
+    public void saveResultToFile(String fileName, long begin, long end) throws IOException {
+        long beginTime = System.currentTimeMillis();
+        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+        for(begin++; begin < end; begin++) {
+            for(int i = 0; i < REDO_NUM; i++) {
+                Record record = redos[i].pkMap.get(begin);
+
+                if (record != null) {
+                    writer.write(record.toString());
+                    writer.write('\n');
+                }
+            }
+        }
+        writer.close();
+        long endTime = System.currentTimeMillis();
+        System.out.println("save to file elapsed time:" + (endTime-beginTime));
+    }
+
+    public void searchResult() {
+        System.out.println("开始测试索引信息，请输入主键（quit退出）：");
+        Scanner scanner = new Scanner(System.in);
+        Redo[] redos = this.redos;
+        while(scanner.hasNext()) {
+            String line = scanner.nextLine().trim();
+            if(line.startsWith("quit")) break;
+            try {
+                Long pk = Long.valueOf(line);
+                for(int i = 0; i < REDO_NUM; i++) {
+                    Record record = redos[i].pkMap.get(pk);
+
+                    if (record != null) {
+                        System.out.println(record);
+                    }
+                }
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
+        if(args.length != 2) {
+            System.out.println("请输入查询范围");
+            System.exit(-1);
+        }
+        ReadingThread.beginId = Long.parseLong(args[0]);
+        ReadingThread.endId = Long.parseLong(args[1]);
         Config.init();
+        String fileBaseName = Config.DATA_HOME + "/ram/canal_splited.txt";
 //        String fileBaseName = Config.DATA_HOME + "/small_";
-        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
+//        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
         int fileCnt = 0;
-        for(int i = 1; i <= 10; i++) {
-            String fileName = fileBaseName + i + ".txt";
+        for(int i = 0; i < 10; i++) {
+            String fileName = fileBaseName + i;
             File f = new File(fileName);
             if(f.exists()) fileCnt++;
         }
         String[] fileNames = new String[fileCnt];
-        for(int i = 1; i <= fileCnt; i++) {
-            fileNames[i-1] = fileBaseName + i + ".txt";
+        for(int i = 0; i < fileCnt; i++) {
+            fileNames[i] = fileBaseName + i;
         }
         long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNames);
         readingThread.start();
         readingThread.join();
         long time2 = System.currentTimeMillis();
-        System.out.println("elapsed time:" + (time2 - time1));
+        System.out.println("elapsed time:" + (time2 - time1) + "ms");
     }
 }

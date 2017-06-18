@@ -5,11 +5,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.pangolin.xuzhe.positiveorder.Constants.LOGINDEX_SIZE;
 import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
+import static org.pangolin.xuzhe.positiveorder.Constants.REDO_NUM;
 
 /**
  * Created by 29146 on 2017/6/16.
  */
 public final class LogIndex {
+    public static final LogIndex EMPTY_LOG_INDEX = new LogIndex(0, null);
     private long[] oldPk;
     private long[] newPk;
     private byte[] logType;
@@ -20,7 +22,7 @@ public final class LogIndex {
     private int logSize;
     private ByteBuffer byteBuffer;
     private LogIndexPool pool;
-    private AtomicInteger refCount = new AtomicInteger(PARSER_NUM);
+    private AtomicInteger refCount = new AtomicInteger(REDO_NUM);
     /**
      *
      * @param columnCount  根据insert确定的表中列数
@@ -88,15 +90,24 @@ public final class LogIndex {
         return columnSize[logIndex];
     }
 
+    public void setColumnSize(int logIndex, int columnSize) {
+        this.columnSize[logIndex] = (short)columnSize;
+    }
+
 
     public void reset() {
+        refCount.set(REDO_NUM);
         logSize = 0;
     }
 
     public synchronized void release() {
         if(refCount.decrementAndGet() == 0) {
             try {
+                ReadBufferPool readBufferPool = ReadBufferPool.getInstance();
+                readBufferPool.put(byteBuffer);
+                byteBuffer = null;
                 pool.put(this);
+
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

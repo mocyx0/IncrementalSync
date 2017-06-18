@@ -8,10 +8,10 @@ import static org.pangolin.xuzhe.positiveorder.Constants.*;
  */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        for(int i = 0 ; i < REDO_NUM; i++){
-            Thread  t1=  new Thread(new Redo(1234, 5242),"thread" + i);
-            t1.start();
-        }
+//        for(int i = 0 ; i < REDO_NUM; i++){
+//            Thread  t1=  new Thread(new Redo(1234, 5242),"thread" + i);
+//            t1.start();
+//        }
 
     }
 }
