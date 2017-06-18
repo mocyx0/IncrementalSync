@@ -50,16 +50,13 @@ public class Server {
         Logger logger = LoggerFactory.getLogger(Server.class);
         try {
             logger.info("server start");
-//            MServer.main(args);
             Config.init();
             initProperties();
 
-            printInput(args);
+            printInput(logger, args);
             ReadingThread.beginId = Long.parseLong(args[2]);
             ReadingThread.endId = Long.parseLong(args[3]);
             String fileBaseName = Config.DATA_HOME + "/";
-//        String fileBaseName = Config.DATA_HOME + "/small_";
-//        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
             int fileCnt = 0;
             for (int i = 1; i <= 10; i++) {
                 String fileName = fileBaseName + i + ".txt";
@@ -75,26 +72,20 @@ public class Server {
             ReadingThread readingThread = new ReadingThread(fileNames);
             readingThread.start();
 
-//        /*
-
-//        Logger logger = LoggerFactory.getLogger(Server.class);
             Server server = new Server();
-//        for (int i = 0; i < 100; i++) {
             logger.info("com.alibaba.middleware.race.sync.Server is running....");
-//        }
 
             server.startServer(SERVER_PORT);
             readingThread.join();
             long time2 = System.currentTimeMillis();
             System.out.println("elapsed time:" + (time2 - time1) + "ms");
-//        */
         } catch (Exception e) {
             logger.info("{}", e);
         }
     }
 
     public static void main(String[] args) throws InterruptedException {
-        mainYX(args);
+        mainXZ(args);
     }
 
     /**
@@ -102,15 +93,15 @@ public class Server {
      * 上面表示，查询的schema为middleware，查询的表为student,主键的查询范围是(100,200)，注意是开区间 对应DB的SQL为： select * from middleware.student where
      * id>100 and id<200
      */
-    private static void printInput(String[] args) {
+    private static void printInput(Logger logger, String[] args) {
         // 第一个参数是Schema Name
-        System.out.println("Schema:" + args[0]);
+        logger.info("Schema:" + args[0]);
         // 第二个参数是Schema Name
-        System.out.println("table:" + args[1]);
+        logger.info("table:" + args[1]);
         // 第三个参数是start pk Id
-        System.out.println("start:" + args[2]);
+        logger.info("start:" + args[2]);
         // 第四个参数是end pk Id
-        System.out.println("end:" + args[3]);
+        logger.info("end:" + args[3]);
 
     }
 

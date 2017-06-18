@@ -51,7 +51,6 @@ public class Parser extends Thread {
 
 
 	public LogIndex getLogIndexQueueHeaderByRedoId(int redoId) throws InterruptedException {
-		--redoId;
 		LogIndex index =  logIndexBlockingQueueArray[redoId].take();
 //		System.out.println(Thread.currentThread().getName() + " take a LogIndex");
 		return index;
@@ -158,6 +157,7 @@ public class Parser extends Thread {
 //						System.out.println();
 					--i; // after:
 					itemIndex += 3;
+					String s = new String(data, lineBegin, i-lineBegin+1);
 					logIndex.addNewLog(oldPK, newPK, op, logItemIndex);
 				} else if (itemIndex == 9) {
 					// current: |first_name:2:0|NULL|阮|...
