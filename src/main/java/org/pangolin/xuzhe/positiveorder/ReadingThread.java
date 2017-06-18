@@ -35,7 +35,7 @@ public class ReadingThread extends Thread {
             parsers[i] = new Parser(i);
         }
         for(int i = 0;  i < REDO_NUM; i++){
-            redos[i] = new Redo(parsers, 1, 100);
+            redos[i] = new Redo(parsers);
         }
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i].start();
@@ -180,7 +180,7 @@ public class ReadingThread extends Thread {
     public static void main(String[] args) throws Exception {
         Config.init();
 //        String fileBaseName = Config.DATA_HOME + "/small_";
-        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
+        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/list/";
         int fileCnt = 0;
         for(int i = 1; i <= 10; i++) {
             String fileName = fileBaseName + i + ".txt";

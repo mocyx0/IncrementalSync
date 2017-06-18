@@ -1,9 +1,7 @@
 package org.pangolin.xuzhe.positiveorder;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
@@ -18,40 +16,19 @@ public class Redo extends Thread {
     private Map<Long, Record> pkMap = new HashMap<>();
     private ByteBuffer byteBuffer;
     private long[] pkPos;
+    private List<Record> records = new ArrayList<>((1000*10000)/64);
     private static AtomicInteger redo = new AtomicInteger(0);
+
     //   private ByteBufferPool byteBufferPool = ByteBufferPool.getInstance();
-    private long beginPk;
-    private long endPk;
     private Parser[] parser;
     int redoId = redo.incrementAndGet();
-    public  Redo(Parser[] parser, long beginPk, long endPk){
+    public  Redo(Parser[] parser){
         setName("Redo" + redoId);
         this.parser = parser;
-        this.beginPk = beginPk;
-        this.endPk = endPk;
-        pkPos = new long[(int)(this.endPk - this.endPk - 1)/64 + 1];
+        pkPos = new long[(1000*10000)/64];
         for(int i = 0; i < pkPos.length; i++){
             pkPos[i] = 0;
         }
-    }
-    public byte bitLongScan(long[] posPk, long pos){
-        int blockBumber = (int)((pos - 1) / 64);
-        byte curpos = (byte)((pos - 1) % 64);
-        long value = posPk[blockBumber];
-        byte bitValue = (byte) ((value >> curpos) & 1);
-        return bitValue;
-    }
-
-    public void bitLongUpdate(long[] posPk, long pos, boolean bitFlag){
-        int blockBumber = (int)((pos - 1) / 64);
-        byte curpos = (byte)((pos - 1) % 64 );
-        long value = posPk[blockBumber];
-        if(bitFlag == true){
-            value = value & ~(1 << curpos);
-        }else{
-            value = value | (1 << curpos);
-        }
-        posPk[blockBumber] = value;
     }
 
     @Override
@@ -109,13 +86,33 @@ public class Redo extends Thread {
 
             }
 
-//            searchResult();
+            searchResult();
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
 
+    public byte bitLongScan(long[] posPk, long pos){
+        int blockBumber = (int)((pos - 1) / 64);
+        byte curpos = (byte)((pos - 1) % 64);
+        long value = posPk[blockBumber];
+        byte bitValue = (byte) ((value >> curpos) & 1);
+        return bitValue;
+    }
 
-
+    public void bitLongUpdate(long[] posPk, long pos, boolean bitFlag){
+        int blockBumber = (int)((pos - 1) / 64);
+        if(blockBumber > 4576316){
+            System.out.println(blockBumber + " " + pos);
+        }
+        byte curpos = (byte)((pos - 1) % 64 );
+        long value = posPk[blockBumber];
+        if(bitFlag == true){
+            value = value & ~(1 << curpos);
+        }else{
+            value = value | (1 << curpos);
+        }
+        posPk[blockBumber] = value;
     }
 
     private void deleteResualt(Map<Long, Record> pkMap, LogIndex logIndex, int index) throws InterruptedException {
@@ -145,12 +142,10 @@ public class Redo extends Thread {
             System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
             columnByteBuffer.limit(columnLen);
         }
-
-//        if (oldPk != newPk) {
-//            System.out.println(oldPk + " -> " + newPk);
-//            pkMap.remove(oldPk);
-//            pkMap.put(newPk, record);
-//        }
+        if (oldPk != newPk) {
+            pkMap.remove(oldPk);
+            pkMap.put(newPk, record);
+        }
     }
 
     private void insertResualt(Map<Long, Record> pkMap, LogIndex logIndex, int index, int redoNum) throws InterruptedException {
@@ -168,17 +163,14 @@ public class Redo extends Thread {
                 int columnLen = logIndex.getColumnValueLens(index)[i];
 
 
-    //            record.getColumnName().add(hashColumnName);
                 ByteBuffer columnByteBuffer = ByteBuffer.allocate(8);
-    //            byteBuffer.position(columnPos);
-    //            byte[] stg = new byte[columnLen];
 
                 System.arraycopy(byteBuffer.array(), columnPos, columnByteBuffer.array(), 0, columnLen);
-    //            System.out.println(new String(columnByteBuffer.array()));
+
                 columnByteBuffer.limit(columnLen);
                 String sf = new String(columnByteBuffer.array());
                 record.getColumnValue().add(columnByteBuffer);
-     //           byte[] sg = new byte[columnLen];
+
             }
             pkMap.put(newPk, record);
         }

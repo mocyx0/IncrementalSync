@@ -154,6 +154,8 @@ public class Parser extends Thread {
 //					if(oldPK != -1 && oldPK != newPK) {
 //						System.out.println(oldPK);
 //					}
+//					if( oldPK != -1 && newPK != -1 &&(oldPK < 0 || newPK < 0))
+//						System.out.println();
 					--i; // after:
 					itemIndex += 3;
 					logIndex.addNewLog(oldPK, newPK, op, logItemIndex);
