@@ -29,9 +29,12 @@ public class Client {
     private static String ip;
     private EventLoopGroup loop = new NioEventLoopGroup();
 
-    public static void main(String[] args) throws Exception {
-//        MClient.main(args);
-//        /*
+
+    private static void mainYX(String[] args) {
+        MClient.main(args);
+    }
+
+    private static void mainXZ(String[] args) throws Exception {
 
         Config.init();
         initProperties();
@@ -48,6 +51,10 @@ public class Client {
 //        Thread.sleep(20000);
         client.connect(ip, port);
 //        */
+    }
+
+    public static void main(String[] args) throws Exception {
+        mainYX(args);
     }
 
     /**
@@ -80,7 +87,7 @@ public class Client {
                 public void initChannel(SocketChannel ch) throws Exception {
 //                    ch.pipeline().addLast(new IdleStateHandler(10, 0, 0));
 //                    ch.pipeline().addLast(new ClientIdleEventHandler());
-                    ch.pipeline().addFirst("decoder", new LengthFieldBasedFrameDecoder(1000000000,0,4,0,4));
+                    ch.pipeline().addFirst("decoder", new LengthFieldBasedFrameDecoder(1000000000, 0, 4, 0, 4));
                     ch.pipeline().addLast(new ClientResultReceiverHandler());
                 }
             });

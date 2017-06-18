@@ -40,7 +40,11 @@ public class Server {
         Server.map = map;
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    private static void mainYX(String[] args) {
+        MServer.main(args);
+    }
+
+    private static void mainXZ(String[] args) {
         Logger logger = LoggerFactory.getLogger(Server.class);
         try {
             logger.info("server start");
@@ -55,13 +59,13 @@ public class Server {
 //        String fileBaseName = Config.DATA_HOME + "/small_";
 //        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
             int fileCnt = 0;
-            for(int i = 0; i < 10; i++) {
+            for (int i = 0; i < 10; i++) {
                 String fileName = fileBaseName + i;
                 File f = new File(fileName);
-                if(f.exists()) fileCnt++;
+                if (f.exists()) fileCnt++;
             }
             String[] fileNames = new String[fileCnt];
-            for(int i = 0; i < fileCnt; i++) {
+            for (int i = 0; i < fileCnt; i++) {
                 fileNames[i] = fileBaseName + i;
             }
             long time1 = System.currentTimeMillis();
@@ -71,12 +75,12 @@ public class Server {
 //        /*
 
 //        Logger logger = LoggerFactory.getLogger(Server.class);
-        Server server = new Server();
+            Server server = new Server();
 //        for (int i = 0; i < 100; i++) {
             logger.info("com.alibaba.middleware.race.sync.Server is running....");
 //        }
 
-        server.startServer(5527);
+            server.startServer(5527);
             readingThread.join();
             long time2 = System.currentTimeMillis();
             System.out.println("elapsed time:" + (time2 - time1) + "ms");
@@ -84,6 +88,10 @@ public class Server {
         } catch (Exception e) {
             logger.info("{}", e);
         }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        mainYX(args);
     }
 
     /**
