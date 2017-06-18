@@ -41,7 +41,7 @@ public class Config {
 
         } else if (runtime.equals("xuzhe")) {
             TESTER_HOME = "/home/ubuntu/alitest/";
-            DATA_HOME = "/home/ubuntu/alitest/data";
+            DATA_HOME = "/home/ubuntu/alitest/data/ram";
             RESULT_HOME = "/home/ubuntu/alitest/result";
             TEAMCODE = Constants.TEAMCODE;
             LOG_LEVEL = "DEBUG";
