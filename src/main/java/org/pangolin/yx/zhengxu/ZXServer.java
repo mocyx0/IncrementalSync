@@ -1,23 +1,25 @@
 package org.pangolin.yx.zhengxu;
 
-import com.alibaba.middleware.race.sync.Client;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.ResultWriter;
 import org.pangolin.yx.Util;
 import org.pangolin.yx.WorkerServer;
-import org.pangolin.yx.nixu.LogParser;
 import org.slf4j.Logger;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Created by yangxiao on 2017/6/16.
  */
+
+class LogQueues {
+    ArrayList<LinkedBlockingQueue<ArrayList<LogRecord>>> queues = new ArrayList<>();
+}
+
 
 class BlockData {
     LinkedBlockingQueue<ArrayList<LogRecord>> logQueue;
@@ -28,8 +30,7 @@ public class ZXServer implements WorkerServer {
     private static int BUFFER_SIZE = 1024;
     private CountDownLatch latch;
     private Logger logger;
-
-    private ArrayList<BlockData> blockDatas = new ArrayList<>();
+    private LogQueues logQueues = new LogQueues();
     private ArrayList<Rebuilder> rebuilders = new ArrayList<>();
     private int queueCount;
 
@@ -46,78 +47,17 @@ public class ZXServer implements WorkerServer {
         int thCount = Config.REBUILDER_THREAD;
         latch = new CountDownLatch(thCount);
         queueCount = thCount;
+
+
         for (int i = 0; i < thCount; i++) {
-            BlockData blockData = new BlockData();
-            blockDatas.add(blockData);
-            blockData.logQueue = new LinkedBlockingQueue<ArrayList<LogRecord>>(2048);
-            blockData.buffQueue = new ArrayList<>();
-            Rebuilder rebuilder = new Rebuilder(blockData.logQueue, latch, LineParser.tableInfo);
+            LinkedBlockingQueue<ArrayList<LogRecord>> logQueue = new LinkedBlockingQueue<ArrayList<LogRecord>>(2048);
+            logQueues.queues.add(logQueue);
+            Rebuilder rebuilder = new Rebuilder(logQueue, latch, LineParser.tableInfo);
             Thread th = new Thread(rebuilder);
             rebuilders.add(rebuilder);
             th.start();
         }
     }
-
-    private void pushLog(int block, LogRecord log) throws Exception {
-        BlockData blockData = blockDatas.get(block);
-        if (blockData.buffQueue.size() == BUFFER_SIZE) {
-            blockData.logQueue.put(blockData.buffQueue);
-            blockData.buffQueue = new ArrayList<>(BUFFER_SIZE);
-        }
-        blockData.buffQueue.add(log);
-    }
-
-    private class ParserThread implements Runnable {
-
-        private void startParser() throws Exception {
-            long t1 = System.currentTimeMillis();
-            ArrayList<String> paths = Util.logFiles(Config.DATA_HOME);
-            LineParser.init(paths);
-            long line = 0;
-            LogRecord logRecord = LineParser.nextLine();
-            while (logRecord != null) {
-                line++;
-                long id = logRecord.id;
-                if (logRecord.opType == 'D') {
-                    id = logRecord.preId;
-                }
-                if (logRecord.opType == 'U' && logRecord.preId != logRecord.id) {
-                    //发送一个X消息表示消息已经被update
-                    LogRecord xlog = new LogRecord();
-                    xlog.opType = 'X';
-                    xlog.id = logRecord.preId;
-                    int block1 = (int) (xlog.id % queueCount);
-                    pushLog(block1, xlog);
-                }
-                int block = (int) (id % queueCount);
-                pushLog(block, logRecord);
-                //logQueues.get(block).put(logRecord);
-
-                logRecord = LineParser.nextLine();
-            }
-            //end
-            for (BlockData blockData : blockDatas) {
-                blockData.logQueue.put(blockData.buffQueue);
-                blockData.logQueue.put(new ArrayList<LogRecord>());
-                blockData.buffQueue = null;
-            }
-            //
-            long t2 = System.currentTimeMillis();
-            logger.info(String.format("parse end, cost:%d", t2 - t1));
-        }
-
-        @Override
-        public void run() {
-            try {
-                startParser();
-            } catch (Exception e) {
-                logger.info("{}", e);
-                System.exit(0);
-            }
-
-        }
-    }
-
 
     private void startParser1() throws Exception {
         long t1 = System.currentTimeMillis();
@@ -227,6 +167,8 @@ public class ZXServer implements WorkerServer {
         ResultWriter.writeBuffer(buffer);
     }
 
+    FileParser fileParser = new FileParserSimple();
+
     @Override
     public void doData() throws Exception {
         //Thread.sleep(3000);
@@ -235,8 +177,7 @@ public class ZXServer implements WorkerServer {
         //开启rebuilder线程
         startRebuilder();
         //解析线程
-        Thread th = new Thread(new ParserThread());
-        th.start();
+        fileParser.run(logQueues);
         latch.await();
         logger.info("Rebuild done");
         ArrayList<DataStorage> dataStorages = new ArrayList<>();

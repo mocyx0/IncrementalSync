@@ -111,6 +111,7 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
         } else {
             logger.info("ERROR clientChannel is null");
             sData = data;
+            System.exit(0);
         }
     }
 

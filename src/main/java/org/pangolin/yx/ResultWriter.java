@@ -50,7 +50,7 @@ public class ResultWriter {
     }
     */
 
-    private static RandomAccessFile raf = null;
+    private  static RandomAccessFile raf = null;
 
     public synchronized static void writeBuffer(ByteBuffer buffer) throws Exception {
         /*

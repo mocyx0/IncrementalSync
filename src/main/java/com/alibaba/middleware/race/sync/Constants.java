@@ -49,7 +49,7 @@ public interface Constants {
 
     boolean NOT_CHECK_SCHEME = true;
 
-    int REBUILDER_THREAD = 15;
+    int REBUILDER_THREAD = 14;
     int PARSER_THREAD = 2;
 
     int COLLECTOR_THREAD = 16;
