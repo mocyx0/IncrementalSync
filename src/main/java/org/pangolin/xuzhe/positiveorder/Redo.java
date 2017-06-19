@@ -17,12 +17,12 @@ public class Redo extends Thread {
     private byte[] dataSrc;
     private long[] pkPos;
 //    private List<Record> records = new ArrayList<>((1000*10000)/64);
-    private static AtomicInteger redo = new AtomicInteger(0);
     public static AtomicInteger allocatedBufferCount = new AtomicInteger(0);
     //   private ByteBufferPool byteBufferPool = ByteBufferPool.getInstance();
     private Parser[] parser;
-    int redoId = redo.incrementAndGet();
-    public  Redo(Parser[] parser){
+    int redoId;
+    public  Redo(int redoId, Parser[] parser){
+        this.redoId = redoId;
         setName("Redo" + redoId);
         this.parser = parser;
         pkPos = new long[(1000*10000)/64];
@@ -66,6 +66,7 @@ public class Redo extends Thread {
 
 
                 dataSrc = logIndex.getByteBuffer().array();
+//                System.out.println(new String(dataSrc, 0, 100));
                 try {
                     for (int i = 0; i < logIndex.getLogSize(); i++) {
                         byte logType = logIndex.getLogType(i);
@@ -79,8 +80,8 @@ public class Redo extends Thread {
                     }
 
 //                    System.out.println("LogIndex Done!" + count);
-                    count++;
                 } finally {
+                    count++;
                     logIndex.release();
                 }
 
@@ -121,10 +122,10 @@ public class Redo extends Thread {
 
     private void updateResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index) throws InterruptedException {
         long oldPk = logIndex.getOldPks()[index];
-        if (!pkMap.containsKey(oldPk)) {
+        Record record = pkMap.get(oldPk);
+        if (record == null) {
             return;
         }
-        Record record = pkMap.get(oldPk);
         long newPk = logIndex.getNewPk(index);
         short columnSize = logIndex.getColumnSize(index);
         for (int i = 0; i < columnSize; i++) {
@@ -145,6 +146,7 @@ public class Redo extends Thread {
         }
         if (oldPk != newPk) {
             pkMap.remove(oldPk);
+            record.setPk(newPk);
             pkMap.put(newPk, record);
         }
     }
@@ -155,7 +157,7 @@ public class Redo extends Thread {
 //            return;
         //      int logSize = logIndex.getLogSize();
         //每个pk对应到不同的线程
-        if(newPk % REDO_NUM == (redoNum - 1)){
+        if(newPk % REDO_NUM == redoNum){
             short columnSize = logIndex.getColumnSize(index);
             Record record = new Record(newPk, columnSize);
             for (int i = 0; i < columnSize; i++) {

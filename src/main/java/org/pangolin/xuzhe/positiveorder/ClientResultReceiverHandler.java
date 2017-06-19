@@ -1,7 +1,6 @@
 package org.pangolin.xuzhe.positiveorder;
 
 import com.alibaba.middleware.race.sync.Client;
-import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -20,11 +19,7 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
     private static Logger logger = LoggerFactory.getLogger(Client.class);
     FileOutputStream fileOutputStream = null;
     public ClientResultReceiverHandler() {
-        try {
-            fileOutputStream = new FileOutputStream(Config.RESULT_HOME + "/" + Config.RESULT_NAME);
-        } catch (IOException e) {
-            logger.info("", e);
-        }
+
     }
 
     private static volatile Channel clientChannel;
@@ -57,10 +52,15 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
         // msg中存储的是ByteBuf类型的数据，把数据读取到byte[]中
         result.readBytes(result1);
         logger.info("Client side, channel Read:{}", result1.length);
-        fileOutputStream.write(result1);
-        fileOutputStream.close();
-        Thread.sleep(10000); //  休眠10秒
-        System.exit(0);
+        try {
+            fileOutputStream = new FileOutputStream(Config.RESULT_HOME + "/" + Config.RESULT_NAME);
+            fileOutputStream.write(result1);
+            fileOutputStream.close();
+            Thread.sleep(10000); //  休眠10秒
+            System.exit(0);
+        } catch (IOException e) {
+            logger.info("", e);
+        }
 
     }
 

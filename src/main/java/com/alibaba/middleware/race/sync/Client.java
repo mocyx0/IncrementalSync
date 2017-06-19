@@ -48,13 +48,12 @@ public class Client {
         // 从args获取server端的ip
         ip = args[0];
         Client client = new Client();
-//        Thread.sleep(20000);
         client.connect(ip, port);
 //        */
     }
 
     public static void main(String[] args) throws Exception {
-        mainYX(args);
+        mainXZ(args);
     }
 
     /**
@@ -103,7 +102,7 @@ public class Client {
                     f.channel().closeFuture().sync();
                 } catch (Exception e) {
                     logger.info("建立连接失败", e);
-                    Thread.sleep(5000);
+                    Thread.sleep(1000);
                 }
             }
         } finally {

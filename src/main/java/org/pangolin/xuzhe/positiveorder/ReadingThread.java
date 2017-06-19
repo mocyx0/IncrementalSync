@@ -44,7 +44,7 @@ public class ReadingThread extends Thread {
             parsers[i] = new Parser(i);
         }
         for(int i = 0;  i < REDO_NUM; i++){
-            redos[i] = new Redo(parsers);
+            redos[i] = new Redo(i, parsers);
         }
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i].start();
@@ -96,18 +96,18 @@ public class ReadingThread extends Thread {
                     }
 //                    firstLineTest(currentBuffer);
                     remain = remain-lastReadCnt;
-                    int w = workerIndex% PARSER_NUM;
                     nextBuffer = pool.get();
 //                    if(nextBuffer != null) {
-                        transferLastBrokenLine(currentBuffer, nextBuffer);
+                    transferLastBrokenLine(currentBuffer, nextBuffer);
 //                    }
 //                    pool.put(currentBuffer);
+                    int w = workerIndex% PARSER_NUM;
                     parsers[w].appendBuffer(currentBuffer);
+                    workerIndex++;
                     currentBuffer = nextBuffer;
                     if(remain == 0) {
                         break;
                     }
-                    workerIndex++;
                 }
                 channel.close();
                 fis.close();
@@ -149,8 +149,8 @@ public class ReadingThread extends Thread {
             beginTime = System.currentTimeMillis();
             saveResultToByteBuf(buf, beginId, endId);
             ResultSenderHandler.sendResult(buf);
-            logger.info("Send to client elapsed time: " + totalLine);
             endTime = System.currentTimeMillis();
+            logger.info("Send to client elapsed time: " + (endTime-beginTime));
 //            this.searchResult();
         } catch (IOException e) {
             logger.info("{}", e);
@@ -228,7 +228,8 @@ public class ReadingThread extends Thread {
                 Record record = redos[i].pkMap.get(begin);
 
                 if (record != null) {
-                    buf.writeCharSequence(record.toString(), Charset.forName("utf-8"));
+                    String s = record.toString();
+                    buf.writeCharSequence(s, Charset.forName("utf-8"));
                     buf.writeByte('\n');
                 }
             }
