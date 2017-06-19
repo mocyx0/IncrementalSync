@@ -147,8 +147,8 @@ public class ReadingThread extends Thread {
 
 //            this.saveResultToFile("Result.rs", beginId, endId);
             beginTime = System.currentTimeMillis();
-            saveResultToByteBuf(buf, beginId, endId);
-            ResultSenderHandler.sendResult(buf);
+//            saveResultToByteBuf(buf, beginId, endId);
+//            ResultSenderHandler.sendResult(buf);
             endTime = System.currentTimeMillis();
             logger.info("Send to client elapsed time: " + (endTime-beginTime));
 //            this.searchResult();
@@ -272,18 +272,25 @@ public class ReadingThread extends Thread {
         ReadingThread.beginId = Long.parseLong(args[0]);
         ReadingThread.endId = Long.parseLong(args[1]);
         Config.init();
-        String fileBaseName = Config.DATA_HOME + "/ram/canal_splited.txt";
+        String fileBaseName = Config.DATA_HOME + "/";
 //        String fileBaseName = Config.DATA_HOME + "/small_";
 //        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
         int fileCnt = 0;
-        for(int i = 0; i < 10; i++) {
-            String fileName = fileBaseName + i;
+        for(int i = 1; i <= 10; i++) {
+            String fileName = fileBaseName + i + ".txt";
+            System.out.print("check file:" + fileName);
             File f = new File(fileName);
-            if(f.exists()) fileCnt++;
+            if(f.exists()) {
+                System.out.println(" exists");
+                fileCnt++;
+            } else {
+                System.out.println(" not exists");
+
+            }
         }
         String[] fileNames = new String[fileCnt];
-        for(int i = 0; i < fileCnt; i++) {
-            fileNames[i] = fileBaseName + i;
+        for(int i = 1; i <= fileCnt; i++) {
+            fileNames[i-1] = fileBaseName + i + ".txt";
         }
         long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNames);
