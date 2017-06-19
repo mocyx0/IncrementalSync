@@ -118,6 +118,7 @@ public class NetServerHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
         logger.info("channelActive");
         clientChannel = ctx.channel();
+        ResultWriter.clearWaitBuff();
     }
 
     @Override

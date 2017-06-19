@@ -52,6 +52,17 @@ public class ResultWriter {
 
     private static RandomAccessFile raf = null;
 
+    private static ArrayList<byte[]> waitBuff = new ArrayList<>();
+
+    public synchronized static void clearWaitBuff() {
+        Channel channel = NetServerHandler.getClientChannel();
+        for (byte[] preData : waitBuff) {
+            ByteBuf byteBuf = Unpooled.wrappedBuffer(preData, 0, preData.length);
+            channel.writeAndFlush(byteBuf);
+        }
+        waitBuff.clear();
+    }
+
     public synchronized static void writeBuffer(ByteBuffer buffer) throws Exception {
         /*
         if (Config.SINGLE) {
@@ -75,9 +86,10 @@ public class ResultWriter {
 
         Channel channel = NetServerHandler.getClientChannel();
         if (channel == null) {
-            Config.serverLogger.info("client channel is empty");
-
+            waitBuff.add(data);
+            Config.serverLogger.info(String.format("client channel is empty, wait buff len %d", waitBuff.size()));
         } else {
+            clearWaitBuff();
             if (buffer.limit() == 0) {
                 Config.serverLogger.info("buffer limit =0");
             }

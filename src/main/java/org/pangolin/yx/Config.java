@@ -66,7 +66,7 @@ public class Config {
     // 赛题数据
     public static String DATA_HOME = "C:/tmp/logfinal";
     // 结果文件目录
-    public static String RESULT_HOME = "D:/tmp/amimid/result";
+    public static String RESULT_HOME = "C:/tmp/logfinal";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";
