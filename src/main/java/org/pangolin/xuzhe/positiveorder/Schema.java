@@ -18,13 +18,13 @@ public class Schema {
 
     int[] coloumHashCode;
     byte[] columnDataType;
-    Map<Integer, Integer> columnHash2NoMap;
+    MyInt2IntHashMap columnHash2NoMap;
     public final int columnCount;
     private Schema(int columnCount) {
         this.columnCount = columnCount;
         coloumHashCode = new int[columnCount];
         columnDataType = new byte[columnCount];
-        columnHash2NoMap = new HashMap<>();
+        columnHash2NoMap = new MyInt2IntHashMap();
     }
 
     /**

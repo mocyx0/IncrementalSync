@@ -145,8 +145,8 @@ public class ReadingThread extends Thread {
 //            }
             ByteBuf buf = Unpooled.directBuffer(20<<20);
 
-//            this.saveResultToFile("Result.rs", beginId, endId);
             beginTime = System.currentTimeMillis();
+            this.saveResultToFile("Result.rs", beginId, endId);
 //            saveResultToByteBuf(buf, beginId, endId);
 //            ResultSenderHandler.sendResult(buf);
             endTime = System.currentTimeMillis();
@@ -272,7 +272,7 @@ public class ReadingThread extends Thread {
         ReadingThread.beginId = Long.parseLong(args[0]);
         ReadingThread.endId = Long.parseLong(args[1]);
         Config.init();
-        String fileBaseName = Config.DATA_HOME + "/";
+        String fileBaseName = Config.DATA_HOME + "/ram/";
 //        String fileBaseName = Config.DATA_HOME + "/small_";
 //        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
         int fileCnt = 0;

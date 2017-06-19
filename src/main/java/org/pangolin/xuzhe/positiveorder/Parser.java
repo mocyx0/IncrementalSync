@@ -34,7 +34,7 @@ public class Parser extends Thread {
 	private ArrayBlockingQueue<LogIndex>[] logIndexBlockingQueueArray;
 	private int parserNo;
 	public int readLineCnt = 0;
-	public int readBytesCnt = 0;
+	public long readBytesCnt = 0;
 	LogIndexPool logIndexPool;
 	private Schema schema;
 	public Parser(int parserNo) {
@@ -157,7 +157,7 @@ public class Parser extends Thread {
 //						System.out.println();
 					--i; // after:
 					itemIndex += 3;
-					String s = new String(data, lineBegin, i-lineBegin+1);
+//					String s = new String(data, lineBegin, i-lineBegin+1);
 					logIndex.addNewLog(oldPK, newPK, op, logItemIndex);
 				} else if (itemIndex == 9) {
 					// current: |first_name:2:0|NULL|阮|...
@@ -178,7 +178,7 @@ public class Parser extends Thread {
 							++i;
 						} // after: :2:0|NULL|阮|...
 //					System.out.println();
-						hashs[columnIndex] = schema.columnHash2NoMap.get(hash).intValue();
+						hashs[columnIndex] = schema.columnHash2NoMap.get(hash);
 
 						i += 4; // after: |NULL|阮|last_name:2:0...
 						// 开始解析列的 新旧值
@@ -220,6 +220,7 @@ public class Parser extends Thread {
 		}
 		logIndex.setLogSize(logItemIndex);
 		for(int j = 0; j < REDO_NUM; j++) {
+//			logIndex.release();
 			logIndexBlockingQueueArray[j].put(logIndex);
 //			System.out.println(getName() + " put a LogIndex into LogIndexQueue");
 		}

@@ -53,29 +53,31 @@ public class Redo extends Thread {
 //         System.out.println(Thread.currentThread().getName() + ":" + currentBeginPk + " " + currentEndPk);
 
         long count = 0;
-        LogIndex logIndex = null;
+        LogIndex logIndex;
         try {
             while (true) {
                 int parserNum = (int) (count % PARSER_NUM);
                 //获取对应parser对象的logIndex
-
                 logIndex = parser[parserNum].getLogIndexQueueHeaderByRedoId(redoId);
                 if (logIndex == LogIndex.EMPTY_LOG_INDEX) {
                     break;
                 }
-
-
                 dataSrc = logIndex.getByteBuffer().array();
 //                System.out.println(new String(dataSrc, 0, 100));
                 try {
+                    long[] oldPKs = logIndex.getOldPks();
                     for (int i = 0; i < logIndex.getLogSize(); i++) {
                         byte logType = logIndex.getLogType(i);
                         if (logType == 'I') {
-                            insertResualt(pkMap, logIndex, i, redoId);
+                            long newPk =logIndex.getNewPk(i);
+
+                            if(newPk % REDO_NUM == this.redoId) {
+                                insertResualt(pkMap, logIndex, i, newPk);
+                            }
                         } else if (logType == 'U') {
-                            updateResualt(pkMap, logIndex, i);
+                            updateResualt(pkMap, logIndex, i, oldPKs[i]);
                         } else {
-                            deleteResualt(pkMap, logIndex, i);
+                            deleteResualt(pkMap, logIndex, oldPKs[i]);
                         }
                     }
 
@@ -86,7 +88,6 @@ public class Redo extends Thread {
                 }
 
             }
-            System.out.println();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -115,25 +116,24 @@ public class Redo extends Thread {
         posPk[blockBumber] = value;
     }
 
-    private void deleteResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index) throws InterruptedException {
-        long oldPk = logIndex.getOldPks()[index];
+    private void deleteResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, long oldPk) throws InterruptedException {
         pkMap.remove(oldPk);
     }
 
-    private void updateResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index) throws InterruptedException {
-        long oldPk = logIndex.getOldPks()[index];
+    private void updateResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index, long oldPk) throws InterruptedException {
         Record record = pkMap.get(oldPk);
         if (record == null) {
             return;
         }
         long newPk = logIndex.getNewPk(index);
+        int[] newValues = logIndex.getColumnNewValues(index);
+        int[] names = logIndex.getHashColumnName(index);
+        short[] valueLens = logIndex.getColumnValueLens(index);
         short columnSize = logIndex.getColumnSize(index);
         for (int i = 0; i < columnSize; i++) {
-            int columnIndex = logIndex.getHashColumnName(index)[i];
-//            ByteBuffer columnByteBuffer = record.getColumnValue().get(pos);
-
-            int columnPos = logIndex.getColumnNewValues(index)[i];
-            int columnLen = logIndex.getColumnValueLens(index)[i];
+            int columnIndex = names[i];
+            int columnPos = newValues[i];
+            int columnLen = valueLens[i];
             record.setColumnValue(columnIndex, dataSrc, columnPos, columnLen);
 //            if (columnLen > columnByteBuffer.capacity()) {
                 //重新申请一个更大长度的byteBuffer
@@ -151,20 +151,18 @@ public class Redo extends Thread {
         }
     }
 
-    private void insertResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index, int redoNum) throws InterruptedException {
-        long newPk = logIndex.getNewPk(index);
+    private void insertResualt(MyLong2ObjHashMap pkMap, LogIndex logIndex, int index, long newPk) throws InterruptedException {
 //        if (newPk <= beginPk || newPk >= endPk)
 //            return;
         //      int logSize = logIndex.getLogSize();
         //每个pk对应到不同的线程
-        if(newPk % REDO_NUM == redoNum){
-            short columnSize = logIndex.getColumnSize(index);
-            Record record = new Record(newPk, columnSize);
-            for (int i = 0; i < columnSize; i++) {
-                int columnIndex = logIndex.getHashColumnName(index)[i];
-                int columnPos = logIndex.getColumnNewValues(index)[i];
-                int columnLen = logIndex.getColumnValueLens(index)[i];
-                record.setColumnValue(columnIndex, dataSrc, columnPos, columnLen);
+        short columnSize = logIndex.getColumnSize(index);
+        Record record = new Record(newPk, columnSize);
+        for (int i = 0; i < columnSize; i++) {
+            int columnIndex = logIndex.getHashColumnName(index)[i];
+            int columnPos = logIndex.getColumnNewValues(index)[i];
+            int columnLen = logIndex.getColumnValueLens(index)[i];
+            record.setColumnValue(columnIndex, dataSrc, columnPos, columnLen);
 //                allocatedBufferCount.incrementAndGet();
 //                ByteBuffer columnByteBuffer = ByteBuffer.allocate(8);
 
@@ -174,9 +172,8 @@ public class Redo extends Thread {
 //                String sf = new String(columnByteBuffer.array());
 //                record.getColumnValue().add(columnByteBuffer);
 
-            }
-            pkMap.put(newPk, record);
         }
+        pkMap.put(newPk, record);
     }
 
 
