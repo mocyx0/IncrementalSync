@@ -21,10 +21,6 @@ class LogQueues {
 }
 
 
-class BlockData {
-    LinkedBlockingQueue<ArrayList<LogRecord>> logQueue;
-    ArrayList<LogRecord> buffQueue;
-}
 
 public class ZXServer implements WorkerServer {
     private static int BUFFER_SIZE = 1024;
