@@ -43,8 +43,6 @@ public interface Constants {
     int PRECACHE_THREAD = 3;
     int CPU_COUNT = 16;
 
-    long BLOCK_SIZE = 1024 * 1024 * 1024 * 2;
-
     boolean COPY_DATA = true;
 
     boolean NOT_CHECK_SCHEME = true;

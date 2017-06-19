@@ -87,7 +87,7 @@ public class ResultWriter {
         Channel channel = NetServerHandler.getClientChannel();
         if (channel == null) {
             waitBuff.add(data);
-            Config.serverLogger.info(String.format("client channel is empty, wait buff len %d", waitBuff.size()));
+            // Config.serverLogger.info(String.format("client channel is empty, wait buff len %d", waitBuff.size()));
         } else {
             clearWaitBuff();
             if (buffer.limit() == 0) {

@@ -15,9 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 多线程日志解析
  */
 public class FileParserMT implements FileParser {
-    private static int FILE_BLOCK_COUNT = 1024;
-    private static int FILE_BLOCK_SIZE = 1024 * 32;//不能大于32k
-    private static int LOG_BUFFER_SIZE = 1024;
+    private static int FILE_BLOCK_COUNT = 128;
+    private static int FILE_BLOCK_SIZE = 1024 * 1024;//不能大于32k
+    //缓存多条数据后交给rebuilder处理
+    private static int LOG_BUFFER_SIZE = 10240 / 2;
+    private static int RESULT_QUEUE_SIZE = 12;
     private LogQueues queues;
     private ArrayList<BlockData> blockDatas = new ArrayList<>();
     int queueCount;
@@ -35,12 +37,15 @@ public class FileParserMT implements FileParser {
         ArrayList<LogRecord> buffQueue;
     }
 
-    BlockingQueue<FileBlock> fileBlocks = new LinkedBlockingQueue<>(FILE_BLOCK_COUNT);
+    //BlockingQueue<FileBlock> fileBlocks = new ArrayBlockingQueue<>(FILE_BLOCK_COUNT);
+
+    ArrayList<BlockingQueue<FileBlock>> fileBlockQueues;
 
     //下一个需要读取的seq
     private int nextReadSeq = 0;
 
-    TreeMap<Integer, ArrayList<LogRecord>> logBlocks = new TreeMap<>();
+    //TreeMap<Integer, ArrayList<LogRecord>> logBlocks = new TreeMap<>();
+    ArrayList<BlockingQueue<ArrayList<LogRecord>>> logBlocks = new ArrayList<>();
 
 
     ConcurrentLinkedQueue<byte[]> bufferPool = new ConcurrentLinkedQueue<>();
@@ -52,6 +57,7 @@ public class FileParserMT implements FileParser {
             buff = new byte[FILE_BLOCK_SIZE];
         }
         return buff;
+        //return new byte[FILE_BLOCK_SIZE];
     }
 
     private void freeReadBuff(byte[] buff) {
@@ -73,7 +79,7 @@ public class FileParserMT implements FileParser {
                     long pos = 0;
                     while (pos < fileLen) {
                         FileBlock fileBlock = new FileBlock();
-                        fileBlock.buffer = new byte[FILE_BLOCK_SIZE];
+                        fileBlock.buffer = allocateReadBuff();
 
                         fileBlock.length = raf.read(fileBlock.buffer);
                         //find the last \n, so we have a full line
@@ -87,11 +93,16 @@ public class FileParserMT implements FileParser {
                         seq++;
                         pos += fileBlock.length;
                         raf.seek(pos);
-                        fileBlocks.put(fileBlock);
+                        fileBlockQueues.get(seq % fileBlockQueues.size()).put(fileBlock);
+                        //fileBlocks.put(fileBlock);
                     }
                     raf.close();
                 }
-                fileBlocks.put(new FileBlock());
+
+                //fileBlocks.put(new FileBlock());
+                for (BlockingQueue<FileBlock> queue : fileBlockQueues) {
+                    queue.put(new FileBlock());
+                }
                 logger.info("ReadThread done");
             } catch (Exception e) {
                 logger.info("{}", e);
@@ -120,18 +131,30 @@ public class FileParserMT implements FileParser {
 
         int parsePos = 0;
         CountDownLatch latch;
+        BlockingQueue<FileBlock> queue;
+        BlockingQueue<ArrayList<LogRecord>> resultQueue;
 
-        ParseThread(CountDownLatch latch) {
+        ParseThread(CountDownLatch latch, BlockingQueue<FileBlock> queue, BlockingQueue<ArrayList<LogRecord>> resultQueue) {
             this.latch = latch;
+            this.queue = queue;
+            this.resultQueue = resultQueue;
+        }
+
+        LogRecord nextLineTest(byte[] data) {
+
+            while (data[parsePos] != '\n') {
+                parsePos++;
+            }
+            parsePos++;
+            return null;
         }
 
         LogRecord nextLine(byte[] data) {
             TableInfo tableInfo = GlobalData.tableInfo;
             LogRecord logRecord = new LogRecord();
-            logRecord.lineData = data;
+            //logRecord.lineData = data;
             logRecord.columnData = new short[3 * (tableInfo.columnName.length - 1)];
             int colWriteIndex = 0;
-
             int pos = parsePos;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
@@ -142,7 +165,7 @@ public class FileParserMT implements FileParser {
             byte op = data[opPos];
             logRecord.opType = op;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//op
-
+/*
             if (op == 'I') {
                 insertCount.incrementAndGet();
             } else if (op == 'U') {
@@ -150,7 +173,7 @@ public class FileParserMT implements FileParser {
             } else if (op == 'D') {
                 deleteCount.incrementAndGet();
             }
-
+            */
             while (data[pos] != '\n') {
                 int namePos = pos;
                 int nameLen = ZXUtil.nextToken(data, pos, ':');//col name
@@ -193,30 +216,38 @@ public class FileParserMT implements FileParser {
             try {
                 int selfLineCount = 0;
                 while (true) {
-                    FileBlock fileBlock = fileBlocks.take();
+                    FileBlock fileBlock = queue.take();
                     if (fileBlock.buffer == null) {
                         //put back the flag
-                        fileBlocks.put(fileBlock);
+                        queue.put(fileBlock);
                         break;
                     } else {
                         ArrayList<LogRecord> logRecords = new ArrayList<>();
                         parsePos = 0;
+                        /*
+                        for (int i = 0; i < 1024 * 10; i++) {
+                            logRecords.add(null);
+                        }*/
                         int seq = fileBlock.seq;
                         while (parsePos < fileBlock.length) {
-
+                            //byte[] newData = new byte[fileBlock.buffer.length];
+                            //System.arraycopy(fileBlock.buffer, 0, newData, 0, newData.length);
                             LogRecord logRecord = nextLine(fileBlock.buffer);
                             logRecords.add(logRecord);
-                            lineCount.incrementAndGet();
+//                            lineCount.incrementAndGet();
                             selfLineCount++;
                         }
+                        freeReadBuff(fileBlock.buffer);
                         //System.out.println(lineCount);
+                        resultQueue.put(logRecords);
+                        /*
                         synchronized (FileParserMT.class) {
                             logBlocks.put(seq, logRecords);
                             int firstKey = logBlocks.firstKey();
                             while (firstKey == nextReadSeq) {
                                 //这是下一个需要处理的块
                                 for (LogRecord logRecord : logBlocks.get(firstKey)) {
-                                    handleLog(logRecord);
+                                    // handleLog(logRecord);
                                 }
                                 nextReadSeq++;
                                 logBlocks.remove(firstKey);
@@ -227,8 +258,10 @@ public class FileParserMT implements FileParser {
                                 }
                             }
                         }
+                        */
                     }
                 }
+                resultQueue.put(new ArrayList<LogRecord>());
                 logger.info(String.format("ParseThread  line:%d ", selfLineCount));
                 latch.countDown();
             } catch (Exception e) {
@@ -238,7 +271,10 @@ public class FileParserMT implements FileParser {
         }
     }
 
+    private static volatile long logSeq = 0;
+
     private void handleLog(LogRecord logRecord) throws Exception {
+        logRecord.seq = logSeq++;
         long id = logRecord.id;
         if (logRecord.opType == 'D') {
             id = logRecord.preId;
@@ -254,7 +290,7 @@ public class FileParserMT implements FileParser {
         int block = (int) (id % queueCount);
         pushLog(block, logRecord);
     }
-
+    /*
     private void flushLogInMap() throws Exception {
         synchronized (FileParserMT.class) {
             for (Integer i : logBlocks.keySet()) {
@@ -264,7 +300,27 @@ public class FileParserMT implements FileParser {
             }
         }
     }
+    */
 
+    //
+    private void dispatch() throws Exception {
+        while (true) {
+            boolean done = false;
+            for (int i = 0; i < logBlocks.size(); i++) {
+                ArrayList<LogRecord> logRecords = logBlocks.get(i).take();
+                if (logRecords.size() == 0) {
+                    done = true;
+                }
+                for (LogRecord logRecord : logRecords) {
+                    handleLog(logRecord);
+                }
+            }
+            if (done) {
+                break;
+            }
+        }
+
+    }
 
     @Override
     public void run(LogQueues queues) throws Exception {
@@ -282,14 +338,21 @@ public class FileParserMT implements FileParser {
         Thread readThread = new Thread(new ReadThread());
         readThread.start();
         int parserCount = Config.PARSER_THREAD;
+        fileBlockQueues = new ArrayList<>(parserCount);
         CountDownLatch latch = new CountDownLatch(parserCount);
         for (int i = 0; i < Config.PARSER_THREAD; i++) {
-            Thread th = new Thread(new ParseThread(latch));
+            BlockingQueue<FileBlock> queue = new ArrayBlockingQueue<FileBlock>(FILE_BLOCK_COUNT);
+            fileBlockQueues.add(queue);
+            BlockingQueue<ArrayList<LogRecord>> logBlockQueue = new LinkedBlockingQueue<>(RESULT_QUEUE_SIZE);
+            logBlocks.add(logBlockQueue);
+            Thread th = new Thread(new ParseThread(latch, queue, logBlockQueue));
             th.start();
         }
-        latch.await();
+        //
+        //latch.await();
         //flush log in buffer
-        flushLogInMap();
+        //flushLogInMap();
+        dispatch();
         logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d ",
                 lineCount.get(), insertCount.get(), updateCount.get(), deleteCount.get(), pkUpdate.get()));
         //send a empty data

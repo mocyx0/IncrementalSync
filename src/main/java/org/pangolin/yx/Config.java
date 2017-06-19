@@ -14,6 +14,7 @@ public class Config {
 
     public static void init() {
         String runtime = System.getenv("RUNTIME");
+        System.out.println(runtime);
         if (runtime == null) {
             //使用阿里环境的配置
             TESTER_HOME = Constants.TESTER_HOME;
@@ -29,7 +30,6 @@ public class Config {
             PRECACHE_DELAY = Constants.PRECACHE_DELAY;
             PRECACHE_THREAD = Constants.PRECACHE_THREAD;
 
-            BLOCK_SIZE = Constants.BLOCK_SIZE;
 
             COPY_DATA = Constants.COPY_DATA;
 
@@ -58,15 +58,25 @@ public class Config {
             MIDDLE_HOME = "G:/研究生/AliCompetition/quarter-final/home/middle";
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = "G:/研究生/AliCompetition/quarter-final/home/log";
+        } else if (runtime.equals("remote_yx")) {
+            TESTER_HOME = "/root/yangxiao/sync";
+            DATA_HOME = "/root/ram";
+            RESULT_HOME = "/root/yangxiao/result";
+            MIDDLE_HOME = "/root/yangxiao/result";
+
+            CPU_COUNT = 16;
+            REBUILDER_THREAD = 10;
+            COLLECTOR_THREAD = 16;
+            PARSER_THREAD = 4;
         }
     }
 
     // 工作主目录
-    public static String TESTER_HOME = "D:/tmp/testhome";
+    public static String TESTER_HOME = "C:/tmp/alimid/small";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/logfinal";
+    public static String DATA_HOME = "C:/tmp/alimid/small";
     // 结果文件目录
-    public static String RESULT_HOME = "C:/tmp/logfinal";
+    public static String RESULT_HOME = "C:/tmp/alimid/small";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";
@@ -105,7 +115,7 @@ public class Config {
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 4;
-    public static int REBUILDER_THREAD = 1;
+    public static int REBUILDER_THREAD = 2;
     public static int COLLECTOR_THREAD = 3;
     public static int PARSER_THREAD = 2;
 

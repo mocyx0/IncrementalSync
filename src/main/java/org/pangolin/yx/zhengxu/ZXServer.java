@@ -21,7 +21,6 @@ class LogQueues {
 }
 
 
-
 public class ZXServer implements WorkerServer {
     private static int BUFFER_SIZE = 1024;
     private CountDownLatch latch;
@@ -46,7 +45,7 @@ public class ZXServer implements WorkerServer {
 
 
         for (int i = 0; i < thCount; i++) {
-            LinkedBlockingQueue<ArrayList<LogRecord>> logQueue = new LinkedBlockingQueue<ArrayList<LogRecord>>(2048);
+            LinkedBlockingQueue<ArrayList<LogRecord>> logQueue = new LinkedBlockingQueue<ArrayList<LogRecord>>(12);
             logQueues.queues.add(logQueue);
             Rebuilder rebuilder = new Rebuilder(logQueue, latch, LineParser.tableInfo);
             Thread th = new Thread(rebuilder);
