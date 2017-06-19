@@ -7,9 +7,7 @@ import org.slf4j.Logger;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.TreeMap;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -45,7 +43,24 @@ public class FileParserMT implements FileParser {
     TreeMap<Integer, ArrayList<LogRecord>> logBlocks = new TreeMap<>();
 
 
+    ConcurrentLinkedQueue<byte[]> bufferPool = new ConcurrentLinkedQueue<>();
+
+
+    private byte[] allocateReadBuff() {
+        byte[] buff = bufferPool.poll();
+        if (buff == null) {
+            buff = new byte[FILE_BLOCK_SIZE];
+        }
+        return buff;
+    }
+
+    private void freeReadBuff(byte[] buff) {
+        bufferPool.offer(buff);
+    }
+
     private class ReadThread implements Runnable {
+
+
         @Override
         public void run() {
             try {
@@ -58,7 +73,8 @@ public class FileParserMT implements FileParser {
                     long pos = 0;
                     while (pos < fileLen) {
                         FileBlock fileBlock = new FileBlock();
-                        fileBlock.buffer = new byte[FileParserMT.FILE_BLOCK_SIZE];
+                        fileBlock.buffer = new byte[FILE_BLOCK_SIZE];
+
                         fileBlock.length = raf.read(fileBlock.buffer);
                         //find the last \n, so we have a full line
                         int last = fileBlock.length;
@@ -197,15 +213,19 @@ public class FileParserMT implements FileParser {
                         synchronized (FileParserMT.class) {
                             logBlocks.put(seq, logRecords);
                             int firstKey = logBlocks.firstKey();
-                            if (firstKey == nextReadSeq) {
+                            while (firstKey == nextReadSeq) {
                                 //这是下一个需要处理的块
                                 for (LogRecord logRecord : logBlocks.get(firstKey)) {
                                     handleLog(logRecord);
                                 }
                                 nextReadSeq++;
                                 logBlocks.remove(firstKey);
+                                if (logBlocks.size() != 0) {
+                                    firstKey = logBlocks.firstKey();
+                                } else {
+                                    break;
+                                }
                             }
-
                         }
                     }
                 }

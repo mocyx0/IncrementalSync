@@ -52,12 +52,12 @@ public class DataStorageHashMap implements DataStorage {
         short[] logData = logRecord.columnData;
         int size = logRecord.columnData.length / 3;
         for (int i = 0; i < size; i++) {
-            short index = logData[i * 3];
+            int index = logData[i * 3];
             if (index == 0) {
                 break;
             } else {
-                short pos = logData[i * 3 + 1];
-                short len = logData[i * 3 + 2];
+                int pos = logData[i * 3 + 1];
+                int len = logData[i * 3 + 2];
                 int writePos = (index - 1) * CELL_SIZE;
                 bytes[writePos] = (byte) len;
                 System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);

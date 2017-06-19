@@ -26,9 +26,6 @@ public class DataCollectorHashMap implements DataCollector {
     @Override
     public void writeBuffer(long id, ByteBuffer buffer) throws Exception {
 
-        if (id == 3541) {
-            System.out.print(1);
-        }
 
         DataStorageHashMap data = getDataMap(id);
         DataStorageHashMap.Node node = data.getNode(id, -1);

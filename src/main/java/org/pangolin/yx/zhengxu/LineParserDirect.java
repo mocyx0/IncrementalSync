@@ -198,9 +198,9 @@ public class LineParserDirect {
         logger.info(String.format("%s %d %d", op, logRecord.preId, logRecord.id));
         StringBuilder colValue = new StringBuilder();
         for (int i = 0; i < logRecord.columnData.length / 3; i++) {
-            short name = logRecord.columnData[i * 3];
-            short pos = logRecord.columnData[i * 3 + 1];
-            short len = logRecord.columnData[i * 3 + 2];
+            int name = logRecord.columnData[i * 3];
+            int pos = logRecord.columnData[i * 3 + 1];
+            int len = logRecord.columnData[i * 3 + 2];
             if (pos == 0) {
                 break;
             }
