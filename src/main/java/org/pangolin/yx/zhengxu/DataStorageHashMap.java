@@ -60,7 +60,10 @@ public class DataStorageHashMap implements DataStorage {
                 int len = logData[i * 3 + 2];
                 int writePos = (index - 1) * CELL_SIZE;
                 bytes[writePos] = (byte) len;
-                System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
+                //System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
+                for (int j = 0; j < len; j++) {
+                    bytes[writePos + 1 + j] = logRecord.lineData[pos + j];
+                }
             }
         }
     }
