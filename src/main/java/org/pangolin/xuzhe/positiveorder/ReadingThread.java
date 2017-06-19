@@ -203,15 +203,31 @@ public class ReadingThread extends Thread {
 
     public void saveResultToFile(String fileName, long begin, long end) throws IOException {
         long beginTime = System.currentTimeMillis();
-        BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+        BufferedOutputStream writer = new BufferedOutputStream(new FileOutputStream(fileName));
+        byte[] buf = new byte[1024];
+        byte[] pkStrBuf = new byte[64];
         for(begin++; begin < end; begin++) {
             for(int i = 0; i < REDO_NUM; i++) {
-                Record record = redos[i].pkMap.get(begin);
-
-                if (record != null) {
-                    writer.write(record.toString());
-                    writer.write('\n');
+                long pk = begin;
+                int len = redos[i].getRecord(pk,  buf, 0);
+                if(len != -1) {
+                    {
+                        int pkStrPos = pkStrBuf.length;
+                        while (pk > 0) {
+                            --pkStrPos;
+                            pkStrBuf[pkStrPos] = (byte)(pk%10+'0');
+                            pk /= 10;
+                        }
+                        writer.write(pkStrBuf, pkStrPos, pkStrBuf.length-pkStrPos);
+                    }
+                    writer.write(buf, 0, len);
                 }
+//                Record record = redos[i].pkMap.get(begin);
+//
+//                if (record != null) {
+//                    writer.write(record.toString());
+//                    writer.write('\n');
+//                }
             }
         }
         writer.close();
@@ -225,13 +241,14 @@ public class ReadingThread extends Thread {
         buf.writeInt(0);
         for(begin++; begin < end; begin++) {
             for(int i = 0; i < REDO_NUM; i++) {
-                Record record = redos[i].pkMap.get(begin);
-
-                if (record != null) {
-                    String s = record.toString();
-                    buf.writeCharSequence(s, Charset.forName("utf-8"));
-                    buf.writeByte('\n');
-                }
+//                redos[i].
+//                Record record = redos[i].pkMap.get(begin);
+//
+//                if (record != null) {
+//                    String s = record.toString();
+//                    buf.writeCharSequence(s, Charset.forName("utf-8"));
+//                    buf.writeByte('\n');
+//                }
             }
         }
         int len = buf.readableBytes();
@@ -252,11 +269,11 @@ public class ReadingThread extends Thread {
             try {
                 Long pk = Long.valueOf(line);
                 for(int i = 0; i < REDO_NUM; i++) {
-                    Record record = redos[i].pkMap.get(pk);
-
-                    if (record != null) {
-                        System.out.println(record);
-                    }
+//                    Record record = redos[i].pkMap.get(pk);
+//
+//                    if (record != null) {
+//                        System.out.println(record);
+//                    }
                 }
             } catch (Exception e){
                 e.printStackTrace();
