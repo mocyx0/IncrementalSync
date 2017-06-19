@@ -85,7 +85,8 @@ public class Server {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        mainXZ(args);
+        //mainXZ(args);
+        mainYX(args);
     }
 
     /**
