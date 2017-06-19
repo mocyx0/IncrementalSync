@@ -330,7 +330,7 @@ public class MyInt2IntHashMap {
     public int get(int key) {
         Entry entry = getEntry(key);
 
-        return null == entry ? null : entry.getValue();
+        return null == entry ? -1 : entry.getValue();
     }
 
     /**

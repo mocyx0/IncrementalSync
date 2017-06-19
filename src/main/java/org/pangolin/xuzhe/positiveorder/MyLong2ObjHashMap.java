@@ -1,6 +1,8 @@
 package org.pangolin.xuzhe.positiveorder;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -37,6 +39,8 @@ public class MyLong2ObjHashMap {
      */
     transient Entry[] table = EMPTY_TABLE;
 
+    public static final int DEQUE_SIZE = 200000;
+    Deque<Entry> removedEntry = new ArrayDeque<>(DEQUE_SIZE);
     /**
      * The number of key-value mappings contained in this map.
      */
@@ -460,7 +464,7 @@ public class MyLong2ObjHashMap {
 
 
     static class Entry {
-        final long key;
+        long key;
         Record value;
         Entry next;
         int hash;
@@ -469,6 +473,18 @@ public class MyLong2ObjHashMap {
          * Creates new entry.
          */
         Entry(int h, long k, Record v, Entry n) {
+            value = v;
+            next = n;
+            key = k;
+            hash = h;
+        }
+
+        public void reset() {
+            this.value = null;
+            this.next = null;
+        }
+
+        public void update(int h, long k, Record v, Entry n) {
             value = v;
             next = n;
             key = k;
@@ -555,7 +571,13 @@ public class MyLong2ObjHashMap {
      */
     void createEntry(int hash, long key, Record value, int bucketIndex) {
         Entry e = table[bucketIndex];
-        table[bucketIndex] = new Entry(hash, key, value, e);
+        Entry newE = removedEntry.pollLast();
+        if(newE == null) {
+            newE = new Entry(hash, key, value, e);
+        } else {
+            newE.update(hash, key, value, e);
+        }
+        table[bucketIndex] = newE;
         size++;
     }
 
@@ -568,9 +590,13 @@ public class MyLong2ObjHashMap {
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
-    public Record remove(long key) {
+    public void remove(long key) {
         Entry e = removeEntryForKey(key);
-        return (e == null ? null : e.value);
+        if(e != null && removedEntry.size() < DEQUE_SIZE) {
+            e.reset();
+            removedEntry.push(e);
+        }
+//        return (e == null ? null : e.value);
     }
 
     /**
