@@ -56,7 +56,7 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
             fileOutputStream = new FileOutputStream(Config.RESULT_HOME + "/" + Config.RESULT_NAME);
             fileOutputStream.write(result1);
             fileOutputStream.close();
-            Thread.sleep(10000); //  休眠10秒
+//            Thread.sleep(10000); //  休眠10秒
             System.exit(0);
         } catch (IOException e) {
             logger.info("", e);
