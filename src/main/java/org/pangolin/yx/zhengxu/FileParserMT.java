@@ -193,9 +193,6 @@ public class FileParserMT implements FileParser {
                     } else if (op == 'U') {
                         logRecord.id = ZXUtil.parseLong(data, newPos, newLen);
                         logRecord.preId = ZXUtil.parseLong(data, oldPos, oldLen);
-                        if (logRecord.id != logRecord.preId) {
-                            pkUpdate.incrementAndGet();
-                        }
                     }
                 } else {
                     int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
