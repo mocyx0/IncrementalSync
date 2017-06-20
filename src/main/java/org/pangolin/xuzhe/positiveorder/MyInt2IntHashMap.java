@@ -1,8 +1,6 @@
 package org.pangolin.xuzhe.positiveorder;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -10,7 +8,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Created by ubuntu on 17-6-13.
  */
 
-public class MyLong2ObjHashMap {
+public class MyInt2IntHashMap {
 
     /**
      * The default initial capacity - MUST be a power of two.
@@ -39,8 +37,6 @@ public class MyLong2ObjHashMap {
      */
     transient Entry[] table = EMPTY_TABLE;
 
-    public static final int DEQUE_SIZE = 200000;
-    Deque<Entry> removedEntry = new ArrayDeque<>(DEQUE_SIZE);
     /**
      * The number of key-value mappings contained in this map.
      */
@@ -127,7 +123,7 @@ public class MyLong2ObjHashMap {
      * @throws IllegalArgumentException if the initial capacity is negative
      *                                  or the load factor is nonpositive
      */
-    public MyLong2ObjHashMap(int initialCapacity, float loadFactor) {
+    public MyInt2IntHashMap(int initialCapacity, float loadFactor) {
         if (initialCapacity < 0)
             throw new IllegalArgumentException("Illegal initial capacity: " +
                     initialCapacity);
@@ -149,7 +145,7 @@ public class MyLong2ObjHashMap {
      * @param initialCapacity the initial capacity.
      * @throws IllegalArgumentException if the initial capacity is negative.
      */
-    public MyLong2ObjHashMap(int initialCapacity) {
+    public MyInt2IntHashMap(int initialCapacity) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR);
     }
 
@@ -157,7 +153,7 @@ public class MyLong2ObjHashMap {
      * Constructs an empty <tt>HashMap</tt> with the default initial capacity
      * (16) and the default load factor (0.75).
      */
-    public MyLong2ObjHashMap() {
+    public MyInt2IntHashMap() {
         this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
@@ -217,7 +213,7 @@ public class MyLong2ObjHashMap {
             // lower quality "random" seed value--still better than zero and not
             // not practically reversible.
             int hashing_seed[] = {
-                    System.identityHashCode(MyLong2ObjHashMap.class),
+                    System.identityHashCode(MyInt2IntHashMap.class),
                     System.identityHashCode(instance),
                     System.identityHashCode(Thread.currentThread()),
                     (int) Thread.currentThread().getId(),
@@ -275,7 +271,7 @@ public class MyLong2ObjHashMap {
      * otherwise encounter collisions for hashCodes that do not differ
      * in lower bits. Note: Null keys always map to hash 0, thus index 0.
      */
-    final int hash(long k) {
+    final int hash(int k) {
 //        int h = hashSeed;
 //        h ^= k;
 //        h ^= (k >> 32);
@@ -329,12 +325,12 @@ public class MyLong2ObjHashMap {
      * The {@link #containsKey containsKey} operation may be used to
      * distinguish these two cases.
      *
-     * @see #put(long, Record)
+     * @see #put(int, int)
      */
-    public Record get(long key) {
+    public int get(int key) {
         Entry entry = getEntry(key);
 
-        return null == entry ? null : entry.getValue();
+        return null == entry ? -1 : entry.getValue();
     }
 
     /**
@@ -345,7 +341,7 @@ public class MyLong2ObjHashMap {
      * @return <tt>true</tt> if this map contains a mapping for the specified
      * key.
      */
-    public boolean containsKey(long key) {
+    public boolean containsKey(int key) {
         return getEntry(key) != null;
     }
 
@@ -354,7 +350,7 @@ public class MyLong2ObjHashMap {
      * HashMap.  Returns null if the HashMap contains no mapping
      * for the key.
      */
-    final Entry getEntry(long key) {
+    final Entry getEntry(int key) {
         if (size == 0) {
             return null;
         }
@@ -363,7 +359,7 @@ public class MyLong2ObjHashMap {
         for (Entry e = table[indexFor(hash, table.length)];
              e != null;
              e = e.next) {
-            long k;
+            int k;
             if (e.hash == hash &&
                     ((k = e.key) == key || (key == k)))
                 return e;
@@ -383,16 +379,16 @@ public class MyLong2ObjHashMap {
      * (A <tt>null</tt> return can also indicate that the map
      * previously associated <tt>null</tt> with <tt>key</tt>.)
      */
-    public Record put(long key, Record value) {
+    public int put(int key, int value) {
         if (table == EMPTY_TABLE) {
             inflateTable(threshold);
         }
         int hash = hash(key);
         int i = indexFor(hash, table.length);
         for (Entry e = table[i]; e != null; e = e.next) {
-            long k;
+            int k;
             if (e.hash == hash && ((k = e.key) == key || key == k)) {
-                Record oldValue = e.value;
+                int oldValue = e.value;
                 e.value = value;
                 e.recordAccess(this);
                 return oldValue;
@@ -400,7 +396,7 @@ public class MyLong2ObjHashMap {
         }
 
         addEntry(hash, key, value, i);
-        return null;
+        return -1;
     }
 
 
@@ -464,43 +460,31 @@ public class MyLong2ObjHashMap {
 
 
     static class Entry {
-        long key;
-        Record value;
+        final int key;
+        int value;
         Entry next;
         int hash;
 
         /**
          * Creates new entry.
          */
-        Entry(int h, long k, Record v, Entry n) {
+        Entry(int h, int k, int v, Entry n) {
             value = v;
             next = n;
             key = k;
             hash = h;
         }
 
-        public void reset() {
-            this.value = null;
-            this.next = null;
-        }
-
-        public void update(int h, long k, Record v, Entry n) {
-            value = v;
-            next = n;
-            key = k;
-            hash = h;
-        }
-
-        public final long getKey() {
+        public final int getKey() {
             return key;
         }
 
-        public final Record getValue() {
+        public final int getValue() {
             return value;
         }
 
-        public final Record setValue(Record newValue) {
-            Record oldValue = value;
+        public final int setValue(int newValue) {
+            int oldValue = value;
             value = newValue;
             return oldValue;
         }
@@ -533,14 +517,14 @@ public class MyLong2ObjHashMap {
          * overwritten by an invocation of put(k,v) for a key k that's already
          * in the HashMap.
          */
-        void recordAccess(MyLong2ObjHashMap m) {
+        void recordAccess(MyInt2IntHashMap m) {
         }
 
         /**
          * This method is invoked whenever the entry is
          * removed from the table.
          */
-        void recordRemoval(MyLong2ObjHashMap m) {
+        void recordRemoval(MyInt2IntHashMap m) {
         }
     }
 
@@ -551,7 +535,7 @@ public class MyLong2ObjHashMap {
      * <p>
      * Subclass overrides this to alter the behavior of put method.
      */
-    void addEntry(int hash, long key, Record value, int bucketIndex) {
+    void addEntry(int hash, int key, int value, int bucketIndex) {
         if ((size >= threshold) && (null != table[bucketIndex])) {
 //            resize(2 * table.length);
             hash = hash(key);
@@ -569,15 +553,9 @@ public class MyLong2ObjHashMap {
      * Subclass overrides this to alter the behavior of HashMap(Map),
      * clone, and readObject.
      */
-    void createEntry(int hash, long key, Record value, int bucketIndex) {
+    void createEntry(int hash, int key, int value, int bucketIndex) {
         Entry e = table[bucketIndex];
-        Entry newE = removedEntry.pollLast();
-        if(newE == null) {
-            newE = new Entry(hash, key, value, e);
-        } else {
-            newE.update(hash, key, value, e);
-        }
-        table[bucketIndex] = newE;
+        table[bucketIndex] = new Entry(hash, key, value, e);
         size++;
     }
 
@@ -590,13 +568,9 @@ public class MyLong2ObjHashMap {
      *         (A <tt>null</tt> return can also indicate that the map
      *         previously associated <tt>null</tt> with <tt>key</tt>.)
      */
-    public void remove(long key) {
+    public int remove(int key) {
         Entry e = removeEntryForKey(key);
-        if(e != null && removedEntry.size() < DEQUE_SIZE) {
-            e.reset();
-            removedEntry.push(e);
-        }
-//        return (e == null ? null : e.value);
+        return (e == null ? null : e.value);
     }
 
     /**
@@ -604,7 +578,7 @@ public class MyLong2ObjHashMap {
      * in the HashMap.  Returns null if the HashMap contains no mapping
      * for this key.
      */
-    final Entry removeEntryForKey(long key) {
+    final Entry removeEntryForKey(int key) {
         if (size == 0) {
             return null;
         }
@@ -615,7 +589,7 @@ public class MyLong2ObjHashMap {
 
         while (e != null) {
             Entry next = e.next;
-            long k;
+            int k;
             if (e.hash == hash &&
                     ((k = e.key) == key || (key != -1 && key == k))) {
                 size--;
@@ -661,16 +635,16 @@ public class MyLong2ObjHashMap {
 //        a = it.next();
 //        System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(a)));
         begin = System.currentTimeMillis();
-        MyLong2ObjHashMap myMap = new MyLong2ObjHashMap(10000000);
-        for(long i = 0; i < 10000000; i++) {
-            myMap.put(i, new Record(i, 0));
+        MyInt2IntHashMap myMap = new MyInt2IntHashMap(10000000);
+        for(int i = 0; i < 10000000; i++) {
+            myMap.put(i, (int)i);
         }
         end = System.currentTimeMillis();
         System.out.println(end-begin);
         begin = System.currentTimeMillis();
-        for(long i = 0; i < 10000000; i++) {
-            Record value = myMap.get(i);
-            if(value.getPk() != i)
+        for(int i = 0; i < 10000000; i++) {
+            int value = myMap.get(i);
+            if(value != i)
                 System.out.println(i + ":" + value);;
         }
         end = System.currentTimeMillis();
