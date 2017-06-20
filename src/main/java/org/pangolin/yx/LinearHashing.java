@@ -219,7 +219,38 @@ public class LinearHashing {
         }
     }
 
-    public void put(long k, int v) throws Exception {
+    //注意删除操作不会回收内存
+    public void remove(long key) {
+        int hash = hashCode(key);
+        int block = getBlock(hash);
+        int blockHead = readInt(blockBuffer, block);
+        if (blockHead != 0) {
+            int headNext = readInt(chainBuffer, blockHead);
+            long headK = readInt(chainBuffer, blockHead + 4);
+            if (headK == key) {
+                writeInt(blockBuffer, block, headNext);
+                r--;
+                return;
+            }
+
+            int preNode = blockHead;
+            int curNode = readInt(chainBuffer, preNode);
+            while (curNode != 0) {
+                int next = readInt(chainBuffer, curNode);
+                long k = readInt(chainBuffer, curNode + 4);
+                if (k == key) {
+                    r--;
+                    writeInt(chainBuffer, preNode, next);
+                    return;
+                }
+                preNode = curNode;
+                curNode = next;
+            }
+        }
+
+    }
+
+    public void put(long k, int v) {
         int hash = hashCode(k);
         int block = getBlock(hash);
         putToBuffer(block, k, v);
@@ -249,6 +280,22 @@ public class LinearHashing {
         throw new Exception("no such key");
     }
 
+    public int getOrDefault(long k, int v) throws Exception {
+        int hash = hashCode(k);
+        int block = getBlock(hash);
+        int head = readInt(blockBuffer, block);
+        while (head != 0) {
+            int next = readInt(chainBuffer, head);
+            long key = readInt(chainBuffer, head + 4);
+            int value = readInt(chainBuffer, head + 12);
+            if (key == k) {
+                return value;
+            }
+            head = next;
+        }
+        return v;
+    }
+
     public boolean containsKey(long k) {
         int hash = hashCode(k);
         int block = getBlock(hash);
@@ -264,60 +311,64 @@ public class LinearHashing {
         return false;
     }
 
-    public static void main(String[] args) throws Exception {
+    private static void run() throws Exception {
         LinearHashing lhash = new LinearHashing();
         HashMap<Long, Integer> hashMap = new HashMap<>();
-        Random random = new Random(0);
         //测试数据量
         int testCount = 7000000;
-        ArrayList<Long> putKey = new ArrayList<>();
-        ArrayList<Integer> putValue = new ArrayList<>();
-        ArrayList<Long> searchKey = new ArrayList<>();
-        ArrayList<Integer> searchValue = new ArrayList<>();
-        ArrayList<Integer> searchValue1 = new ArrayList<>();
+        long seq = 0;
 
-        for (int i = 0; i < testCount; i++) {
-            putKey.add((long) random.nextInt(testCount * 2) - testCount);
-            putValue.add(random.nextInt(testCount * 2) - testCount);
-            searchKey.add((long) random.nextInt(testCount * 2) - testCount);
-        }
         long t1 = System.currentTimeMillis();
+        System.out.println("hashmao start");
         //hashmap
         for (int i = 0; i < testCount; i++) {
-            hashMap.put((long) putKey.get(i), putValue.get(i));
+            hashMap.put((long) i, i);
+        }
+        for (int i = 0; i < testCount / 2; i++) {
+            hashMap.remove((long) i * 2);
         }
         for (int i = 0; i < testCount; i++) {
-            long key = searchKey.get(i);
+            long key = i;
             if (hashMap.containsKey(key)) {
-                searchValue.add(hashMap.get(key));
-            } else {
-                searchValue.add(null);
+                seq++;
             }
         }
         long t2 = System.currentTimeMillis();
+        System.out.println("lhash start");
         //lhash
         for (int i = 0; i < testCount; i++) {
-            lhash.put((long) putKey.get(i), putValue.get(i));
+            lhash.put((long) i, i);
+        }
+        for (int i = 0; i < testCount / 2; i++) {
+            lhash.remove(i * 2);
         }
         for (int i = 0; i < testCount; i++) {
-            long key = searchKey.get(i);
+            long key = i;
             if (lhash.containsKey(key)) {
-                searchValue1.add(lhash.get(key));
-            } else {
-                searchValue1.add(null);
+                seq++;
             }
         }
         long t3 = System.currentTimeMillis();
-
         for (int i = 0; i < testCount; i++) {
-            Integer v1 = searchValue.get(i);
-            Integer v2 = searchValue.get(i);
-            if (v1 != null && !v1.equals(v2)) {
-                System.out.println("error");
-            } else if (v2 != null && !v2.equals(v1)) {
+            boolean b1 = hashMap.containsKey((long) i);
+            boolean b2 = lhash.containsKey(i);
+            if (b1 && b2) {
+                int v1 = hashMap.get((long) i);
+                int v2 = lhash.get(i);
+                if (v1 != v2) {
+                    System.out.println("error");
+                }
+            } else if (!b1 && !b2) {
+            } else {
                 System.out.println("error");
             }
         }
-        System.out.println(String.format("hashmap %d lhash %d", t2 - t1, t3 - t2));
+
+        System.out.println(String.format("hashmap %d lhash %d lhashSize %d", t2 - t1, t3 - t2, LinearHashing.TOTAL_MEM.get()));
+    }
+
+    public static void main(String[] args) throws Exception {
+        run();
+        Thread.sleep(100000);
     }
 }

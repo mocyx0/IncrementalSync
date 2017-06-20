@@ -273,6 +273,7 @@ public class LogParser {
         if (op.equals("U")) {
             linfo.id = Long.parseLong(cinfo.newValue);
             linfo.preId = Long.parseLong(cinfo.oldValue);
+            /*
             if (!cinfo.newValue.equals(cinfo.oldValue)) {
                 pkUpdateCount.incrementAndGet();
             }
@@ -280,6 +281,7 @@ public class LogParser {
                 //打印第一条update
                 logger.info(lineInfo.line);
             }
+            */
 
         } else if (op.equals("I")) {
             linfo.id = Long.parseLong(cinfo.newValue);

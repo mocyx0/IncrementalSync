@@ -63,11 +63,10 @@ public class Config {
             DATA_HOME = "/root/ram";
             RESULT_HOME = "/root/yangxiao/result";
             MIDDLE_HOME = "/root/yangxiao/result";
-
             CPU_COUNT = 16;
-            REBUILDER_THREAD = 10;
+            REBUILDER_THREAD = 9;
             COLLECTOR_THREAD = 16;
-            PARSER_THREAD = 4;
+            PARSER_THREAD = 5;
         }
     }
 
@@ -115,9 +114,9 @@ public class Config {
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 4;
-    public static int REBUILDER_THREAD = 2;
-    public static int COLLECTOR_THREAD = 4;
-    public static int PARSER_THREAD = 2;
+    public static int REBUILDER_THREAD = 1;
+    public static int COLLECTOR_THREAD = 1;
+    public static int PARSER_THREAD = 1;
 
     public static int MAX_COL_SIZE = 6;
     //

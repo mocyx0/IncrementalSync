@@ -29,7 +29,7 @@ public class Rebuilder implements Runnable {
         this.index = index;
         this.reBuilderCount = reBuilderCount;
         logger = Config.serverLogger;
-        dataStorage = new DataStorageHashMap(tableInfo);
+        dataStorage = new DataStoragePlain(tableInfo);
         //logger.info( String.format(String.format("rebuilder %d %d ",index,reBuilderCount)));
     }
 

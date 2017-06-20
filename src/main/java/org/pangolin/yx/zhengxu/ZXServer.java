@@ -144,7 +144,8 @@ public class ZXServer implements WorkerServer {
             if (i == thCount - 1) {
                 e = end;
             }
-            DataCollector dataCollector = new DataCollectorHashMap(dataStorages);
+            //DataCollector dataCollector = new DataCollectorHashMap(dataStorages);
+            DataCollector dataCollector = new DataCollectorPlain(dataStorages);
             Thread th = new Thread(new Collector(dataCollector, s, e, latch, i + 1));
             th.start();
         }
