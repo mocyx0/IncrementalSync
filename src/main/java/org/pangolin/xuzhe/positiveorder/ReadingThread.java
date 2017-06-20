@@ -146,9 +146,9 @@ public class ReadingThread extends Thread {
             ByteBuf buf = Unpooled.directBuffer(20<<20);
 
             beginTime = System.currentTimeMillis();
-            this.saveResultToFile("Result.rs", beginId, endId);
-//            saveResultToByteBuf(buf, beginId, endId);
-//            ResultSenderHandler.sendResult(buf);
+//            this.saveResultToFile("Result.rs", beginId, endId);
+            saveResultToByteBuf(buf, beginId, endId);
+            ResultSenderHandler.sendResult(buf);
             endTime = System.currentTimeMillis();
             logger.info("Send to client elapsed time: " + (endTime-beginTime));
 //            this.searchResult();
@@ -239,65 +239,76 @@ public class ReadingThread extends Thread {
 //        buf.writeChar('R');
         long beginTime = System.currentTimeMillis();
         buf.writeInt(0);
-        for(begin++; begin < end; begin++) {
-            for(int i = 0; i < REDO_NUM; i++) {
-//                redos[i].
-//                Record record = redos[i].pkMap.get(begin);
-//
-//                if (record != null) {
-//                    String s = record.toString();
-//                    buf.writeCharSequence(s, Charset.forName("utf-8"));
-//                    buf.writeByte('\n');
-//                }
+        byte[] recordBuf = new byte[1024];
+        byte[] pkStrBuf = new byte[64];
+        for (begin++; begin < end; begin++) {
+            for (int i = 0; i < REDO_NUM; i++) {
+                long pk = begin;
+                int len = redos[i].getRecord(pk, recordBuf, 0);
+                if (len != -1) {
+                    {
+                        int pkStrPos = pkStrBuf.length;
+                        while (pk > 0) {
+                            --pkStrPos;
+                            pkStrBuf[pkStrPos] = (byte) (pk % 10 + '0');
+                            pk /= 10;
+                        }
+                        buf.writeBytes(pkStrBuf, pkStrPos, pkStrBuf.length - pkStrPos);
+                    }
+                    buf.writeBytes(recordBuf, 0, len);
+                }
+
+
             }
+
         }
         int len = buf.readableBytes();
         buf.writerIndex(0);
-        buf.writeInt(len-4);
+        buf.writeInt(len - 4);
         buf.writerIndex(len);
         long endTime = System.currentTimeMillis();
-        logger.info("save to buf elapsed time:{}", (endTime-beginTime));
+        logger.info("save to buf elapsed time:{}", (endTime - beginTime));
     }
 
     public void searchResult() {
         System.out.println("开始测试索引信息，请输入主键（quit退出）：");
         Scanner scanner = new Scanner(System.in);
         Redo[] redos = this.redos;
-        while(scanner.hasNext()) {
+        while (scanner.hasNext()) {
             String line = scanner.nextLine().trim();
-            if(line.startsWith("quit")) break;
+            if (line.startsWith("quit")) break;
             try {
                 Long pk = Long.valueOf(line);
-                for(int i = 0; i < REDO_NUM; i++) {
+                for (int i = 0; i < REDO_NUM; i++) {
 //                    Record record = redos[i].pkMap.get(pk);
 //
 //                    if (record != null) {
 //                        System.out.println(record);
 //                    }
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
-        if(args.length != 2) {
+        if (args.length != 2) {
             System.out.println("请输入查询范围");
             System.exit(-1);
         }
         ReadingThread.beginId = Long.parseLong(args[0]);
         ReadingThread.endId = Long.parseLong(args[1]);
         Config.init();
-        String fileBaseName = Config.DATA_HOME + "/ram/";
+        String fileBaseName = Config.DATA_HOME + "/";
 //        String fileBaseName = Config.DATA_HOME + "/small_";
 //        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
         int fileCnt = 0;
-        for(int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 10; i++) {
             String fileName = fileBaseName + i + ".txt";
             System.out.print("check file:" + fileName);
             File f = new File(fileName);
-            if(f.exists()) {
+            if (f.exists()) {
                 System.out.println(" exists");
                 fileCnt++;
             } else {
@@ -306,8 +317,8 @@ public class ReadingThread extends Thread {
             }
         }
         String[] fileNames = new String[fileCnt];
-        for(int i = 1; i <= fileCnt; i++) {
-            fileNames[i-1] = fileBaseName + i + ".txt";
+        for (int i = 1; i <= fileCnt; i++) {
+            fileNames[i - 1] = fileBaseName + i + ".txt";
         }
         long time1 = System.currentTimeMillis();
         ReadingThread readingThread = new ReadingThread(fileNames);
@@ -316,4 +327,6 @@ public class ReadingThread extends Thread {
         long time2 = System.currentTimeMillis();
         System.out.println("elapsed time:" + (time2 - time1) + "ms");
     }
+
 }
+
