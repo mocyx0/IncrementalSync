@@ -9,6 +9,7 @@ import org.pangolin.yx.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -53,10 +54,12 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
         result.readBytes(result1);
         logger.info("Client side, channel Read:{}", result1.length);
         try {
-            fileOutputStream = new FileOutputStream(Config.RESULT_HOME + "/" + Config.RESULT_NAME);
+            File f = new File(Config.RESULT_HOME + "/" + Config.RESULT_NAME);
+            fileOutputStream = new FileOutputStream(f);
             fileOutputStream.write(result1);
             fileOutputStream.close();
 //            Thread.sleep(10000); //  休眠10秒
+            logger.info("File {} size:{}", f.getAbsolutePath(), f.length());
             System.exit(0);
         } catch (IOException e) {
             logger.info("", e);
