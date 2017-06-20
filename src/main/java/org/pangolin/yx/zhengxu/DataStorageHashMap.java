@@ -48,8 +48,8 @@ public class DataStorageHashMap implements DataStorage {
 
     HashMap<Long, Node> data = new HashMap<>();
 
-    private void writeToBytes(byte[] bytes, LogRecord logRecord) {
-        short[] logData = logRecord.columnData;
+    private void writeToBytes(byte[] bytes, LogRecord logRecord, byte[] readBuff) {
+        int[] logData = logRecord.columnData;
         int size = logRecord.columnData.length / 3;
         for (int i = 0; i < size; i++) {
             int index = logData[i * 3];
@@ -62,7 +62,7 @@ public class DataStorageHashMap implements DataStorage {
                 bytes[writePos] = (byte) len;
                 //System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
                 for (int j = 0; j < len; j++) {
-                    bytes[writePos + 1 + j] = logRecord.lineData[pos + j];
+                    bytes[writePos + 1 + j] = readBuff[pos + j];
                 }
             }
         }
@@ -78,7 +78,7 @@ public class DataStorageHashMap implements DataStorage {
     }
 
     @Override
-    public void doLog(LogRecord logRecord) throws Exception {
+    public void doLog(LogRecord logRecord, byte[] bytes) throws Exception {
         if (logRecord.opType == 'U') {
             long id = logRecord.id;
             if (logRecord.preId != logRecord.id) {
@@ -89,15 +89,18 @@ public class DataStorageHashMap implements DataStorage {
                 Node newNode = createNode();
                 newNode.seq = logRecord.seq;
                 newNode.next = next;
-                writeToBytes(newNode.bytes, logRecord);
+                writeToBytes(newNode.bytes, logRecord, bytes);
                 newNode.preid = logRecord.preId;
                 data.put(id, newNode);
             } else {
                 if (!data.containsKey(id)) {
+                    System.out.println(id);
                     throw new Exception("no preid in data");
+                } else {
+                    Node node = data.get(id);
+                    writeToBytes(node.bytes, logRecord, bytes);
                 }
-                Node node = data.get(id);
-                writeToBytes(node.bytes, logRecord);
+
             }
         } else if (logRecord.opType == 'I') {
             Node next = null;
@@ -108,7 +111,7 @@ public class DataStorageHashMap implements DataStorage {
             Node newNode = createNode();
             newNode.seq = logRecord.seq;
             newNode.next = next;
-            writeToBytes(newNode.bytes, logRecord);
+            writeToBytes(newNode.bytes, logRecord, bytes);
             newNode.preid = -1;
             data.put(id, newNode);
         } else if (logRecord.opType == 'D') {

@@ -7,9 +7,7 @@ import java.util.ArrayList;
  * Created by yangxiao on 2017/6/17.
  */
 public interface DataStorage {
-    void doLog(LogRecord logRecord) throws Exception;
-
-
+    void doLog(LogRecord logRecord, byte[] data) throws Exception;
 }
 
 interface DataCollector {

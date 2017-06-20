@@ -53,7 +53,7 @@ public class LinearHashing {
 
     private int hashCode(long key) {
         int hi = (int) (key >>> 32);
-        int lo = (int) (key & 0x0000ffff);
+        int lo = (int) (key);
         return hi ^ lo;
     }
 
@@ -149,15 +149,19 @@ public class LinearHashing {
 
         //search first
         int blockHead = readInt(blockBuffer, block);
+        //int c = 0;
         while (blockHead != 0) {
+            //   c++;
             int next = readInt(chainBuffer, blockHead);
             long k = readInt(chainBuffer, blockHead + 4);
             if (k == key) {
+                //System.out.println(c);
                 writeInt(chainBuffer, blockHead + 12, value);
                 return;
             }
             blockHead = next;
         }
+        //System.out.println(c);
         //没有找到key 插入新值
         r++;
         //链表内存地址
@@ -265,7 +269,7 @@ public class LinearHashing {
         HashMap<Long, Integer> hashMap = new HashMap<>();
         Random random = new Random(0);
         //测试数据量
-        int testCount = 1000000;
+        int testCount = 7000000;
         ArrayList<Long> putKey = new ArrayList<>();
         ArrayList<Integer> putValue = new ArrayList<>();
         ArrayList<Long> searchKey = new ArrayList<>();

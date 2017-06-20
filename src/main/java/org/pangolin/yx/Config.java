@@ -87,7 +87,7 @@ public class Config {
     //
     public static String LOG_HOME = "D:/tmp/testhome/logs/" + TEAMCODE;
     // server端口
-    public static Integer SERVER_PORT = 5527;
+    public static Integer SERVER_PORT = 5528;
 
     public static long BLOCK_SIZE = 1024 * 1024 * 256;
 
@@ -116,7 +116,7 @@ public class Config {
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 4;
     public static int REBUILDER_THREAD = 2;
-    public static int COLLECTOR_THREAD = 3;
+    public static int COLLECTOR_THREAD = 4;
     public static int PARSER_THREAD = 2;
 
     public static int MAX_COL_SIZE = 6;

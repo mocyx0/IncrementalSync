@@ -132,8 +132,8 @@ public class LineParserDirect {
     private static LogRecord parseLineReal() throws Exception {
         byte[] data = buffer;
         LogRecord logRecord = new LogRecord();
-        logRecord.lineData = data;
-        logRecord.columnData = new short[3 * (tableInfo.columnName.length - 1)];
+      //  logRecord.lineData = data;
+        logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
         int colWriteIndex = 0;
 
         int pos = bufferReadPos;
@@ -192,7 +192,7 @@ public class LineParserDirect {
 
         return logRecord;
     }
-
+/*
     private static void printLogRecord(LogRecord logRecord) {
         String op = "" + ((char) logRecord.opType);
         logger.info(String.format("%s %d %d", op, logRecord.preId, logRecord.id));
@@ -210,6 +210,7 @@ public class LineParserDirect {
         }
         logger.info(colValue.toString());
     }
+    */
 
     public static LogRecord nextLine() throws Exception {
 

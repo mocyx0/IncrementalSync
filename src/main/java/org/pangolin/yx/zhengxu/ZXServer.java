@@ -1,9 +1,6 @@
 package org.pangolin.yx.zhengxu;
 
-import org.pangolin.yx.Config;
-import org.pangolin.yx.ResultWriter;
-import org.pangolin.yx.Util;
-import org.pangolin.yx.WorkerServer;
+import org.pangolin.yx.*;
 import org.slf4j.Logger;
 
 import java.nio.BufferOverflowException;
@@ -17,7 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 
 class LogQueues {
-    ArrayList<LinkedBlockingQueue<ArrayList<LogRecord>>> queues = new ArrayList<>();
+    ArrayList<LinkedBlockingQueue<LogBlock>> queues = new ArrayList<>();
 }
 
 
@@ -42,12 +39,10 @@ public class ZXServer implements WorkerServer {
         int thCount = Config.REBUILDER_THREAD;
         latch = new CountDownLatch(thCount);
         queueCount = thCount;
-
-
         for (int i = 0; i < thCount; i++) {
-            LinkedBlockingQueue<ArrayList<LogRecord>> logQueue = new LinkedBlockingQueue<ArrayList<LogRecord>>(12);
+            LinkedBlockingQueue<LogBlock> logQueue = new LinkedBlockingQueue<LogBlock>(4);
             logQueues.queues.add(logQueue);
-            Rebuilder rebuilder = new Rebuilder(logQueue, latch, LineParser.tableInfo);
+            Rebuilder rebuilder = new Rebuilder(logQueue, latch, LineParser.tableInfo, i, thCount);
             Thread th = new Thread(rebuilder);
             rebuilders.add(rebuilder);
             th.start();
@@ -178,6 +173,7 @@ public class ZXServer implements WorkerServer {
         latch.await();
         long t2 = System.currentTimeMillis();
         logger.info(String.format("Rebuild done cost %d", t2 - t1));
+        logger.info(String.format("read buffer count %d", ReadBufferPoll.size()));
         ArrayList<DataStorage> dataStorages = new ArrayList<>();
         for (Rebuilder rebuilder : rebuilders) {
             dataStorages.add(rebuilder.getDataStorage());

@@ -12,11 +12,11 @@ import java.util.HashMap;
  */
 
 class LogRecord {
-    byte[] lineData;
+    //   byte[] lineData;
     long id = -1;
     long preId = -1;
     byte opType = 0;
-    short[] columnData;//三个一个单位  列索引, 位置, 长度
+    int[] columnData;//三个一个单位  列索引, 位置, 长度
     long seq;//log sequence
 }
 
@@ -167,8 +167,8 @@ public class LineParser {
 
     private static LogRecord parseLineReal(LineInfo lineInfo) {
         LogRecord logRecord = new LogRecord();
-        logRecord.lineData = lineInfo.data;
-        logRecord.columnData = new short[3 * (tableInfo.columnName.length - 1)];
+        //logRecord.lineData = lineInfo.data;
+        logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
         int colWriteIndex = 0;
 
         int pos = 0;
@@ -225,7 +225,7 @@ public class LineParser {
         }
         return logRecord;
     }
-
+/*
     private static void printLogRecord(LogRecord logRecord) {
         String op = "" + ((char) logRecord.opType);
         logger.info(String.format("%s %d %d", op, logRecord.preId, logRecord.id));
@@ -243,6 +243,7 @@ public class LineParser {
         }
         logger.info(colValue.toString());
     }
+    */
 
     private static LogRecord parseLine(LineInfo lineInfo) {
 

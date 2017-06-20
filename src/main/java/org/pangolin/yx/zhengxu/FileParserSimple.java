@@ -96,7 +96,8 @@ public class FileParserSimple implements FileParser {
         queueCount = this.queues.queues.size();
         for (int i = 0; i < queues.queues.size(); i++) {
             BlockData blockData = new BlockData();
-            blockData.logQueue = queues.queues.get(i);
+            //TODO
+           // blockData.logQueue = queues.queues.get(i);
             blockData.buffQueue = new ArrayList<>(BUFFER_SIZE);
             blockDatas.add(blockData);
         }

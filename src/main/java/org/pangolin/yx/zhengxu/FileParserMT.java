@@ -1,6 +1,7 @@
 package org.pangolin.yx.zhengxu;
 
 import org.pangolin.yx.Config;
+import org.pangolin.yx.ReadBufferPoll;
 import org.pangolin.yx.Util;
 import org.slf4j.Logger;
 
@@ -14,27 +15,37 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by yangxiao on 2017/6/18.
  * 多线程日志解析
  */
+class LogBlock {
+    static LogBlock EMPTY = new LogBlock();
+    ArrayList<LogRecord> logRecords = new ArrayList<>();
+    //对应的fileBlock
+    FileBlock fileBlock;
+    //引用
+    AtomicInteger ref = new AtomicInteger();
+}
+
+class FileBlock {
+    byte[] buffer;//这个buff会被重复使用
+    int seq;
+    int length;
+}
+
 public class FileParserMT implements FileParser {
     private static int FILE_BLOCK_COUNT = 128;
-    private static int FILE_BLOCK_SIZE = 1024 * 1024;//不能大于32k
+
     //缓存多条数据后交给rebuilder处理
     private static int LOG_BUFFER_SIZE = 10240 / 2;
-    private static int RESULT_QUEUE_SIZE = 12;
+    private static int RESULT_QUEUE_SIZE = 4;
     private LogQueues queues;
     private ArrayList<BlockData> blockDatas = new ArrayList<>();
     int queueCount;
 
-    private static class FileBlock {
-        byte[] buffer;
-        int seq;
-        int length;
-    }
 
     private Logger logger;
 
     private class BlockData {
-        LinkedBlockingQueue<ArrayList<LogRecord>> logQueue;
-        ArrayList<LogRecord> buffQueue;
+        LinkedBlockingQueue<LogBlock> logQueue;
+        //ArrayList<LogRecord> buffQueue;
     }
 
     //BlockingQueue<FileBlock> fileBlocks = new ArrayBlockingQueue<>(FILE_BLOCK_COUNT);
@@ -45,24 +56,9 @@ public class FileParserMT implements FileParser {
     private int nextReadSeq = 0;
 
     //TreeMap<Integer, ArrayList<LogRecord>> logBlocks = new TreeMap<>();
-    ArrayList<BlockingQueue<ArrayList<LogRecord>>> logBlocks = new ArrayList<>();
+    //这是每个parser输出的LogBlock
+    ArrayList<BlockingQueue<LogBlock>> logBlocks = new ArrayList<>();
 
-
-    ConcurrentLinkedQueue<byte[]> bufferPool = new ConcurrentLinkedQueue<>();
-
-
-    private byte[] allocateReadBuff() {
-        byte[] buff = bufferPool.poll();
-        if (buff == null) {
-            buff = new byte[FILE_BLOCK_SIZE];
-        }
-        return buff;
-        //return new byte[FILE_BLOCK_SIZE];
-    }
-
-    private void freeReadBuff(byte[] buff) {
-        bufferPool.offer(buff);
-    }
 
     private class ReadThread implements Runnable {
 
@@ -79,7 +75,7 @@ public class FileParserMT implements FileParser {
                     long pos = 0;
                     while (pos < fileLen) {
                         FileBlock fileBlock = new FileBlock();
-                        fileBlock.buffer = allocateReadBuff();
+                        fileBlock.buffer = ReadBufferPoll.allocateReadBuff();
 
                         fileBlock.length = raf.read(fileBlock.buffer);
                         //find the last \n, so we have a full line
@@ -90,11 +86,11 @@ public class FileParserMT implements FileParser {
                         //
                         fileBlock.length = last;
                         fileBlock.seq = seq;
-                        seq++;
                         pos += fileBlock.length;
                         raf.seek(pos);
                         fileBlockQueues.get(seq % fileBlockQueues.size()).put(fileBlock);
                         //fileBlocks.put(fileBlock);
+                        seq++;
                     }
                     raf.close();
                 }
@@ -117,6 +113,7 @@ public class FileParserMT implements FileParser {
     public static AtomicInteger pkUpdate = new AtomicInteger();
     public static AtomicInteger lineCount = new AtomicInteger();
 
+    /*
     private void pushLog(int block, LogRecord log) throws Exception {
         BlockData blockData = blockDatas.get(block);
         if (blockData.buffQueue.size() == LOG_BUFFER_SIZE) {
@@ -125,6 +122,7 @@ public class FileParserMT implements FileParser {
         }
         blockData.buffQueue.add(log);
     }
+    */
 
 
     private class ParseThread implements Runnable {
@@ -132,9 +130,9 @@ public class FileParserMT implements FileParser {
         int parsePos = 0;
         CountDownLatch latch;
         BlockingQueue<FileBlock> queue;
-        BlockingQueue<ArrayList<LogRecord>> resultQueue;
+        BlockingQueue<LogBlock> resultQueue;
 
-        ParseThread(CountDownLatch latch, BlockingQueue<FileBlock> queue, BlockingQueue<ArrayList<LogRecord>> resultQueue) {
+        ParseThread(CountDownLatch latch, BlockingQueue<FileBlock> queue, BlockingQueue<LogBlock> resultQueue) {
             this.latch = latch;
             this.queue = queue;
             this.resultQueue = resultQueue;
@@ -153,7 +151,7 @@ public class FileParserMT implements FileParser {
             TableInfo tableInfo = GlobalData.tableInfo;
             LogRecord logRecord = new LogRecord();
             //logRecord.lineData = data;
-            logRecord.columnData = new short[3 * (tableInfo.columnName.length - 1)];
+            logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
             int colWriteIndex = 0;
             int pos = parsePos;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
@@ -201,9 +199,9 @@ public class FileParserMT implements FileParser {
                     }
                 } else {
                     int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
-                    logRecord.columnData[colWriteIndex++] = (short) byteIndex;
-                    logRecord.columnData[colWriteIndex++] = (short) newPos;
-                    logRecord.columnData[colWriteIndex++] = (short) newLen;
+                    logRecord.columnData[colWriteIndex++] = byteIndex;
+                    logRecord.columnData[colWriteIndex++] = newPos;
+                    logRecord.columnData[colWriteIndex++] = newLen;
                 }
             }
             pos++;//skip \n
@@ -237,9 +235,13 @@ public class FileParserMT implements FileParser {
 //                            lineCount.incrementAndGet();
                             selfLineCount++;
                         }
-                        freeReadBuff(fileBlock.buffer);
+                        //ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         //System.out.println(lineCount);
-                        resultQueue.put(logRecords);
+                        LogBlock logBlock = new LogBlock();
+                        logBlock.fileBlock = fileBlock;
+                        logBlock.logRecords = logRecords;
+                        logBlock.ref.set(queueCount);
+                        resultQueue.put(logBlock);
                         /*
                         synchronized (FileParserMT.class) {
                             logBlocks.put(seq, logRecords);
@@ -261,7 +263,7 @@ public class FileParserMT implements FileParser {
                         */
                     }
                 }
-                resultQueue.put(new ArrayList<LogRecord>());
+                resultQueue.put(LogBlock.EMPTY);
                 logger.info(String.format("ParseThread  line:%d ", selfLineCount));
                 latch.countDown();
             } catch (Exception e) {
@@ -272,7 +274,7 @@ public class FileParserMT implements FileParser {
     }
 
     private static volatile long logSeq = 0;
-
+/*
     private void handleLog(LogRecord logRecord) throws Exception {
         logRecord.seq = logSeq++;
         long id = logRecord.id;
@@ -290,6 +292,8 @@ public class FileParserMT implements FileParser {
         int block = (int) (id % queueCount);
         pushLog(block, logRecord);
     }
+    */
+
     /*
     private void flushLogInMap() throws Exception {
         synchronized (FileParserMT.class) {
@@ -307,13 +311,19 @@ public class FileParserMT implements FileParser {
         while (true) {
             boolean done = false;
             for (int i = 0; i < logBlocks.size(); i++) {
-                ArrayList<LogRecord> logRecords = logBlocks.get(i).take();
-                if (logRecords.size() == 0) {
+                LogBlock logBlock = logBlocks.get(i).take();
+                if (logBlock == LogBlock.EMPTY) {
                     done = true;
+                } else {
+                    for (LinkedBlockingQueue<LogBlock> queue : queues.queues) {
+                        queue.put(logBlock);
+                    }
                 }
+                /*
                 for (LogRecord logRecord : logRecords) {
                     handleLog(logRecord);
                 }
+                */
             }
             if (done) {
                 break;
@@ -331,7 +341,7 @@ public class FileParserMT implements FileParser {
         for (int i = 0; i < queues.queues.size(); i++) {
             BlockData blockData = new BlockData();
             blockData.logQueue = queues.queues.get(i);
-            blockData.buffQueue = new ArrayList<>(LOG_BUFFER_SIZE);
+            //blockData.buffQueue = new ArrayList<>(LOG_BUFFER_SIZE);
             blockDatas.add(blockData);
         }
         //start working thread
@@ -343,7 +353,8 @@ public class FileParserMT implements FileParser {
         for (int i = 0; i < Config.PARSER_THREAD; i++) {
             BlockingQueue<FileBlock> queue = new ArrayBlockingQueue<FileBlock>(FILE_BLOCK_COUNT);
             fileBlockQueues.add(queue);
-            BlockingQueue<ArrayList<LogRecord>> logBlockQueue = new LinkedBlockingQueue<>(RESULT_QUEUE_SIZE);
+
+            BlockingQueue<LogBlock> logBlockQueue = new LinkedBlockingQueue<>(RESULT_QUEUE_SIZE);
             logBlocks.add(logBlockQueue);
             Thread th = new Thread(new ParseThread(latch, queue, logBlockQueue));
             th.start();
@@ -357,9 +368,8 @@ public class FileParserMT implements FileParser {
                 lineCount.get(), insertCount.get(), updateCount.get(), deleteCount.get(), pkUpdate.get()));
         //send a empty data
         for (BlockData blockData : blockDatas) {
-            blockData.logQueue.put(blockData.buffQueue);
-            blockData.logQueue.put(new ArrayList<LogRecord>());
-            blockData.buffQueue = null;
+            blockData.logQueue.put(LogBlock.EMPTY);
+            //   blockData.buffQueue = null;
         }
         //
     }
