@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class LinearHashing {
     public static AtomicInteger TOTAL_MEM = new AtomicInteger();
 
-    private static int BUFFER_SIZE = 4 * 1024;//
+    private static int BUFFER_SIZE = 1024 * 1024;//
     private static int BLOCK_SIZE = 4;//8字节的key 4字节value,
     private static int CHAIN_BLOCK_SIZE = 16;//链表节点的大小 4字节指向下一节点 8key 4value
     //private static int SLOT_COUNT = 1;//单个block包含的节点数量
@@ -47,7 +47,7 @@ public class LinearHashing {
     }
 
     private void updateMemCount() {
-        TOTAL_MEM.addAndGet(BUFFER_SIZE);
+        //TOTAL_MEM.addAndGet(BUFFER_SIZE);
     }
 
 
@@ -86,16 +86,31 @@ public class LinearHashing {
             freeChain += CHAIN_BLOCK_SIZE;
             return re;
         }
+    }
 
+    private int readInt(byte[] buf, int buffOff) {
+        int re = (buf[buffOff] & 0xff)
+                | ((buf[buffOff + 1] & 0xff) << 8)
+                | ((buf[buffOff + 2] & 0xff) << 16)
+                | ((buf[buffOff + 3] & 0xff) << 24);
+        return re;
+    }
 
+    private long readLong(byte[] buf, int buffOff) {
+        long re = (((long) buf[buffOff]) & 0xff)
+                | (((long) buf[buffOff + 1] & 0xff) << 8)
+                | (((long) buf[buffOff + 2] & 0xff) << 16)
+                | (((long) buf[buffOff + 3] & 0xff) << 24)
+                | (((long) buf[buffOff + 4] & 0xff) << 32)
+                | (((long) buf[buffOff + 5] & 0xff) << 40)
+                | (((long) buf[buffOff + 6] & 0xff) << 48)
+                | (((long) buf[buffOff + 7] & 0xff) << 56);
+        return re;
     }
 
     private int readInt(ArrayList<byte[]> buffer, int off) {
         int index = off / BUFFER_SIZE;
         int buffOff = off % BUFFER_SIZE;
-        if (index >= buffer.size()) {
-            System.out.print(1);
-        }
         byte[] buf = buffer.get(index);
         int re = (buf[buffOff] & 0xff)
                 | ((buf[buffOff + 1] & 0xff) << 8)
@@ -153,7 +168,7 @@ public class LinearHashing {
         while (blockHead != 0) {
             //   c++;
             int next = readInt(chainBuffer, blockHead);
-            long k = readInt(chainBuffer, blockHead + 4);
+            long k = readLong(chainBuffer, blockHead + 4);
             if (k == key) {
                 //System.out.println(c);
                 writeInt(chainBuffer, blockHead + 12, value);
@@ -226,7 +241,7 @@ public class LinearHashing {
         int blockHead = readInt(blockBuffer, block);
         if (blockHead != 0) {
             int headNext = readInt(chainBuffer, blockHead);
-            long headK = readInt(chainBuffer, blockHead + 4);
+            long headK = readLong(chainBuffer, blockHead + 4);
             if (headK == key) {
                 writeInt(blockBuffer, block, headNext);
                 r--;
@@ -237,7 +252,7 @@ public class LinearHashing {
             int curNode = readInt(chainBuffer, preNode);
             while (curNode != 0) {
                 int next = readInt(chainBuffer, curNode);
-                long k = readInt(chainBuffer, curNode + 4);
+                long k = readLong(chainBuffer, curNode + 4);
                 if (k == key) {
                     r--;
                     writeInt(chainBuffer, preNode, next);
@@ -270,7 +285,7 @@ public class LinearHashing {
         int head = readInt(blockBuffer, block);
         while (head != 0) {
             int next = readInt(chainBuffer, head);
-            long key = readInt(chainBuffer, head + 4);
+            long key = readLong(chainBuffer, head + 4);
             int value = readInt(chainBuffer, head + 12);
             if (key == k) {
                 return value;
@@ -285,9 +300,17 @@ public class LinearHashing {
         int block = getBlock(hash);
         int head = readInt(blockBuffer, block);
         while (head != 0) {
+            int index = head / BUFFER_SIZE;
+            int buffOff = head % BUFFER_SIZE;
+            byte[] buf = chainBuffer.get(index);
+            int next = readInt(buf, buffOff);
+            long key = readLong(buf, buffOff + 4);
+            int value = readInt(buf, buffOff + 12);
+            /*
             int next = readInt(chainBuffer, head);
-            long key = readInt(chainBuffer, head + 4);
+            long key = readLong(chainBuffer, head + 4);
             int value = readInt(chainBuffer, head + 12);
+            */
             if (key == k) {
                 return value;
             }
@@ -302,7 +325,7 @@ public class LinearHashing {
         int head = readInt(blockBuffer, block);
         while (head != 0) {
             int next = readInt(chainBuffer, head);
-            long key = readInt(chainBuffer, head + 4);
+            long key = readLong(chainBuffer, head + 4);
             if (key == k) {
                 return true;
             }

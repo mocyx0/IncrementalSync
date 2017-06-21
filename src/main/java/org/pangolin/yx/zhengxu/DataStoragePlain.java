@@ -2,6 +2,8 @@ package org.pangolin.yx.zhengxu;
 
 import org.pangolin.yx.Config;
 import org.pangolin.yx.LinearHashing;
+import org.pangolin.yx.PlainHashing;
+import org.pangolin.yx.PlainHashingSimple;
 
 import java.util.ArrayList;
 
@@ -12,17 +14,19 @@ import static org.pangolin.yx.NetServerHandler.data;
  */
 public class DataStoragePlain implements DataStorage {
     //存储格式:  next/int seq/long preid/long valid/byte [len/byte data/6byte]*n
-    private static int OFF_NEXT = 0;
-    private static int OFF_SEQ = 4;
-    private static int OFF_PREID = 12;
-    private static int OFF_VALID = 20;  //valid=1 表示无效
-    private static int OFF_CELL = 21;
+    private static final int OFF_NEXT = 0;
+    private static final int OFF_SEQ = 4;
+    private static final int OFF_PREID = 12;
+    private static final int OFF_VALID = 20;  //valid=1 表示无效
+    private static final int OFF_CELL = 21;
     TableInfo tableInfo;
     int CELL_SIZE;
     int CELL_COUNT;
-    private static int BUFFER_SIZE = 1024 * 1024;
+    private static final int BUFFER_SIZE = 1024 * 1024;
+    private static final int BUFFER_BITS = 20;
     private int blockSize = 0;
-    LinearHashing hashing = new LinearHashing();
+    //LinearHashing hashing = new LinearHashing();
+    PlainHashing hashing = new PlainHashing(20);
     private ArrayList<byte[]> bytes = new ArrayList<>();
     private int nextBytePos;
 
@@ -81,6 +85,7 @@ public class DataStoragePlain implements DataStorage {
                 int writePos = (index - 1) * CELL_SIZE;
                 //bytes[writePos] = (byte) len;
                 writeByte(bytes, node + OFF_CELL + writePos, (byte) len);
+
                 //System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
                 writeBytes(bytes, node + OFF_CELL + writePos + 1, readBuff, pos, len);
             }
@@ -88,8 +93,10 @@ public class DataStoragePlain implements DataStorage {
     }
 
     private int readInt(ArrayList<byte[]> buffer, int off) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
         int re = (buf[buffOff] & 0xff)
                 | ((buf[buffOff + 1] & 0xff) << 8)
@@ -99,23 +106,29 @@ public class DataStoragePlain implements DataStorage {
     }
 
     private byte readByte(ArrayList<byte[]> buffer, int off) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
         byte re = buf[buffOff];
         return re;
     }
 
     public void readBytes(int node, int srcPos, byte[] dst, int dstPos, int len) {
-        int index = node / BUFFER_SIZE;
-        int buffOff = node % BUFFER_SIZE;
+//        int index = node / BUFFER_SIZE;
+        //      int buffOff = node % BUFFER_SIZE;
+        int index = node >>> BUFFER_BITS;
+        int buffOff = node & (BUFFER_SIZE - 1);
         byte[] buf = bytes.get(index);
         System.arraycopy(buf, buffOff + OFF_CELL + srcPos, dst, dstPos, len);
     }
 
     private long readLong(ArrayList<byte[]> buffer, int off) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
         long re = (((long) buf[buffOff]) & 0xff)
                 | (((long) buf[buffOff + 1] & 0xff) << 8)
@@ -129,17 +142,22 @@ public class DataStoragePlain implements DataStorage {
     }
 
     private void writeBytes(ArrayList<byte[]> buffer, int off, byte[] src, int srcPos, int srcLen) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
+        //System.arraycopy(src,srcPos,buf,buffOff,srcLen);
         for (int i = 0; i < srcLen; i++) {
             buf[buffOff + i] = src[srcPos + i];
         }
     }
 
     private void writeInt(ArrayList<byte[]> buffer, int off, int v) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
         buf[buffOff] = (byte) (0xff & v);
         buf[buffOff + 1] = (byte) (0xff & v >>> 8);
@@ -148,15 +166,19 @@ public class DataStoragePlain implements DataStorage {
     }
 
     private void writeByte(ArrayList<byte[]> buffer, int off, byte v) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
         buf[buffOff] = v;
     }
 
     private void writeLong(ArrayList<byte[]> buffer, int off, long v) {
-        int index = off / BUFFER_SIZE;
-        int buffOff = off % BUFFER_SIZE;
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
         byte[] buf = buffer.get(index);
         buf[buffOff] = (byte) (0xff & v);
         buf[buffOff + 1] = (byte) (0xff & v >>> 8);
@@ -203,9 +225,7 @@ public class DataStoragePlain implements DataStorage {
                 writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
                 writeLong(bytes, OFF_PREID + newNode, logRecord.preId);
                 writeDataToBytes(newNode, logRecord, data);
-                long preid = readLong(bytes, newNode + OFF_PREID);
                 hashing.put(id, newNode);
-
             } else {
                 int node = hashing.getOrDefault(id, 0);
                 if (node == 0) {
@@ -223,7 +243,6 @@ public class DataStoragePlain implements DataStorage {
             writeInt(bytes, OFF_NEXT + newNode, next);
             writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
             writeLong(bytes, OFF_PREID + newNode, -1);
-
             writeDataToBytes(newNode, logRecord, data);
             hashing.put(id, newNode);
         } else if (logRecord.opType == 'D') {

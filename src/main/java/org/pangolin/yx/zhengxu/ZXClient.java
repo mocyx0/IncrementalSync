@@ -112,7 +112,7 @@ public class ZXClient implements WorkerClient {
         writeOff += readlLen;
         if (writeOff > 0 && buffer[writeOff - 1] == 0) {
             dumpToFile();
-            ctx.channel().close().sync();
+            //ctx.channel().close().sync();
             System.exit(0);
         }
     }

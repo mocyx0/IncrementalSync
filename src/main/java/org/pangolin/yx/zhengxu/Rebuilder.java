@@ -70,6 +70,10 @@ public class Rebuilder implements Runnable {
                         if (logBlock.ref.decrementAndGet() == 0) {
                             ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
                         }
+                    } else {
+                        if (logBlock.ref.decrementAndGet() == 0) {
+                            ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
+                        }
                     }
                 }
             }

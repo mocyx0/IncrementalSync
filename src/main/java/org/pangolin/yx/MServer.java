@@ -51,6 +51,7 @@ public class MServer {
                     throw new Exception("wrong test mode");
                 }
                 logger.info("send result to client");
+                //System.exit(0);
             } catch (Exception e) {
                 logger.info("{}", e);
                 System.exit(0);

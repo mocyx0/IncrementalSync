@@ -9,13 +9,13 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class ReadBufferPoll {
     private static int FILE_BLOCK_SIZE = 1024 * 1024;//
-
+    private static final int BUFFER_COUNT = 50;
     private static volatile BlockingQueue<byte[]> bufferPool;
 
     public static byte[] allocateReadBuff() throws Exception {
         if (bufferPool == null) {
-            bufferPool = new LinkedBlockingQueue<>(50);
-            for (int i = 0; i < 50; i++) {
+            bufferPool = new LinkedBlockingQueue<>(BUFFER_COUNT);
+            for (int i = 0; i < BUFFER_COUNT; i++) {
                 bufferPool.put(new byte[FILE_BLOCK_SIZE]);
             }
         }
