@@ -66,9 +66,10 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
             fileOutputStream.write(result1);
             fileOutputStream.close();
 //            Thread.sleep(10000); //  休眠10秒
-            logger.info("File {} size:{}  MD5:{}", f.getAbsolutePath(), f.length(), MD5(result1));
+//            logger.info("File {} size:{}  MD5:{}", f.getAbsolutePath(), f.length(), MD5(result1));
+            logger.info("File {} size:{} ", f.getAbsolutePath(), f.length());
             ok = true;
-//            System.exit(0);
+            System.exit(0);
         } catch (IOException e) {
             logger.info("", e);
         }
