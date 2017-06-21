@@ -35,8 +35,10 @@ public class Parser extends Thread {
 	private int parserNo;
 	public int readLineCnt = 0;
 	public long readBytesCnt = 0;
-	LogIndexPool logIndexPool;
+	private LogIndexPool logIndexPool;
 	private Schema schema;
+	private int databaseNameLen;
+	private int tableNameLen;
 	public Parser(int parserNo) {
 		this.setName("Parser" + parserNo);
 		this.parserNo = parserNo;
@@ -47,8 +49,6 @@ public class Parser extends Thread {
 		}
 
 	}
-
-
 
 	public LogIndex getLogIndexQueueHeaderByRedoId(int redoId) throws InterruptedException {
 		LogIndex index =  logIndexBlockingQueueArray[redoId].take();
@@ -69,6 +69,9 @@ public class Parser extends Thread {
 		try {
 			ReadingThread.parserLatch.await();
 			logIndexPool = LogIndexPool.getInstance();
+			Schema schema = Schema.getInstance();
+			databaseNameLen = schema.databaseNameLen;
+			tableNameLen = schema.tableNameLen;
 			while(true) {
 				ByteBuffer buffer = this.buffers.take();
 //				logger.info("{} buffer.size:{}", getName(), buffers.size());
@@ -105,11 +108,11 @@ public class Parser extends Thread {
 		int lineEnd = -1;
 		int subBegin = -1;
 		byte[] data = buffer.array();
-		byte op = 0;
+		int op = 0;
 		long oldPK = -1, newPK = -1;
 		int hash = 0;
 		int i = 0;
-		byte b;
+		int b;
 		LogIndex logIndex = logIndexPool.get();
 		logIndex.setByteBuffer(buffer);
 
@@ -118,10 +121,14 @@ public class Parser extends Thread {
 		// |first_name:2:0|NULL|阮|last_name:2:0|NULL|甲|sex:2:0|NULL|女|score:1:0|NULL|53|
 		for (i = dataBegin; i < dataEnd; ++i) {
 			b = data[i];
-//			char ch = (char) b;
 			if (b == '|') {
 				++itemIndex;
-				if (itemIndex == 5) {
+				if(itemIndex == 1) {
+					i += 18;
+				} else if(itemIndex == 2) {
+					i += (13 + 1 + 1 + databaseNameLen + tableNameLen);
+					itemIndex = 4;
+				} else if (itemIndex == 5) {
 					++i;
 					op = data[i];//I|id:1:1|NULL|11|first_na...
 

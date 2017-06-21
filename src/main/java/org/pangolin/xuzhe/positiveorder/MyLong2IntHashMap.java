@@ -535,7 +535,7 @@ public class MyLong2IntHashMap {
      */
     void addEntry(int hash, long key, int value, int bucketIndex) {
         if ((size >= threshold) && (null != table[bucketIndex])) {
-//            resize(2 * table.length);
+            resize(2 * table.length);
             hash = hash(key);
             bucketIndex = indexFor(hash, table.length);
         }

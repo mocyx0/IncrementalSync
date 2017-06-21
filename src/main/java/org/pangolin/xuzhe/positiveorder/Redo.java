@@ -13,13 +13,8 @@ import static org.pangolin.xuzhe.positiveorder.ReadingThread.parserLatch;
  * Created by 29146 on 2017/6/16.
  */
 public class Redo extends Thread {
-    public MyLong2IntHashMap pkMap = new MyLong2IntHashMap(10000000/REDO_NUM, 0.99f);
-
+    public MyLong2IntHashMap pkMap = new MyLong2IntWithBitIndexHashMap(10000000/REDO_NUM, 0.99f);
     private byte[] dataSrc;
-    private long[] pkPos;
-//    private List<Record> records = new ArrayList<>((1000*10000)/64);
-    public static AtomicInteger allocatedBufferCount = new AtomicInteger(0);
-    //   private ByteBufferPool byteBufferPool = ByteBufferPool.getInstance();
     private Parser[] parser;
     int redoId;
     private DataStore dataStore;
@@ -27,10 +22,6 @@ public class Redo extends Thread {
         this.redoId = redoId;
         setName("Redo" + redoId);
         this.parser = parser;
-        pkPos = new long[(1000*10000)/64];
-        for(int i = 0; i < pkPos.length; i++){
-            pkPos[i] = 0;
-        }
     }
 
     public int getRecord(long pk, byte[] out, int pos) {
@@ -77,7 +68,7 @@ public class Redo extends Thread {
                 try {
                     long[] oldPKs = logIndex.getOldPks();
                     for (int i = 0; i < logIndex.getLogSize(); i++) {
-                        byte logType = logIndex.getLogType(i);
+                        int logType = logIndex.getLogType(i);
                         if (logType == 'I') {
                             long newPk =logIndex.getNewPk(i);
 
@@ -101,29 +92,6 @@ public class Redo extends Thread {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    public byte bitLongScan(long[] posPk, long pos){
-        int blockBumber = (int)((pos - 1) / 64);
-        byte curpos = (byte)((pos - 1) % 64);
-        long value = posPk[blockBumber];
-        byte bitValue = (byte) ((value >> curpos) & 1);
-        return bitValue;
-    }
-
-    public void bitLongUpdate(long[] posPk, long pos, boolean bitFlag){
-        int blockBumber = (int)((pos - 1) / 64);
-        if(blockBumber > 4576316){
-            System.out.println(blockBumber + " " + pos);
-        }
-        byte curpos = (byte)((pos - 1) % 64 );
-        long value = posPk[blockBumber];
-        if(bitFlag == true){
-            value = value & ~(1 << curpos);
-        }else{
-            value = value | (1 << curpos);
-        }
-        posPk[blockBumber] = value;
     }
 
     private void deleteResualt(MyLong2IntHashMap pkMap, LogIndex logIndex, long oldPk) throws InterruptedException {

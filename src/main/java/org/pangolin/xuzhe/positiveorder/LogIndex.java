@@ -14,7 +14,7 @@ public final class LogIndex {
     public static final LogIndex EMPTY_LOG_INDEX = new LogIndex(0, null);
     private long[] oldPk;
     private long[] newPk;
-    private byte[] logType;
+    private int[] logType;
     private int[][] hashColumnName;   //列名的hash值
     private short[][] columnLen;
     private int[][] columnNewValues;          //列值
@@ -30,7 +30,7 @@ public final class LogIndex {
     public LogIndex(int columnCount, LogIndexPool pool) {
         oldPk = new long[LOGINDEX_SIZE];
         newPk = new long[LOGINDEX_SIZE];
-        logType = new byte[LOGINDEX_SIZE];
+        logType = new int[LOGINDEX_SIZE];
         hashColumnName = new int[LOGINDEX_SIZE][columnCount];
         columnLen = new short[LOGINDEX_SIZE][columnCount];
         columnNewValues = new int[LOGINDEX_SIZE][columnCount];
@@ -43,7 +43,7 @@ public final class LogIndex {
         this.logSize = logSize;
     }
 
-    public void addNewLog(long oldPK, long newPK, byte logType, int logItemIndex) {
+    public void addNewLog(long oldPK, long newPK, int logType, int logItemIndex) {
         this.oldPk[logItemIndex] = oldPK;
         this.newPk[logItemIndex] = newPK;
         this.logType[logItemIndex] = logType;
@@ -74,7 +74,7 @@ public final class LogIndex {
         return newPk[logIndex];
     }
 
-    public byte getLogType(int logIndex) {
+    public int getLogType(int logIndex) {
         return logType[logIndex];
     }
 

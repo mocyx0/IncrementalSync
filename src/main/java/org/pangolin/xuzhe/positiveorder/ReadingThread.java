@@ -128,7 +128,7 @@ public class ReadingThread extends Thread {
             endTime = System.currentTimeMillis();
             logger.info("Redo Done!" + (endTime-beginTime) + " ms");
             int totalLine = 0;
-            int totalReadBytes = 0;
+            long totalReadBytes = 0;
             for(int i = 0; i < PARSER_NUM; i++) {
                 totalLine += parsers[i].readLineCnt;
                 totalReadBytes += parsers[i].readBytesCnt;
@@ -152,6 +152,7 @@ public class ReadingThread extends Thread {
             endTime = System.currentTimeMillis();
             logger.info("Send to client elapsed time: " + (endTime-beginTime));
 //            this.searchResult();
+//            System.exit(0);
         } catch (IOException e) {
             logger.info("{}", e);
         } catch (InterruptedException e) {
@@ -209,19 +210,19 @@ public class ReadingThread extends Thread {
         for(begin++; begin < end; begin++) {
             for(int i = 0; i < REDO_NUM; i++) {
                 long pk = begin;
-                int len = redos[i].getRecord(pk,  buf, 0);
-                if(len != -1) {
-                    {
-                        int pkStrPos = pkStrBuf.length;
-                        while (pk > 0) {
-                            --pkStrPos;
-                            pkStrBuf[pkStrPos] = (byte)(pk%10+'0');
-                            pk /= 10;
-                        }
-                        writer.write(pkStrBuf, pkStrPos, pkStrBuf.length-pkStrPos);
-                    }
-                    writer.write(buf, 0, len);
-                }
+//                int len = redos[i].getRecord(pk,  buf, 0);
+//                if(len != -1) {
+//                    {
+//                        int pkStrPos = pkStrBuf.length;
+//                        while (pk > 0) {
+//                            --pkStrPos;
+//                            pkStrBuf[pkStrPos] = (byte)(pk%10+'0');
+//                            pk /= 10;
+//                        }
+//                        writer.write(pkStrBuf, pkStrPos, pkStrBuf.length-pkStrPos);
+//                    }
+//                    writer.write(buf, 0, len);
+//                }
 //                Record record = redos[i].pkMap.get(begin);
 //
 //                if (record != null) {
@@ -242,9 +243,9 @@ public class ReadingThread extends Thread {
         byte[] recordBuf = new byte[1024];
         byte[] pkStrBuf = new byte[64];
         for (begin++; begin < end; begin++) {
-            for (int i = 0; i < REDO_NUM; i++) {
+//            for (int i = 0; i < REDO_NUM; i++) {
                 long pk = begin;
-                int len = redos[i].getRecord(pk, recordBuf, 0);
+                int len = redos[0].getRecord(pk, recordBuf, 0);
                 if (len != -1) {
                     {
                         int pkStrPos = pkStrBuf.length;
@@ -257,10 +258,7 @@ public class ReadingThread extends Thread {
                     }
                     buf.writeBytes(recordBuf, 0, len);
                 }
-
-
-            }
-
+//            }
         }
         int len = buf.readableBytes();
         buf.writerIndex(0);
@@ -273,7 +271,7 @@ public class ReadingThread extends Thread {
     public void searchResult() {
         System.out.println("开始测试索引信息，请输入主键（quit退出）：");
         Scanner scanner = new Scanner(System.in);
-        Redo[] redos = this.redos;
+//        Redo[] redos = this.redos;
         while (scanner.hasNext()) {
             String line = scanner.nextLine().trim();
             if (line.startsWith("quit")) break;

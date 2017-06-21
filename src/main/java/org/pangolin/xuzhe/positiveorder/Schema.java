@@ -20,6 +20,8 @@ public class Schema {
     byte[] columnDataType;
     MyInt2IntHashMap columnHash2NoMap;
     public final int columnCount;
+    public int databaseNameLen;
+    public int tableNameLen;
     private Schema(int columnCount) {
         this.columnCount = columnCount;
         coloumHashCode = new int[columnCount];
@@ -58,7 +60,23 @@ public class Schema {
             if (b == '|') {
                 itemIndex++;
                 ++i;
-                if(itemIndex == 9) {
+                if(itemIndex == 3) {
+                    int a = i;
+                    while(data[a] != '|') {
+                        ++a;
+                    }
+                    s.databaseNameLen = a-i;
+                    System.out.println("databaseNameLen:" + s.databaseNameLen);
+                    a++;
+                    i = a;
+                    while(data[a] != '|') {
+                        ++a;
+                    }
+                    s.tableNameLen = a-i;
+                    System.out.println("tableNameLen:" + s.tableNameLen);
+                    i = a - 1;
+                    itemIndex = 4;
+                } else if(itemIndex == 9) {
 //                    System.out.println(new String(data, i, data.length-i-1));
                     // 解析每一列
                     for(int j = 0; j < columnCount; j++) {

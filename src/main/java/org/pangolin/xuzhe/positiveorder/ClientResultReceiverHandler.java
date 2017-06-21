@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.MessageDigest;
 
 /**
  * Created by ubuntu on 17-6-18.
@@ -19,6 +20,7 @@ import java.io.IOException;
 public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
     private static Logger logger = LoggerFactory.getLogger(Client.class);
     FileOutputStream fileOutputStream = null;
+    private boolean ok = false;
     public ClientResultReceiverHandler() {
 
     }
@@ -38,11 +40,16 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
         ctx.write(encoded);
         ctx.flush();
         clientChannel = ctx.channel();
+        ok = false;
     }
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-
+        if(ok) {
+            ctx.close();
+        } else {
+            ctx.read();
+        }
 
     }
 
@@ -59,22 +66,38 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
             fileOutputStream.write(result1);
             fileOutputStream.close();
 //            Thread.sleep(10000); //  休眠10秒
-            logger.info("File {} size:{}", f.getAbsolutePath(), f.length());
-            System.exit(0);
+            logger.info("File {} size:{}  MD5:{}", f.getAbsolutePath(), f.length(), MD5(result1));
+            ok = true;
+//            System.exit(0);
         } catch (IOException e) {
             logger.info("", e);
         }
 
     }
 
-    public static void sendResult(ByteBuf byteBuf) throws InterruptedException {
-
-        while (clientChannel == null) {
-            logger.info("client还未与Server建立连接，将等待10ms");
-            Thread.sleep(10);
+    private static char hexDigits[]={'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+    public final static String MD5(byte[] result) {
+        try {
+            byte[] btInput = result;
+            // 获得MD5摘要算法的 MessageDigest 对象
+            MessageDigest mdInst = MessageDigest.getInstance("MD5");
+            // 使用指定的字节更新摘要
+            mdInst.update(btInput);
+            // 获得密文
+            byte[] md = mdInst.digest();
+            // 把密文转换成十六进制的字符串形式
+            int j = md.length;
+            char str[] = new char[j * 2];
+            int k = 0;
+            for (int i = 0; i < j; i++) {
+                byte byte0 = md[i];
+                str[k++] = hexDigits[byte0 >>> 4 & 0xf];
+                str[k++] = hexDigits[byte0 & 0xf];
+            }
+            return new String(str);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        //发送查询结果
-        clientChannel.writeAndFlush(byteBuf);
-        logger.info("send data done");
     }
 }

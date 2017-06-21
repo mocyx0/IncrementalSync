@@ -117,6 +117,7 @@ public class Server {
 
 
     private void startServer(int port) throws InterruptedException {
+        Logger logger = LoggerFactory.getLogger(Server.class);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -138,6 +139,7 @@ public class Server {
             ChannelFuture f = b.bind(port).sync();
 
             f.channel().closeFuture().sync();
+            logger.info("server closed!");
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();

@@ -36,10 +36,10 @@ public class Client {
 
     private static void mainXZ(String[] args) throws Exception {
 
+        logger.info("mclient start");
         Config.init();
         initProperties();
 
-        logger.info("mclient start");
         logger.info("args: ");
         for (String s : args) {
             logger.info(s);
@@ -76,34 +76,37 @@ public class Client {
     public void connect(String host, int port) throws Exception {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-        try {
-            Bootstrap b = new Bootstrap();
-            b.group(workerGroup);
-            b.channel(NioSocketChannel.class);
-            b.option(ChannelOption.SO_KEEPALIVE, true);
-            b.handler(new ChannelInitializer<SocketChannel>() {
+        Bootstrap b = new Bootstrap();
+        b.group(workerGroup);
+        b.channel(NioSocketChannel.class);
+        b.option(ChannelOption.SO_KEEPALIVE, true);
+        b.handler(new ChannelInitializer<SocketChannel>() {
 
-                @Override
-                public void initChannel(SocketChannel ch) throws Exception {
+            @Override
+            public void initChannel(SocketChannel ch) throws Exception {
 //                    ch.pipeline().addLast(new IdleStateHandler(10, 0, 0));
 //                    ch.pipeline().addLast(new ClientIdleEventHandler());
-                    ch.pipeline().addFirst("decoder", new LengthFieldBasedFrameDecoder(1000000000, 0, 4, 0, 4));
-                    ch.pipeline().addLast(new ClientResultReceiverHandler());
-                }
-            });
+                ch.pipeline().addFirst("decoder", new LengthFieldBasedFrameDecoder(1000000000, 0, 4, 0, 4));
+                ch.pipeline().addLast(new ClientResultReceiverHandler());
+            }
+        });
 
+        try {
             // Start the client.
-            int counter = 100;
-            while (counter > 0) {
+            String lastError = null;
+            while (true) {
                 try {
-                    counter--;
                     ChannelFuture f = b.connect(host, port).sync();
 
                     // Wait until the connection is closed.
                     f.channel().closeFuture().sync();
-                } catch (Exception e) {
-                    logger.info("建立连接失败", e);
                     Thread.sleep(1000);
+                } catch (Exception e) {
+                    if(lastError == null || !lastError.equals(e.getMessage())) {
+                        lastError = e.getMessage();
+                        logger.info("建立连接失败, {}", lastError);
+                    }
+                    Thread.sleep(3000);
                 }
             }
         } finally {

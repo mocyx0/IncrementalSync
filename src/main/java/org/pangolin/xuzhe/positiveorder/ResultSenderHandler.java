@@ -35,18 +35,23 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        logger.info("server side, channel read. ");
+        logger.info("server side, channel read. {}", msg);
+        latch.await();
+        if(byteBuf == null) {
+            return;
+        }
 //        byte[] data = "Hello".getBytes();
 //        ByteBuf byteBuf = Unpooled.buffer(1000);
 //        byteBuf.writeInt(data.length);
 //        System.out.println(data.length);
 //        byteBuf.writeBytes(data);
-        latch.await();
         ctx.channel().writeAndFlush(byteBuf).addListener(new ChannelFutureListener() {
 
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
                 logger.info("Server发送消息成功！ byte length:{}", byteBuf.writerIndex()-4);
+                byteBuf = null;
+                System.exit(0);
             }
         });
     }
@@ -54,8 +59,8 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
     public static void sendResult(ByteBuf byteBuf) throws InterruptedException {
 
         while(clientChannel == null) {
-            logger.info("client还未与Server建立连接，将等待10ms");
-            Thread.sleep(1000);
+            logger.info("client还未与Server建立连接，将等待200ms");
+            Thread.sleep(200);
         }
         //发送查询结果
         int len = byteBuf.getInt(0);

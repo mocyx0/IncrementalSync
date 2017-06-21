@@ -8,7 +8,7 @@ import java.util.Deque;
  * Created by ubuntu on 17-6-19.
  */
 public class DataStore {
-    private static final int BLOCK_SIZE = 1<<25;
+    private static final int BLOCK_SIZE = 1<<24;
     private static final int STACK_SIZE = 1<<20;
     private final int columnCount;
     //    private ArrayList<byte[]> dataStore = new ArrayList<>();
