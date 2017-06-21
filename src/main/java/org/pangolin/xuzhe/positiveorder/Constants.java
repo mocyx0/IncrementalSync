@@ -7,10 +7,10 @@ import org.pangolin.yx.Config;
  */
 public class Constants {
 
-    static final int REDO_NUM = 6;
+    static final int REDO_NUM = 8;
     static final int BUFFER_SIZE = 256*1024;
     static final int PARSER_NUM = 6;
-    static final int READBUFFER_POOL_SIZE = 200; // 至少2个
+    static final int READBUFFER_POOL_SIZE = 20; // 至少2个
     static final int LINE_MAX_LENGTH = 1000;
     static final int STRING_LIST_SIZE = 5000;
     static final int PARSER_BLOCKING_QUEUE_SIZE = READBUFFER_POOL_SIZE+10;

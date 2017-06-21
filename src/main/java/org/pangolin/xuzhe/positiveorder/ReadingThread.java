@@ -243,9 +243,9 @@ public class ReadingThread extends Thread {
         byte[] recordBuf = new byte[1024];
         byte[] pkStrBuf = new byte[64];
         for (begin++; begin < end; begin++) {
-//            for (int i = 0; i < REDO_NUM; i++) {
+            for (int i = 0; i < REDO_NUM; i++) {
                 long pk = begin;
-                int len = redos[0].getRecord(pk, recordBuf, 0);
+                int len = redos[i].getRecord(pk, recordBuf, 0);
                 if (len != -1) {
                     {
                         int pkStrPos = pkStrBuf.length;
@@ -258,7 +258,7 @@ public class ReadingThread extends Thread {
                     }
                     buf.writeBytes(recordBuf, 0, len);
                 }
-//            }
+            }
         }
         int len = buf.readableBytes();
         buf.writerIndex(0);
