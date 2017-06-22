@@ -46,27 +46,11 @@ public class Rebuilder implements Runnable {
                     break;
                 } else {
                     if (DO_REBUILD) {
-                        int i = 0;
-                        for (LogRecord log : logBlock.logRecords) {
-                            log.seq = ((long) logBlock.fileBlock.seq << 32) | i;
-                            if (log.opType == 'U' && log.preId != log.id) {
-                                if ((log.preId % reBuilderCount) == index) {
-                                    LogRecord xlog = new LogRecord();
-                                    xlog.opType = 'X';
-                                    xlog.id = log.preId;
-                                    dataStorage.doLog(xlog, logBlock.fileBlock.buffer);
-                                }
-                            }
-                            long id = log.id;
-                            if (log.opType == 'D') {
-                                id = log.preId;
-                            }
-                            if ((id % reBuilderCount) == index) {
-                                logCount++;
-                                dataStorage.doLog(log, logBlock.fileBlock.buffer);
-                            }
-                            i++;
+                        for (LogRecord log : logBlock.logRecordsArr.get(index)) {
+                            //logCount++;
+                            dataStorage.doLog(log, logBlock.fileBlock.buffer);
                         }
+                        //free buffer
                         if (logBlock.ref.decrementAndGet() == 0) {
                             ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
                         }
@@ -77,7 +61,7 @@ public class Rebuilder implements Runnable {
                     }
                 }
             }
-            logger.info(String.format("rebuild handle log:%d", logCount));
+            //logger.info(String.format("rebuild handle log:%d", logCount));
             latch.countDown();
         } catch (Exception e) {
             logger.info("{}", e);

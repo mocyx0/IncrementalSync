@@ -6,7 +6,7 @@ import java.util.ArrayList;
 /**
  * Created by yangxiao on 2017/6/17.
  */
-public class DataCollectorHashMap implements DataCollector {
+public final class DataCollectorHashMap implements DataCollector {
 
     ArrayList<DataStorageHashMap> dataStorageHashMaps = new ArrayList<>();
 

@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
  */
 
 
-public class Config {
+public final class Config {
     private static String runtime = "yx";
 
     public static void init() {
@@ -64,9 +64,9 @@ public class Config {
             RESULT_HOME = "/root/yangxiao/result";
             MIDDLE_HOME = "/root/yangxiao/result";
             CPU_COUNT = 16;
-            REBUILDER_THREAD = 9;
+            REBUILDER_THREAD = 7;
             COLLECTOR_THREAD = 16;
-            PARSER_THREAD = 5;
+            PARSER_THREAD = 6;
         }
     }
 
@@ -93,7 +93,7 @@ public class Config {
     public static int TYPE_NUMBER = 1;
     public static int TYPE_STRING = 2;
 
-    //客户端打印一部分输出
+    //客户端打印一部分输出//
     public static int PRINT_RESULT_LINE = 50;
 
     public static QueryData queryData;

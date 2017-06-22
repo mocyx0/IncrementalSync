@@ -19,7 +19,7 @@ import java.util.ArrayList;
 /**
  * Created by yangxiao on 2017/6/4.
  */
-public class MServer {
+public final class MServer {
     private static Logger logger;
 
     private static void initProperties() {

@@ -74,14 +74,14 @@ public class DataStoragePlain implements DataStorage {
 
     private void writeDataToBytes(int node, LogRecord logRecord, byte[] readBuff) {
         int[] logData = logRecord.columnData;
-        int size = logRecord.columnData.length / 3;
-        for (int i = 0; i < size; i++) {
-            int index = logData[i * 3];
+        int datalen = logRecord.columnData.length;
+        for (int i = 0; i < datalen; ) {
+            int index = logData[i++];
             if (index == 0) {
                 break;
             } else {
-                int pos = logData[i * 3 + 1];
-                int len = logData[i * 3 + 2];
+                int pos = logData[i++];
+                int len = logData[i++];
                 int writePos = (index - 1) * CELL_SIZE;
                 //bytes[writePos] = (byte) len;
                 writeByte(bytes, node + OFF_CELL + writePos, (byte) len);

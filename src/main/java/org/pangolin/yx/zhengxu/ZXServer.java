@@ -19,7 +19,7 @@ class LogQueues {
 
 
 public class ZXServer implements WorkerServer {
-    private static final int LOG_BLOCK_QUEUE_SIZE = 6;
+    private static final int LOG_BLOCK_QUEUE_SIZE = 32;
     private CountDownLatch latch;
     private Logger logger;
     private LogQueues logQueues = new LogQueues();

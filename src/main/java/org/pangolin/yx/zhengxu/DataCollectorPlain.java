@@ -17,10 +17,6 @@ public class DataCollectorPlain implements DataCollector {
 
     private DataStoragePlain getDataMap(long id) {
         int block = (int) (id % dataStorageHashMaps.size());
-        if (block == -1) {
-            System.out.println(1);
-        }
-
         DataStoragePlain data = dataStorageHashMaps.get(block);
         return data;
     }

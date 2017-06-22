@@ -17,7 +17,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 class LogBlock {
     static LogBlock EMPTY = new LogBlock();
-    ArrayList<LogRecord> logRecords = new ArrayList<>();
+    //ArrayList<LogRecord> logRecords = new ArrayList<>();
+    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
     //对应的fileBlock
     FileBlock fileBlock;
     //引用
@@ -131,11 +132,13 @@ public class FileParserMT implements FileParser {
         CountDownLatch latch;
         BlockingQueue<FileBlock> queue;
         BlockingQueue<LogBlock> resultQueue;
+        int rebuilderCount;
 
         ParseThread(CountDownLatch latch, BlockingQueue<FileBlock> queue, BlockingQueue<LogBlock> resultQueue) {
             this.latch = latch;
             this.queue = queue;
             this.resultQueue = resultQueue;
+            rebuilderCount = Config.REBUILDER_THREAD;
         }
 
         LogRecord nextLineTest(byte[] data) {
@@ -156,9 +159,12 @@ public class FileParserMT implements FileParser {
             int pos = parsePos;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
+            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
+            pos += 14;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
+            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
+            pos += 8;
+
             int opPos = pos;
             byte op = data[opPos];
             logRecord.opType = op;
@@ -217,18 +223,37 @@ public class FileParserMT implements FileParser {
                         queue.put(fileBlock);
                         break;
                     } else {
-                        ArrayList<LogRecord> logRecords = new ArrayList<>();
+                        ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
+                        for (int i = 0; i < rebuilderCount; i++) {
+                            logRecordsArr.add(new ArrayList<LogRecord>(2048));
+                        }
+
+                        //ArrayList<LogRecord> logRecords = new ArrayList<>();
                         parsePos = 0;
                         /*
                         for (int i = 0; i < 1024 * 10; i++) {
                             logRecords.add(null);
                         }*/
-                        int seq = fileBlock.seq;
+                        long seq = (long) fileBlock.seq << 32;
                         while (parsePos < fileBlock.length) {
                             //byte[] newData = new byte[fileBlock.buffer.length];
                             //System.arraycopy(fileBlock.buffer, 0, newData, 0, newData.length);
                             LogRecord logRecord = nextLine(fileBlock.buffer);
-                            logRecords.add(logRecord);
+                            logRecord.seq = seq++;
+                            long id = logRecord.id;
+                            if (logRecord.opType == 'D') {
+                                id = logRecord.preId;
+                            } else if (logRecord.opType == 'U' && logRecord.id != logRecord.preId) {
+                                //添加一个x消息
+                                LogRecord xlog = new LogRecord();
+                                xlog.opType = 'X';
+                                xlog.id = logRecord.preId;
+                                int block = (int) (xlog.id % rebuilderCount);
+                                logRecordsArr.get(block).add(xlog);
+                            }
+                            int block = (int) (id % rebuilderCount);
+                            logRecordsArr.get(block).add(logRecord);
+                            //logRecords.add(logRecord);
 //                            lineCount.incrementAndGet();
                             selfLineCount++;
                         }
@@ -236,7 +261,8 @@ public class FileParserMT implements FileParser {
                         //System.out.println(lineCount);
                         LogBlock logBlock = new LogBlock();
                         logBlock.fileBlock = fileBlock;
-                        logBlock.logRecords = logRecords;
+                        //logBlock.logRecords = logRecords;
+                        logBlock.logRecordsArr = logRecordsArr;
                         logBlock.ref.set(queueCount);
                         resultQueue.put(logBlock);
                         /*
