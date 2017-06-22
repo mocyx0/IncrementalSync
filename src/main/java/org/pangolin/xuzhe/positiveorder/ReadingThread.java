@@ -238,6 +238,7 @@ public class ReadingThread extends Thread {
 
     public void saveResultToByteBuf(ByteBuf buf, long begin, long end) {
 //        buf.writeChar('R');
+        System.out.println(MyLong2IntWithBitIndexHashMap.counter.get());
         long beginTime = System.currentTimeMillis();
         buf.writeInt(0);
         byte[] recordBuf = new byte[1024];

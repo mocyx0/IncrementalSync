@@ -16,9 +16,9 @@ public final class LogIndex {
     private long[] newPk;
     private int[] logType;
     private int[][] hashColumnName;   //列名的hash值
-    private short[][] columnLen;
+    private int[][] columnLen;
     private int[][] columnNewValues;          //列值
-    private short[] columnSize;
+    private int[] columnSize;
     private int logSize;
     private ByteBuffer byteBuffer;
     private LogIndexPool pool;
@@ -32,9 +32,9 @@ public final class LogIndex {
         newPk = new long[LOGINDEX_SIZE];
         logType = new int[LOGINDEX_SIZE];
         hashColumnName = new int[LOGINDEX_SIZE][columnCount];
-        columnLen = new short[LOGINDEX_SIZE][columnCount];
+        columnLen = new int[LOGINDEX_SIZE][columnCount];
         columnNewValues = new int[LOGINDEX_SIZE][columnCount];
-        columnSize = new short[LOGINDEX_SIZE];
+        columnSize = new int[LOGINDEX_SIZE];
         logSize = 0;
         this.pool = pool;
     }
@@ -78,7 +78,7 @@ public final class LogIndex {
         return logType[logIndex];
     }
 
-    public short[] getColumnValueLens(int logIndex) {
+    public int[] getColumnValueLens(int logIndex) {
         return columnLen[logIndex];
     }
 
@@ -86,7 +86,7 @@ public final class LogIndex {
         return columnNewValues[logIndex];
     }
 
-    public short getColumnSize(int logIndex) {
+    public int getColumnSize(int logIndex) {
         return columnSize[logIndex];
     }
 

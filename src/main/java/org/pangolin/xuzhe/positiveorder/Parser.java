@@ -173,7 +173,7 @@ public class Parser extends Thread {
 //					printSubLine(buffer);
 					int[] hashs = logIndex.getHashColumnName(logItemIndex);
 					int[] columnNewValues = logIndex.getColumnNewValues(logItemIndex);
-					short[] columnValueLens = logIndex.getColumnValueLens(logItemIndex);
+					int[] columnValueLens = logIndex.getColumnValueLens(logItemIndex);
 					int columnIndex = 0;
 					while(data[i+1] != '\n') {
 						// 计算column name的hash code
