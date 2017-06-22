@@ -63,10 +63,11 @@ public final class Config {
             DATA_HOME = "/root/ram";
             RESULT_HOME = "/root/yangxiao/result";
             MIDDLE_HOME = "/root/yangxiao/result";
-            CPU_COUNT = 16;
-            REBUILDER_THREAD = 7;
-            COLLECTOR_THREAD = 16;
-            PARSER_THREAD = 6;
+
+            CPU_COUNT = Constants.CPU_COUNT;
+            REBUILDER_THREAD = Constants.REBUILDER_THREAD;
+            COLLECTOR_THREAD = Constants.COLLECTOR_THREAD;
+            PARSER_THREAD = Constants.PARSER_THREAD;
         }
     }
 
