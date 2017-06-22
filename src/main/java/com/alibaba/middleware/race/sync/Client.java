@@ -53,8 +53,8 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-  //      mainXZ(args);
-        mainYX(args);
+        mainXZ(args);
+//        mainYX(args);
     }
 
     /**

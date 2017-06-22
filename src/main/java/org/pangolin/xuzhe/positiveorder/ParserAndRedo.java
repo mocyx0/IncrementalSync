@@ -27,7 +27,7 @@ public class ParserAndRedo extends Thread {
     LogIndexPool logIndexPool;
     private Schema schema;
 
-    public MyLong2IntHashMap pkMap = new MyLong2IntWithBitIndexHashMap(10000000/REDO_NUM, 0.99f);
+    public MyLong2IntHashMap pkMap = new MyLong2IntWithBitIndexHashMap(32-Integer.numberOfLeadingZeros(10000000/REDO_NUM), 0.99f);
 
     private byte[] dataSrc;
     private DataStore dataStore;
@@ -68,24 +68,24 @@ public class ParserAndRedo extends Thread {
             Schema schema = Schema.getInstance();
             databaseNameLen = schema.databaseNameLen;
             tableNameLen = schema.tableNameLen;
-            dataStore = new DataStore(schema.columnCount);
-            LogIndex logIndex;
-            while(true) {
-                ByteBuffer buffer = this.buffers.take();
-//				logger.info("{} buffer.size:{}", getName(), buffers.size());
-                if(buffer == EMPTY_BUFFER) {
-                    for(int r = 0; r < REDO_NUM; r++) {
-                        logIndexBlockingQueueArray[r].put(LogIndex.EMPTY_LOG_INDEX);
-                    }
-                    break;
-                }
-
-                long begin = System.nanoTime();
-                process(buffer);
-
-                long end = System.nanoTime();
-//				pool.put(buffer);
-            }
+//            dataStore = new DataStore(schema.columnCount);
+//            LogIndex logIndex;
+//            while(true) {
+//                ByteBuffer buffer = this.buffers.take();
+////				logger.info("{} buffer.size:{}", getName(), buffers.size());
+//                if(buffer == EMPTY_BUFFER) {
+//                    for(int r = 0; r < REDO_NUM; r++) {
+//                        logIndexBlockingQueueArray[r].put(LogIndex.EMPTY_LOG_INDEX);
+//                    }
+//                    break;
+//                }
+//
+//                long begin = System.nanoTime();
+//                process(buffer);
+//
+//                long end = System.nanoTime();
+////				pool.put(buffer);
+//            }
             //logger.info("{} done!", Thread.currentThread().getName());
         } catch (InterruptedException e) {
             logger.error("Worker was interrupted", e);
@@ -175,7 +175,7 @@ public class ParserAndRedo extends Thread {
 //					printSubLine(buffer);
                     int[] hashs = logIndex.getHashColumnName(logItemIndex);
                     int[] columnNewValues = logIndex.getColumnNewValues(logItemIndex);
-                    short[] columnValueLens = logIndex.getColumnValueLens(logItemIndex);
+                    int[] columnValueLens = logIndex.getColumnValueLens(logItemIndex);
                     int columnIndex = 0;
                     while(data[i+1] != '\n') {
                         // 计算column name的hash code
@@ -287,13 +287,13 @@ public class ParserAndRedo extends Thread {
         long newPk = logIndex.getNewPk(index);
         int[] newValues = logIndex.getColumnNewValues(index);
         int[] names = logIndex.getHashColumnName(index);
-        short[] valueLens = logIndex.getColumnValueLens(index);
-        short columnSize = logIndex.getColumnSize(index);
+        int[] valueLens = logIndex.getColumnValueLens(index);
+        int columnSize = logIndex.getColumnSize(index);
         for (int i = 0; i < columnSize; i++) {
             int columnIndex = names[i];
             int columnPos = newValues[i];
             int columnLen = valueLens[i];
-            dataStore.updateRecord(recordIndexInStore, columnIndex, dataSrc, columnPos, columnLen);
+//            dataStore.updateRecord(recordIndexInStore, columnIndex, dataSrc, columnPos, columnLen);
         }
         if (oldPk != newPk) {
             pkMap.remove(oldPk);
@@ -303,16 +303,16 @@ public class ParserAndRedo extends Thread {
 
     private void insertResualt(MyLong2IntHashMap pkMap, LogIndex logIndex, int index, long newPk) throws InterruptedException {
         //每个pk对应到不同的线程
-        short columnSize = logIndex.getColumnSize(index);
-        int indexInStore = dataStore.createRecord();
-        for (int i = 0; i < columnSize; i++) {
-            int columnIndex = logIndex.getHashColumnName(index)[i];
-            int columnPos = logIndex.getColumnNewValues(index)[i];
-            int columnLen = logIndex.getColumnValueLens(index)[i];
-            dataStore.updateRecord(indexInStore, columnIndex, dataSrc, columnPos, columnLen);
-
-        }
-        pkMap.put(newPk, indexInStore);
+        int columnSize = logIndex.getColumnSize(index);
+//        int indexInStore = dataStore.createRecord();
+//        for (int i = 0; i < columnSize; i++) {
+//            int columnIndex = logIndex.getHashColumnName(index)[i];
+//            int columnPos = logIndex.getColumnNewValues(index)[i];
+//            int columnLen = logIndex.getColumnValueLens(index)[i];
+//            dataStore.updateRecord(indexInStore, columnIndex, dataSrc, columnPos, columnLen);
+//
+//        }
+//        pkMap.put(newPk, indexInStore);
     }
 
     public int getRecord(long pk, byte[] out, int pos) {
