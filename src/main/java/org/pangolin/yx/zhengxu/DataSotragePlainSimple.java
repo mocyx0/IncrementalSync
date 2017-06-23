@@ -209,4 +209,9 @@ public class DataSotragePlainSimple implements DataStorage {
             writeByte(OFF_VALID + node, (byte) 1);
         }
     }
+
+    @Override
+    public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
+
+    }
 }

@@ -1,8 +1,10 @@
 package org.pangolin.yx.zhengxu;
 
+import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.ReadBufferPoll;
 import org.pangolin.yx.Util;
+import org.pangolin.yx.nixu.LogRebuilder;
 import org.slf4j.Logger;
 
 import java.io.RandomAccessFile;
@@ -16,13 +18,58 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 多线程日志解析
  */
 class LogBlock {
-    static LogBlock EMPTY = new LogBlock();
+    private static final int COUNT = 30;
+    public static LogBlock EMPTY = new LogBlock();
     //ArrayList<LogRecord> logRecords = new ArrayList<>();
-    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
+//    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
+    public static final int MAX_LENGTH = 40000;
+    long[] ids = new long[MAX_LENGTH];
+    long[] preIds = new long[MAX_LENGTH];
+    byte[] opTypes = new byte[MAX_LENGTH];
+    int[] columnData = new int[GlobalData.colCount * 3 * MAX_LENGTH];//三个一个单位  列索引, 位置, 长度
+    long[] seqs = new long[MAX_LENGTH];//log sequence
+    int length = 0;
+
+    LogBlockRebuilder[] logBlockRebuilders = new LogBlockRebuilder[Config.REBUILDER_THREAD];
+
     //对应的fileBlock
     FileBlock fileBlock;
     //引用
     AtomicInteger ref = new AtomicInteger();
+
+    private LogBlock() {
+        for (int i = 0; i < logBlockRebuilders.length; i++) {
+            logBlockRebuilders[i] = new LogBlockRebuilder();
+        }
+    }
+
+    private static BlockingQueue<LogBlock> queue;
+
+    public static LogBlock allocate() throws Exception {
+        if (queue == null) {
+            queue = new LinkedBlockingQueue(COUNT);
+            for (int i = 0; i < COUNT; i++) {
+                queue.put(new LogBlock());
+            }
+        }
+        LogBlock logBlock = queue.take();
+        return logBlock;
+    }
+
+    public static void free(LogBlock logBlock) throws Exception {
+        logBlock.fileBlock = null;
+        for (int i = 0; i < logBlock.logBlockRebuilders.length; i++) {
+            logBlock.logBlockRebuilders[i].length = 0;
+        }
+        logBlock.length = 0;
+        queue.put(logBlock);
+    }
+
+}
+
+class LogBlockRebuilder {
+    int length;
+    int[] poss = new int[LogBlock.MAX_LENGTH];
 }
 
 class FileBlock {
@@ -212,6 +259,94 @@ public class FileParserMT implements FileParser {
             return logRecord;
         }
 
+        long seqNumber = 0;
+
+        void nextLineDirect(byte[] data, LogBlock logBlock) {
+            TableInfo tableInfo = GlobalData.tableInfo;
+
+            // LogRecord logRecord = new LogRecord();
+            //logRecord.lineData = data;
+            //logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
+
+            int pos = parsePos;
+            long id = -1;
+            long preid = -1;
+            byte op;
+            //int colWriteIndex = tableInfo.columnName.length - 1;
+            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
+            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
+            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
+            pos += 14;
+            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
+            pos += 12;
+            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
+            pos += 8;
+
+            int opPos = pos;
+            op = data[opPos];
+            //logRecord.opType = op;
+            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//op
+            LogBlockRebuilder logBlockRebuilder = null;
+            int logPos = logBlock.length;
+            int colWriteIndex = 3 * logPos * GlobalData.colCount;
+            while (data[pos] != '\n') {
+                int namePos = pos;
+                int nameLen = ZXUtil.nextToken(data, pos, ':');//col name
+                pos += 1 + nameLen;
+                byte type = data[pos];
+                byte isPk = data[pos + 2];
+                pos += 4;//skip
+                int oldPos = pos;
+                int oldLen = ZXUtil.nextToken(data, pos, '|');
+                pos = pos + 1 + oldLen;//old value
+                int newPos = pos;
+                int newLen = ZXUtil.nextToken(data, pos, '|');
+                pos = pos + 1 + newLen;//new value
+                if (isPk == '1') {
+                    long activeId = 0;
+                    if (op == 'I') {
+                        id = ZXUtil.parseLong(data, newPos, newLen);
+                        activeId = id;
+                    } else if (op == 'D') {
+                        preid = ZXUtil.parseLong(data, oldPos, oldLen);
+                        activeId = preid;
+                    } else if (op == 'U') {
+                        id = ZXUtil.parseLong(data, newPos, newLen);
+                        preid = ZXUtil.parseLong(data, oldPos, oldLen);
+                        activeId = id;
+                    }
+                    logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % Config.REBUILDER_THREAD)];
+                } else {
+                    int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
+                    logBlock.columnData[colWriteIndex++] = byteIndex;
+                    logBlock.columnData[colWriteIndex++] = newPos;
+                    logBlock.columnData[colWriteIndex++] = newLen;
+                }
+            }
+
+            if (colWriteIndex < 3 * (logPos + 1) * GlobalData.colCount) {
+                logBlock.columnData[colWriteIndex] = 0;
+            }
+
+            pos++;//skip \n
+            parsePos = pos;
+            logBlock.ids[logPos] = id;
+            logBlock.preIds[logPos] = preid;
+            logBlock.opTypes[logPos] = op;
+            logBlock.seqs[logPos] = seqNumber++;
+            logBlock.length++;
+            logBlockRebuilder.poss[logBlockRebuilder.length++] = logPos;
+            if (op == 'U' && preid != id) {
+                LogBlockRebuilder xrebuilder = logBlock.logBlockRebuilders[(int) ((preid) % Config.REBUILDER_THREAD)];
+                int xpos = logBlock.length;
+                logBlock.ids[xpos] = preid;
+                logBlock.opTypes[xpos] = 'X';
+                logBlock.length++;
+                xrebuilder.poss[xrebuilder.length++] = xpos;
+            }
+
+        }
+
         @Override
         public void run() {
             try {
@@ -223,22 +358,26 @@ public class FileParserMT implements FileParser {
                         queue.put(fileBlock);
                         break;
                     } else {
+                        LogBlock logBlock = LogBlock.allocate();
+                        /*
                         ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
                         for (int i = 0; i < rebuilderCount; i++) {
                             logRecordsArr.add(new ArrayList<LogRecord>(2048));
                         }
-
+                        */
                         //ArrayList<LogRecord> logRecords = new ArrayList<>();
                         parsePos = 0;
                         /*
                         for (int i = 0; i < 1024 * 10; i++) {
                             logRecords.add(null);
                         }*/
-                        long seq = (long) fileBlock.seq << 32;
+                        seqNumber = (long) fileBlock.seq << 32;
                         while (parsePos < fileBlock.length) {
                             //byte[] newData = new byte[fileBlock.buffer.length];
                             //System.arraycopy(fileBlock.buffer, 0, newData, 0, newData.length);
-                            LogRecord logRecord = nextLine(fileBlock.buffer);
+                            //LogRecord logRecord = nextLine(fileBlock.buffer);
+                            nextLineDirect(fileBlock.buffer, logBlock);
+                            /*
                             logRecord.seq = seq++;
                             long id = logRecord.id;
                             if (logRecord.opType == 'D') {
@@ -253,17 +392,19 @@ public class FileParserMT implements FileParser {
                             }
                             int block = (int) (id % rebuilderCount);
                             logRecordsArr.get(block).add(logRecord);
+                            */
                             //logRecords.add(logRecord);
 //                            lineCount.incrementAndGet();
                             selfLineCount++;
                         }
                         //ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         //System.out.println(lineCount);
-                        LogBlock logBlock = new LogBlock();
+
                         logBlock.fileBlock = fileBlock;
                         //logBlock.logRecords = logRecords;
-                        logBlock.logRecordsArr = logRecordsArr;
+                        //logBlock.logRecordsArr = logRecordsArr;
                         logBlock.ref.set(queueCount);
+                        // System.out.println(logBlock.length);
                         resultQueue.put(logBlock);
                         /*
                         synchronized (FileParserMT.class) {
@@ -387,7 +528,7 @@ public class FileParserMT implements FileParser {
         //flush log in buffer
         //flushLogInMap();
         dispatch();
-      //  logger.info(String.format("%d %d",DataStoragePlain.bigIdCount.get(),DataStoragePlain.bigData.size()));
+        //  logger.info(String.format("%d %d",DataStoragePlain.bigIdCount.get(),DataStoragePlain.bigData.size()));
         logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d ",
                 lineCount.get(), insertCount.get(), updateCount.get(), deleteCount.get(), pkUpdate.get()));
         //send a empty data

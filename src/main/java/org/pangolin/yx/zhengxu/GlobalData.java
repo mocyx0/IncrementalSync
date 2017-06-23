@@ -5,4 +5,5 @@ package org.pangolin.yx.zhengxu;
  */
 public class GlobalData {
     public static TableInfo tableInfo = new TableInfo();
+    public static int colCount;
 }

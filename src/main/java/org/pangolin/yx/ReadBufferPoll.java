@@ -8,7 +8,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Created by yangxiao on 2017/6/20.
  */
 public class ReadBufferPoll {
-    private static int FILE_BLOCK_SIZE = 1024 * 1024 ;//
+    private static int FILE_BLOCK_SIZE = 1024 * 1024;//
     private static final int BUFFER_COUNT = 60;
     private static volatile BlockingQueue<byte[]> bufferPool;
 

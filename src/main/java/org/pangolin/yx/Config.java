@@ -74,9 +74,9 @@ public final class Config {
     // 工作主目录
     public static String TESTER_HOME = "C:/tmp/alimid/small";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/alimid/small";
+    public static String DATA_HOME = "C:/tmp/alimid/big";
     // 结果文件目录
-    public static String RESULT_HOME = "C:/tmp/alimid/small";
+    public static String RESULT_HOME = "C:/tmp/alimid/big";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";
@@ -115,7 +115,7 @@ public final class Config {
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 4;
-    public static int REBUILDER_THREAD = 1;
+    public static int REBUILDER_THREAD = 3;
     public static int COLLECTOR_THREAD = 1;
     public static int PARSER_THREAD = 1;
 

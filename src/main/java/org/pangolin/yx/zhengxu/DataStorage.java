@@ -8,6 +8,8 @@ import java.util.ArrayList;
  */
 public interface DataStorage {
     void doLog(LogRecord logRecord, byte[] data) throws Exception;
+
+    void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception;
 }
 
 interface DataCollector {

@@ -131,4 +131,9 @@ public class DataStorageHashMap implements DataStorage {
         }
     }
 
+    @Override
+    public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
+
+    }
+
 }

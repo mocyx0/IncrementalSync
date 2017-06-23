@@ -3,10 +3,6 @@ package org.pangolin.yx.zhengxu;
 import org.pangolin.yx.*;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.pangolin.yx.NetServerHandler.data;
 
 /**
  * Created by yangxiao on 2017/6/20.
@@ -81,6 +77,24 @@ public class DataStoragePlain implements DataStorage {
             } else {
                 int pos = logData[i++];
                 int len = logData[i++];
+                int writePos = (index - 1) * CELL_SIZE;
+                //bytes[writePos] = (byte) len;
+                writeByte(bytes, node + OFF_CELL + writePos, (byte) len);
+
+                //System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
+                writeBytes(bytes, node + OFF_CELL + writePos + 1, readBuff, pos, len);
+            }
+        }
+    }
+
+    private void writeDataToBytesDirect(int node, int[] logData, int logDataOff, byte[] readBuff) {
+        for (int i = 0; i < 3 * GlobalData.colCount; ) {
+            int index = logData[logDataOff + i++];
+            if (index == 0) {
+                break;
+            } else {
+                int pos = logData[logDataOff + i++];
+                int len = logData[logDataOff + i++];
                 int writePos = (index - 1) * CELL_SIZE;
                 //bytes[writePos] = (byte) len;
                 writeByte(bytes, node + OFF_CELL + writePos, (byte) len);
@@ -213,21 +227,57 @@ public class DataStoragePlain implements DataStorage {
         }
     }
 
-    /*
-        public static AtomicInteger bigIdCount = new AtomicInteger();
-        public static HashSet<Long> bigData = new HashSet<>();
-    */
+
+    private void doLogRaw(byte[] data, long id, long preId, byte op, long seq, int[] colData, int colDataPos) throws Exception {
+        if (op == 'U') {
+            if (preId != id) {
+                int next = hashing.getOrDefault(id, 0);
+                int newNode = allocateBlock();
+                writeInt(bytes, OFF_NEXT + newNode, next);
+                writeLong(bytes, OFF_SEQ + newNode, seq);
+                writeLong(bytes, OFF_PREID + newNode, preId);
+                writeDataToBytesDirect(newNode, colData, colDataPos, data);
+                hashing.put(id, newNode);
+            } else {
+                int node = hashing.getOrDefault(id, 0);
+                if (node == 0) {
+                    System.out.println(id);
+                    throw new Exception("no preid in data");
+                } else {
+                    //writeDataToBytes(node, logRecord, data);
+                    writeDataToBytesDirect(node, colData, colDataPos, data);
+                }
+
+            }
+        } else if (op == 'I') {
+            int next = hashing.getOrDefault(id, 0);
+            int newNode = allocateBlock();
+            writeInt(bytes, OFF_NEXT + newNode, next);
+            writeLong(bytes, OFF_SEQ + newNode, seq);
+            writeLong(bytes, OFF_PREID + newNode, -1);
+            writeDataToBytesDirect(newNode, colData, colDataPos, data);
+            hashing.put(id, newNode);
+        } else if (op == 'D') {
+            int node = hashing.getOrDefault(preId, 0);
+            if (node == 0) {
+                throw new Exception("error");
+            } else {
+                int next = readInt(bytes, node + OFF_NEXT);
+                if (next == 0) {
+                    hashing.remove(preId);
+                } else {
+                    hashing.put(preId, next);
+                }
+            }
+
+        } else if (op == 'X') {
+            int node = hashing.get(id);
+            writeByte(bytes, OFF_VALID + node, (byte) 1);
+        }
+    }
+
     @Override
     public void doLog(LogRecord logRecord, byte[] data) throws Exception {
-        /*
-        if (logRecord.id > 10000000) {
-            synchronized (bigData) {
-                bigData.add(logRecord.id);
-            }
-            bigIdCount.incrementAndGet();
-        }
-        */
-
 
         if (logRecord.opType == 'U') {
             long id = logRecord.id;
@@ -277,5 +327,11 @@ public class DataStoragePlain implements DataStorage {
             int node = hashing.get(id);
             writeByte(bytes, OFF_VALID + node, (byte) 1);
         }
+    }
+
+    @Override
+    public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
+        doLogRaw(data, logBlock.ids[logPos], logBlock.preIds[logPos], logBlock.opTypes[logPos],
+                logBlock.seqs[logPos], logBlock.columnData, logPos * 3 * GlobalData.colCount);
     }
 }

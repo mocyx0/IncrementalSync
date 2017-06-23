@@ -154,6 +154,7 @@ public class LineParser {
         for (int i = 0; i < columns.size(); i++) {
             GlobalData.tableInfo.columnName[i] = columns.get(i);
         }
+        GlobalData.colCount = GlobalData.tableInfo.columnName.length - 1;
         tableInfo = GlobalData.tableInfo;
     }
 

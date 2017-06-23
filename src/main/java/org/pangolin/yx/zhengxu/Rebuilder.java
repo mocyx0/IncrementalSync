@@ -41,21 +41,34 @@ public class Rebuilder implements Runnable {
         try {
             while (true) {
                 LogBlock logBlock = queue.take();
+
                 if (logBlock == LogBlock.EMPTY) {
                     break;
                 } else {
+                    if (index == 7) {
+                        //  System.out.println(String.format("file block %d",logBlock.fileBlock.seq));
+                    }
                     if (DO_REBUILD) {
+                        LogBlockRebuilder logBlockRebuilder = logBlock.logBlockRebuilders[index];
+                        for (int i = 0; i < logBlockRebuilder.length; i++) {
+                            dataStorage.doLog(logBlock, logBlock.fileBlock.buffer, logBlockRebuilder.poss[i]);
+                        }
+                        /*
                         for (LogRecord log : logBlock.logRecordsArr.get(index)) {
                             //logCount++;
                             dataStorage.doLog(log, logBlock.fileBlock.buffer);
                         }
+                        */
                         //free buffer
                         if (logBlock.ref.decrementAndGet() == 0) {
                             ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
+                            LogBlock.free(logBlock);
                         }
                     } else {
                         if (logBlock.ref.decrementAndGet() == 0) {
                             ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
+                            LogBlock.free(logBlock);
+
                         }
                     }
                 }

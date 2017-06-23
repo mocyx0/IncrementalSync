@@ -98,6 +98,7 @@ public class PlainHashing {
     }
 
     public void put(long key, int value) {
+
         int pos = (int) (key & (hashTable.length - 1));
         int head = hashTable[pos];
         int oldHead = head;
@@ -118,6 +119,7 @@ public class PlainHashing {
     }
 
     public void remove(long key) {
+
         int pos = (int) (key & (hashTable.length - 1));
         int head = hashTable[pos];
         if (head != 0) {
