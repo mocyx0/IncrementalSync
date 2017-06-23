@@ -387,6 +387,7 @@ public class FileParserMT implements FileParser {
         //flush log in buffer
         //flushLogInMap();
         dispatch();
+      //  logger.info(String.format("%d %d",DataStoragePlain.bigIdCount.get(),DataStoragePlain.bigData.size()));
         logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d ",
                 lineCount.get(), insertCount.get(), updateCount.get(), deleteCount.get(), pkUpdate.get()));
         //send a empty data

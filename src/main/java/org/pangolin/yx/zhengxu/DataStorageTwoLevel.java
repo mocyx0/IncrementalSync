@@ -1,41 +1,69 @@
 package org.pangolin.yx.zhengxu;
 
-import org.pangolin.yx.*;
+import org.pangolin.xuzhe.Log;
+import org.pangolin.yx.Config;
+import org.pangolin.yx.PlainHashArr;
+import org.pangolin.yx.PlainHashing;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static org.pangolin.yx.NetServerHandler.data;
 
 /**
- * Created by yangxiao on 2017/6/20.
+ * Created by yangxiao on 2017/6/23.
  */
-public class DataStoragePlain implements DataStorage {
+public class DataStorageTwoLevel implements DataStorage {
+
+    class RecordData {
+        long preid;
+        byte[] colData;
+    }
+
+    static class Level1 {
+        byte[] colData;
+        int[] next;
+        long[] seq;
+        byte[] flag;//0 empty 1 valid 2 non-valid
+        long[] preid;
+    }
+
+    public static final int FLAG_EMPTY = 0;
+    public static final int FLAG_VALID = 1;
+    public static final int FLAG_X = 2;
     //存储格式:  next/int seq/long preid/long valid/byte [len/byte data/6byte]*n
     private static final int OFF_NEXT = 0;
     private static final int OFF_SEQ = 4;
     private static final int OFF_PREID = 12;
-    private static final int OFF_VALID = 20;  //valid=1 表示无效
+    private static final int OFF_FLAG = 20;  //valid=1 表示无效
     private static final int OFF_CELL = 21;
+    private static final int FIRST_LEVEL_COUNT = 1 << 20;
+    private static final int FIRST_LEVEL_MAX = FIRST_LEVEL_COUNT - 1;
     TableInfo tableInfo;
     int CELL_SIZE;
     int CELL_COUNT;
+    int COL_BLOCK_SIZE;
     private static final int BUFFER_SIZE = 1024 * 1024;
     private static final int BUFFER_BITS = 20;
     private int blockSize = 0;
     //LinearHashing hashing = new LinearHashing();
-    PlainHashing hashing = new PlainHashing(20);
+    PlainHashArr hashing = new PlainHashArr(20);
     private ArrayList<byte[]> bytes = new ArrayList<>();
     private int nextBytePos;
+    private Level1 level1;
 
-    DataStoragePlain(TableInfo tableInfo) {
+    DataStorageTwoLevel(TableInfo tableInfo) {
         this.tableInfo = tableInfo;
         CELL_SIZE = Config.MAX_COL_SIZE + 1;
         CELL_COUNT = tableInfo.columnName.length - 1;
         blockSize = 4 + 8 + 8 + 1 + CELL_SIZE * CELL_COUNT;
         nextBytePos = blockSize;
         bytes.add(new byte[BUFFER_SIZE]);
+        COL_BLOCK_SIZE = CELL_SIZE * CELL_COUNT;
+
+        level1 = new Level1();
+        level1.colData = new byte[CELL_SIZE * CELL_COUNT * FIRST_LEVEL_COUNT];
+        level1.next = new int[FIRST_LEVEL_COUNT];
+        level1.preid = new long[FIRST_LEVEL_COUNT];
+        level1.seq = new long[FIRST_LEVEL_COUNT];
+        level1.flag = new byte[FIRST_LEVEL_COUNT];
     }
 
     int allocateBlock() {
@@ -63,13 +91,36 @@ public class DataStoragePlain implements DataStorage {
     }
 
     public byte getValid(int node) {
-        return readByte(bytes, node + OFF_VALID);
+        return readByte(bytes, node + OFF_FLAG);
     }
 
     public long getPreid(int node) {
         return readLong(bytes, node + OFF_PREID);
     }
 
+
+    private void writeDataToBytesRaw(byte[] buff, int bufPos, LogRecord logRecord, byte[] readBuff) {
+        int[] logData = logRecord.columnData;
+        int datalen = logRecord.columnData.length;
+        for (int i = 0; i < datalen; ) {
+            int index = logData[i++];
+            if (index == 0) {
+                break;
+            } else {
+                int pos = logData[i++];
+                int len = logData[i++];
+                int writePos = (index - 1) * CELL_SIZE + bufPos;
+                //bytes[writePos] = (byte) len;
+                //writeByte(bytes, node + OFF_CELL + writePos, (byte) len);
+                buff[writePos] = (byte) len;
+                //System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
+                //writeBytes(bytes, node + OFF_CELL + writePos + 1, readBuff, pos, len);
+                for (int j = 0; j < len; j++) {
+                    buff[writePos + 1 + j] = readBuff[pos + j];
+                }
+            }
+        }
+    }
 
     private void writeDataToBytes(int node, LogRecord logRecord, byte[] readBuff) {
         int[] logData = logRecord.columnData;
@@ -152,6 +203,16 @@ public class DataStoragePlain implements DataStorage {
         }
     }
 
+
+    private void writeByte(ArrayList<byte[]> buffer, int off, byte v) {
+        //int index = off / BUFFER_SIZE;
+        //int buffOff = off % BUFFER_SIZE;
+        int index = off >>> BUFFER_BITS;
+        int buffOff = off & (BUFFER_SIZE - 1);
+        byte[] buf = buffer.get(index);
+        buf[buffOff] = v;
+    }
+
     private void writeInt(ArrayList<byte[]> buffer, int off, int v) {
         //int index = off / BUFFER_SIZE;
         //int buffOff = off % BUFFER_SIZE;
@@ -162,15 +223,6 @@ public class DataStoragePlain implements DataStorage {
         buf[buffOff + 1] = (byte) (0xff & v >>> 8);
         buf[buffOff + 2] = (byte) (0xff & v >>> 16);
         buf[buffOff + 3] = (byte) (0xff & v >>> 24);
-    }
-
-    private void writeByte(ArrayList<byte[]> buffer, int off, byte v) {
-        //int index = off / BUFFER_SIZE;
-        //int buffOff = off % BUFFER_SIZE;
-        int index = off >>> BUFFER_BITS;
-        int buffOff = off & (BUFFER_SIZE - 1);
-        byte[] buf = buffer.get(index);
-        buf[buffOff] = v;
     }
 
     private void writeLong(ArrayList<byte[]> buffer, int off, long v) {
@@ -188,6 +240,45 @@ public class DataStoragePlain implements DataStorage {
         buf[buffOff + 5] = (byte) (0xff & v >>> 40);
         buf[buffOff + 6] = (byte) (0xff & v >>> 48);
         buf[buffOff + 7] = (byte) (0xff & v >>> 56);
+    }
+
+
+    public RecordData getRecord(long id, long seq) throws Exception {
+        RecordData logRecord = new RecordData();
+        int level1Index = (int) (id / Config.REBUILDER_THREAD);
+        if (seq == -1) {
+            if (level1.flag[level1Index] == FLAG_VALID) {
+                logRecord.preid = level1.preid[level1Index];
+                logRecord.colData = new byte[COL_BLOCK_SIZE];
+                System.arraycopy(level1.colData, COL_BLOCK_SIZE * level1Index, logRecord.colData, 0, COL_BLOCK_SIZE);
+                return logRecord;
+            }
+        } else {
+            if (level1.flag[level1Index] == FLAG_VALID) {
+                if (level1.seq[level1Index] < seq) {
+                    logRecord.preid = level1.preid[level1Index];
+                    logRecord.colData = new byte[COL_BLOCK_SIZE];
+                    System.arraycopy(level1.colData, COL_BLOCK_SIZE * level1Index, logRecord.colData, 0, COL_BLOCK_SIZE);
+                    return logRecord;
+                } else {
+                    int next = level1.next[level1Index];
+                    while (true) {
+                        long seqNext = readLong(bytes, next + OFF_SEQ);
+                        if (seqNext < seq) {
+                            logRecord.preid = readLong(bytes, next + OFF_PREID);
+                            logRecord.colData = new byte[COL_BLOCK_SIZE];
+                            readBytes(next, 0, logRecord.colData, 0, COL_BLOCK_SIZE);
+                            return logRecord;
+                        } else {
+                            next = readInt(bytes, next + OFF_NEXT);
+                        }
+                    }
+                }
+            } else {
+                throw new Exception("error");
+            }
+        }
+        throw new Exception("error");
     }
 
     //seq=-1 表示不关心seq
@@ -213,25 +304,34 @@ public class DataStoragePlain implements DataStorage {
         }
     }
 
-    /*
-        public static AtomicInteger bigIdCount = new AtomicInteger();
-        public static HashSet<Long> bigData = new HashSet<>();
-    */
+    int copyDataToLevel2(int index) {
+        int next = level1.next[index];
+        int node = allocateBlock();
+        writeInt(bytes, node + OFF_NEXT, next);
+        writeLong(bytes, node + OFF_SEQ, level1.seq[index]);
+        writeLong(bytes, node + OFF_PREID, level1.preid[index]);
+        writeByte(bytes, node + OFF_FLAG, level1.flag[index]);
+        //writeInt(bytes,node+OFF_NEXT,next);
+        writeBytes(bytes, node + OFF_CELL, level1.colData, index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
+
+        return 0;
+    }
+
     @Override
     public void doLog(LogRecord logRecord, byte[] data) throws Exception {
-        /*
-        if (logRecord.id > 10000000) {
-            synchronized (bigData) {
-                bigData.add(logRecord.id);
-            }
-            bigIdCount.incrementAndGet();
-        }
-        */
-
-
         if (logRecord.opType == 'U') {
             long id = logRecord.id;
             if (logRecord.preId != logRecord.id) {
+                int level1Index = (int) (id / Config.REBUILDER_THREAD);
+                System.out.println(id);
+                if (level1.flag[level1Index] != FLAG_EMPTY) {
+                    level1.next[level1Index] = copyDataToLevel2(level1Index);
+                }
+                level1.seq[level1Index] = logRecord.seq;
+                level1.preid[level1Index] = logRecord.preId;
+                level1.flag[level1Index] = FLAG_VALID;
+                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                /*
                 int next = hashing.getOrDefault(id, 0);
                 int newNode = allocateBlock();
                 writeInt(bytes, OFF_NEXT + newNode, next);
@@ -239,7 +339,12 @@ public class DataStoragePlain implements DataStorage {
                 writeLong(bytes, OFF_PREID + newNode, logRecord.preId);
                 writeDataToBytes(newNode, logRecord, data);
                 hashing.put(id, newNode);
+                */
             } else {
+                //更新数据
+                int level1Index = (int) (id / Config.REBUILDER_THREAD);
+                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                /*
                 int node = hashing.getOrDefault(id, 0);
                 if (node == 0) {
                     System.out.println(id);
@@ -247,10 +352,20 @@ public class DataStoragePlain implements DataStorage {
                 } else {
                     writeDataToBytes(node, logRecord, data);
                 }
+                */
 
             }
         } else if (logRecord.opType == 'I') {
             long id = logRecord.id;
+            int level1Index = (int) (id / Config.REBUILDER_THREAD);
+            if (level1.flag[level1Index] != FLAG_EMPTY) {
+                level1.next[level1Index] = copyDataToLevel2(level1Index);
+            }
+            level1.seq[level1Index] = logRecord.seq;
+            level1.preid[level1Index] = -1;
+            level1.flag[level1Index] = FLAG_VALID;
+            writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+            /*
             int next = hashing.getOrDefault(id, 0);
             int newNode = allocateBlock();
             writeInt(bytes, OFF_NEXT + newNode, next);
@@ -258,7 +373,23 @@ public class DataStoragePlain implements DataStorage {
             writeLong(bytes, OFF_PREID + newNode, -1);
             writeDataToBytes(newNode, logRecord, data);
             hashing.put(id, newNode);
+            */
         } else if (logRecord.opType == 'D') {
+            long id = logRecord.preId;
+            int level1Index = (int) (id / Config.REBUILDER_THREAD);
+            if (level1.next[level1Index] != 0) {
+                //read the pre node
+                int next = level1.next[level1Index];
+                level1.next[level1Index] = readInt(bytes, next + OFF_NEXT);
+                level1.seq[level1Index] = readLong(bytes, next + OFF_SEQ);
+                level1.flag[level1Index] = readByte(bytes, next + OFF_FLAG);
+                level1.preid[level1Index] = readLong(bytes, next + OFF_PREID);
+                //level1.colData[level1Index] = readInt(bytes, next + OFF_NEXT);
+                readBytes(next, OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
+            } else {
+                level1.flag[level1Index] = FLAG_EMPTY;
+            }
+            /*
             long id = logRecord.preId;
             int node = hashing.getOrDefault(id, 0);
             if (node == 0) {
@@ -271,11 +402,18 @@ public class DataStoragePlain implements DataStorage {
                     hashing.put(id, next);
                 }
             }
+            */
 
         } else if (logRecord.opType == 'X') {
             long id = logRecord.id;
+            int level1Index = (int) (id / Config.REBUILDER_THREAD);
+            level1.flag[level1Index] = FLAG_X;
+            /*
+            long id = logRecord.id;
             int node = hashing.get(id);
             writeByte(bytes, OFF_VALID + node, (byte) 1);
+            */
         }
     }
+
 }

@@ -172,7 +172,7 @@ public class PlainHashing {
         PlainHashing lhash = new PlainHashing(21);
         HashMap<Long, Integer> hashMap = new HashMap<>();
         //测试数据量
-        int testCount = 2000000;
+        int testCount = 1500000;
         long seq = 0;
 
         long t1 = System.currentTimeMillis();
