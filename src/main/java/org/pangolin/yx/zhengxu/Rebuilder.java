@@ -14,7 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Rebuilder implements Runnable {
     //啥也不做 用于测试
     private boolean DO_REBUILD = true;
-
     CountDownLatch latch;
     LinkedBlockingQueue<LogBlock> queue;
     Logger logger;

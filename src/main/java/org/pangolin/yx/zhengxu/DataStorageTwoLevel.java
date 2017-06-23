@@ -43,8 +43,7 @@ public class DataStorageTwoLevel implements DataStorage {
     private static final int BUFFER_SIZE = 1024 * 1024;
     private static final int BUFFER_BITS = 20;
     private int blockSize = 0;
-    //LinearHashing hashing = new LinearHashing();
-    PlainHashArr hashing = new PlainHashArr(20);
+    PlainHashArr hashing = new PlainHashArr(19);
     private ArrayList<byte[]> bytes = new ArrayList<>();
     private int nextBytePos;
     private Level1 level1;
@@ -317,20 +316,30 @@ public class DataStorageTwoLevel implements DataStorage {
         return 0;
     }
 
+
     @Override
     public void doLog(LogRecord logRecord, byte[] data) throws Exception {
         if (logRecord.opType == 'U') {
             long id = logRecord.id;
             if (logRecord.preId != logRecord.id) {
                 int level1Index = (int) (id / Config.REBUILDER_THREAD);
-                System.out.println(id);
-                if (level1.flag[level1Index] != FLAG_EMPTY) {
-                    level1.next[level1Index] = copyDataToLevel2(level1Index);
+                if (level1Index > FIRST_LEVEL_MAX) {
+                    int next = hashing.getOrDefault(id, 0);
+                    int newNode = allocateBlock();
+                    writeInt(bytes, OFF_NEXT + newNode, next);
+                    writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
+                    writeLong(bytes, OFF_PREID + newNode, logRecord.preId);
+                    writeDataToBytes(newNode, logRecord, data);
+                    hashing.put(id, newNode);
+                } else {
+                    if (level1.flag[level1Index] != FLAG_EMPTY) {
+                        level1.next[level1Index] = copyDataToLevel2(level1Index);
+                    }
+                    level1.seq[level1Index] = logRecord.seq;
+                    level1.preid[level1Index] = logRecord.preId;
+                    level1.flag[level1Index] = FLAG_VALID;
+                    writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
                 }
-                level1.seq[level1Index] = logRecord.seq;
-                level1.preid[level1Index] = logRecord.preId;
-                level1.flag[level1Index] = FLAG_VALID;
-                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
                 /*
                 int next = hashing.getOrDefault(id, 0);
                 int newNode = allocateBlock();
@@ -343,7 +352,13 @@ public class DataStorageTwoLevel implements DataStorage {
             } else {
                 //更新数据
                 int level1Index = (int) (id / Config.REBUILDER_THREAD);
-                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                if (level1Index > FIRST_LEVEL_MAX) {
+                    int node = hashing.getOrDefault(id, 0);
+                    writeDataToBytes(node, logRecord, data);
+                } else {
+                    writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                }
+
                 /*
                 int node = hashing.getOrDefault(id, 0);
                 if (node == 0) {
@@ -358,13 +373,24 @@ public class DataStorageTwoLevel implements DataStorage {
         } else if (logRecord.opType == 'I') {
             long id = logRecord.id;
             int level1Index = (int) (id / Config.REBUILDER_THREAD);
-            if (level1.flag[level1Index] != FLAG_EMPTY) {
-                level1.next[level1Index] = copyDataToLevel2(level1Index);
+            if (level1Index > FIRST_LEVEL_MAX) {
+                int next = hashing.getOrDefault(id, 0);
+                int newNode = allocateBlock();
+                writeInt(bytes, OFF_NEXT + newNode, next);
+                writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
+                writeLong(bytes, OFF_PREID + newNode, -1);
+                writeDataToBytes(newNode, logRecord, data);
+                hashing.put(id, newNode);
+            } else {
+                if (level1.flag[level1Index] != FLAG_EMPTY) {
+                    level1.next[level1Index] = copyDataToLevel2(level1Index);
+                }
+                level1.seq[level1Index] = logRecord.seq;
+                level1.preid[level1Index] = -1;
+                level1.flag[level1Index] = FLAG_VALID;
+                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
             }
-            level1.seq[level1Index] = logRecord.seq;
-            level1.preid[level1Index] = -1;
-            level1.flag[level1Index] = FLAG_VALID;
-            writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+
             /*
             int next = hashing.getOrDefault(id, 0);
             int newNode = allocateBlock();
@@ -377,18 +403,33 @@ public class DataStorageTwoLevel implements DataStorage {
         } else if (logRecord.opType == 'D') {
             long id = logRecord.preId;
             int level1Index = (int) (id / Config.REBUILDER_THREAD);
-            if (level1.next[level1Index] != 0) {
-                //read the pre node
-                int next = level1.next[level1Index];
-                level1.next[level1Index] = readInt(bytes, next + OFF_NEXT);
-                level1.seq[level1Index] = readLong(bytes, next + OFF_SEQ);
-                level1.flag[level1Index] = readByte(bytes, next + OFF_FLAG);
-                level1.preid[level1Index] = readLong(bytes, next + OFF_PREID);
-                //level1.colData[level1Index] = readInt(bytes, next + OFF_NEXT);
-                readBytes(next, OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
+            if (level1Index > FIRST_LEVEL_MAX) {
+                int node = hashing.getOrDefault(id, 0);
+                if (node == 0) {
+                    throw new Exception("error");
+                } else {
+                    int next = readInt(bytes, node + OFF_NEXT);
+                    if (next == 0) {
+                        hashing.remove(id);
+                    } else {
+                        hashing.put(id, next);
+                    }
+                }
             } else {
-                level1.flag[level1Index] = FLAG_EMPTY;
+                if (level1.next[level1Index] != 0) {
+                    //read the pre node
+                    int next = level1.next[level1Index];
+                    level1.next[level1Index] = readInt(bytes, next + OFF_NEXT);
+                    level1.seq[level1Index] = readLong(bytes, next + OFF_SEQ);
+                    level1.flag[level1Index] = readByte(bytes, next + OFF_FLAG);
+                    level1.preid[level1Index] = readLong(bytes, next + OFF_PREID);
+                    //level1.colData[level1Index] = readInt(bytes, next + OFF_NEXT);
+                    readBytes(next, OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
+                } else {
+                    level1.flag[level1Index] = FLAG_EMPTY;
+                }
             }
+
             /*
             long id = logRecord.preId;
             int node = hashing.getOrDefault(id, 0);
@@ -407,7 +448,12 @@ public class DataStorageTwoLevel implements DataStorage {
         } else if (logRecord.opType == 'X') {
             long id = logRecord.id;
             int level1Index = (int) (id / Config.REBUILDER_THREAD);
-            level1.flag[level1Index] = FLAG_X;
+            if (level1Index > FIRST_LEVEL_MAX) {
+                int node = hashing.get(id);
+                writeByte(bytes, OFF_FLAG + node, (byte) 1);
+            } else {
+                level1.flag[level1Index] = FLAG_X;
+            }
             /*
             long id = logRecord.id;
             int node = hashing.get(id);

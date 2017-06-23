@@ -8,16 +8,20 @@ import java.util.HashMap;
  */
 public class PlainHashing {
 
-    private ArrayList<byte[]> bytes = new ArrayList<>();
+    //private ArrayList<byte[]> bytes = new ArrayList<>();
     private final int BUFFER_SIZE = 1024 * 1024;
     private static int CHAIN_BLOCK_SIZE = 16;//链表节点的大小 4字节指向下一节点 8key 4value
     private int hashBits;
     private int[] hashTable;
 
-    private int readInt(ArrayList<byte[]> buffer, int off) {
+    private byte[][] bytes = new byte[16][];
+    private int bytesLength = 0;
+
+
+    private int readInt(byte[][] buffer, int off) {
         int index = off / BUFFER_SIZE;
         int buffOff = off % BUFFER_SIZE;
-        byte[] buf = buffer.get(index);
+        byte[] buf = buffer[(index)];
         int re = (buf[buffOff] & 0xff)
                 | ((buf[buffOff + 1] & 0xff) << 8)
                 | ((buf[buffOff + 2] & 0xff) << 16)
@@ -25,10 +29,10 @@ public class PlainHashing {
         return re;
     }
 
-    private long readLong(ArrayList<byte[]> buffer, int off) {
+    private long readLong(byte[][] buffer, int off) {
         int index = off / BUFFER_SIZE;
         int buffOff = off % BUFFER_SIZE;
-        byte[] buf = buffer.get(index);
+        byte[] buf = buffer[index];
         long re = (((long) buf[buffOff]) & 0xff)
                 | (((long) buf[buffOff + 1] & 0xff) << 8)
                 | (((long) buf[buffOff + 2] & 0xff) << 16)
@@ -40,20 +44,20 @@ public class PlainHashing {
         return re;
     }
 
-    private void writeInt(ArrayList<byte[]> buffer, int off, int v) {
+    private void writeInt(byte[][] buffer, int off, int v) {
         int index = off / BUFFER_SIZE;
         int buffOff = off % BUFFER_SIZE;
-        byte[] buf = buffer.get(index);
+        byte[] buf = buffer[index];
         buf[buffOff] = (byte) (0xff & v);
         buf[buffOff + 1] = (byte) (0xff & v >>> 8);
         buf[buffOff + 2] = (byte) (0xff & v >>> 16);
         buf[buffOff + 3] = (byte) (0xff & v >>> 24);
     }
 
-    private void writeLong(ArrayList<byte[]> buffer, int off, long v) {
+    private void writeLong(byte[][] buffer, int off, long v) {
         int index = off / BUFFER_SIZE;
         int buffOff = off % BUFFER_SIZE;
-        byte[] buf = buffer.get(index);
+        byte[] buf = buffer[index];
         buf[buffOff] = (byte) (0xff & v);
         buf[buffOff + 1] = (byte) (0xff & v >>> 8);
         buf[buffOff + 2] = (byte) (0xff & v >>> 16);
@@ -69,15 +73,24 @@ public class PlainHashing {
     public PlainHashing(int capBit) {
         hashBits = capBit;
         hashTable = new int[1 << hashBits];
-        bytes.add(new byte[BUFFER_SIZE]);
+        //bytes.add(new byte[BUFFER_SIZE]);
+        bytes[bytesLength++] = new byte[BUFFER_SIZE];
     }
 
     int allocatePos = CHAIN_BLOCK_SIZE;
 
     private int allocateChainNode() {
-        if (allocatePos + CHAIN_BLOCK_SIZE > bytes.size() * BUFFER_SIZE) {
-            bytes.add(new byte[BUFFER_SIZE]);
-            allocatePos = (bytes.size() - 1) * BUFFER_SIZE;
+        if (allocatePos + CHAIN_BLOCK_SIZE > bytesLength * BUFFER_SIZE) {
+            if (bytesLength == bytes.length) {
+                byte[][] newBytes = new byte[bytesLength * 2][];
+                for (int i = 0; i < bytesLength; i++) {
+                    newBytes[i] = bytes[i];
+                }
+                bytes = newBytes;
+            }
+            bytes[bytesLength++] = new byte[BUFFER_SIZE];
+            //bytes.add(new byte[BUFFER_SIZE]);
+            allocatePos = (bytesLength - 1) * BUFFER_SIZE;
         }
         int re = allocatePos;
         allocatePos += CHAIN_BLOCK_SIZE;
