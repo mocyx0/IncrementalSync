@@ -1,5 +1,9 @@
 package org.pangolin.xuzhe.positiveorder;
 
+import com.alibaba.middleware.race.sync.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,23 +17,44 @@ import static org.pangolin.xuzhe.positiveorder.ReadingThread.parserLatch;
  * Created by 29146 on 2017/6/16.
  */
 public class Redo extends Thread {
+    static Logger logger = LoggerFactory.getLogger(Server.class);
 //    public MyLong2IntHashMap pkMap = new MyLong2IntWithBitIndexHashMap(32-Integer.numberOfLeadingZeros(10000000/REDO_NUM), 0.99f);
 //    private byte[] dataSrc;
     private Parser[] parser;
     int redoId;
     private DataStore dataStore;
+    private int beginId;
+    private int endId;
+    private HashMap<Integer, Redo.Record> map;
     public  Redo(int redoId, Parser[] parser){
         this.redoId = redoId;
         setName("Redo" + redoId);
         this.parser = parser;
     }
 
+    public void setSearchRange(int begin, int end) {
+        beginId = begin;
+        endId = end;
+    }
+
     public int getRecord(long pk, byte[] out, int pos) {
-//        int indexInStore = pkMap.get(pk);
-//        if(indexInStore == -1) {
-//            return -1;
-//        }
-        return this.dataStore.getRecord(pk, out, pos);
+        if(this.dataStore.exist((int)pk)) {
+            Redo.Record r = this.map.get((int)pk);
+            System.arraycopy(r.data, 0, out, pos, r.len);
+            return pos + r.len;
+        } else {
+            return -1;
+        }
+//        return this.dataStore.getRecord(pk, out, pos);
+    }
+
+    public static class Record {
+        public final byte[] data;
+        public final int len;
+        public Record(byte[] data, int len) {
+            this.data = data;
+            this.len = len;
+        }
     }
 
     @Override
@@ -90,6 +115,20 @@ public class Redo extends Thread {
                 }
 
             }
+            long time1 = System.currentTimeMillis();
+            map = new HashMap<>(100_0000, 0.85f);
+            int off = 0;
+            byte[] buf = new byte[100];
+            for(int i = beginId + 1; i < endId; i++ ) {
+                int len = this.dataStore.getRecord(i, buf, 0);
+                if(len != -1) {
+                    map.put(i, new Redo.Record(buf, len));
+                    off += len;
+                    buf = new byte[100];
+                }
+            }
+            long time2 = System.currentTimeMillis();
+            logger.info( off + "bytes, Done," + (time2-time1) + " ms");
         } catch (Exception e) {
             e.printStackTrace();
         }

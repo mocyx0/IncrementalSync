@@ -59,7 +59,7 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
         byte[] result1 = new byte[result.readableBytes()];
         // msg中存储的是ByteBuf类型的数据，把数据读取到byte[]中
         result.readBytes(result1);
-        logger.info("Client side, channel Read:{}", result1.length);
+//        logger.info("Client side, channel Read:{}", result1.length);
         try {
             File f = new File(Config.RESULT_HOME + "/" + Config.RESULT_NAME);
             fileOutputStream = new FileOutputStream(f);

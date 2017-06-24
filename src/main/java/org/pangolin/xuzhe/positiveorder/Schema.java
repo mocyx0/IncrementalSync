@@ -66,14 +66,14 @@ public class Schema {
                         ++a;
                     }
                     s.databaseNameLen = a-i;
-                    System.out.println("databaseNameLen:" + s.databaseNameLen);
+//                    System.out.println("databaseNameLen:" + s.databaseNameLen);
                     a++;
                     i = a;
                     while(data[a] != '|') {
                         ++a;
                     }
                     s.tableNameLen = a-i;
-                    System.out.println("tableNameLen:" + s.tableNameLen);
+//                    System.out.println("tableNameLen:" + s.tableNameLen);
                     i = a - 1;
                     itemIndex = 4;
                 } else if(itemIndex == 9) {

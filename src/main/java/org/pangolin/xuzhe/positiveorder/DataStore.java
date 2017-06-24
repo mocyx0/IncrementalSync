@@ -1,5 +1,10 @@
 package org.pangolin.xuzhe.positiveorder;
 
+import com.koloboke.collect.hash.HashConfig;
+import com.koloboke.collect.map.hash.HashLongIntMap;
+import com.koloboke.collect.map.hash.HashLongIntMapFactory;
+import com.koloboke.collect.map.hash.HashLongIntMaps;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -23,7 +28,7 @@ public class DataStore {
     private boolean[] firstLevelStoreKeys;
     private ArrayList<byte[]> secondLevelDataStore;
     private Deque<Integer> deque = new ArrayDeque<>(STACK_SIZE);
-    private MyLong2IntHashMap storeIndexMap;
+    private HashLongIntMap storeIndexMap;
     private int nextIndexInSecondLevel = 0;
     private int id;
     /**
@@ -39,9 +44,10 @@ public class DataStore {
         firstLevelStoreKeys = new boolean[5000_0000/ REDO_NUM];
         secondLevelDataStore = new ArrayList<>();
         secondLevelDataStore.add(new byte[SECOND_LEVEL_BLOCK_SIZE]);
-        storeIndexMap = new MyLong2IntHashMap(1000000, 0.95f);
+//        storeIndexMap = new MyLong2IntHashMap(2000000, 0.95f);
         this.id = id;
-
+        storeIndexMap = HashLongIntMaps.getDefaultFactory().withDefaultValue(-1).withHashConfig(
+                HashConfig.fromLoads(0.8, 0.95, 0.95)).newMutableMap(100_0000);
         bitMaps = new int[(int)(bitIndexMaxValue>>5)];
     }
 
@@ -49,7 +55,8 @@ public class DataStore {
     public void process(LogIndex logIndex) {
         byte[] dataSrc = logIndex.getByteBuffer().array();
         long[] oldPKs = logIndex.getOldPks();
-        for (int i = 0; i < logIndex.getLogSize(); i++) {
+        int logSize = logIndex.getLogSize();
+        for (int i = 0; i < logSize; i++) {
             long oldPK = oldPKs[i];
             if(oldPK != -1) { // 更新或删除
                 if(oldPK < FIRST_LEVEL_MAX_KEY) { // 旧主键对应的记录在位图索引中有记录
@@ -127,6 +134,15 @@ public class DataStore {
                 }
             }
         }
+    }
+
+    /**
+     * 在一级存储的位图索引中检索，记录是否存在
+     * @param id
+     * @return
+     */
+    public boolean exist(int id) {
+        return bitScan(id) == 1;
     }
 
     /**
