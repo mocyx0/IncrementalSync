@@ -106,7 +106,7 @@ public class Client {
                         lastError = e.getMessage();
                         logger.info("建立连接失败, {}", lastError);
                     }
-                    Thread.sleep(3000);
+                    Thread.sleep(100);
                 }
             }
         } finally {

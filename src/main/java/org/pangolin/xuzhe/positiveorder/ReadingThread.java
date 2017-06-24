@@ -45,6 +45,7 @@ public class ReadingThread extends Thread {
         }
         for(int i = 0;  i < REDO_NUM; i++){
             redos[i] = new Redo(i, parsers);
+            redos[i].setSearchRange((int)beginId, (int)endId);
         }
         for(int i = 0; i < PARSER_NUM; i++) {
             parsers[i].start();

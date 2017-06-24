@@ -66,7 +66,7 @@ public class Server {
             String[] fileNames = new String[fileCnt];
             for (int i = 1; i <= fileCnt; i++) {
                 fileNames[i - 1] = fileBaseName + i + ".txt";
-                logger.info("fileName:{}", fileNames[i - 1]);
+//                logger.info("fileName:{}", fileNames[i - 1]);
             }
             long time1 = System.currentTimeMillis();
             ReadingThread readingThread = new ReadingThread(fileNames);
