@@ -105,7 +105,7 @@ public class ZXClient implements WorkerClient {
 
     @Override
     public void onData(ByteBuf result, ChannelHandlerContext ctx) throws Exception {
-        logger.info("onData");
+        //logger.info("onData");
 
         int readlLen = result.readableBytes();
         result.readBytes(buffer, writeOff, result.readableBytes());

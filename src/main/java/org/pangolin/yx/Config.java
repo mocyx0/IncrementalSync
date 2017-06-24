@@ -95,7 +95,7 @@ public final class Config {
     public static int TYPE_STRING = 2;
 
     //客户端打印一部分输出//
-    public static int PRINT_RESULT_LINE = 50;
+    public static int PRINT_RESULT_LINE = 3;
 
     public static QueryData queryData;
     //test mode会执行mserver的doTest并且只会返回client "hello world"

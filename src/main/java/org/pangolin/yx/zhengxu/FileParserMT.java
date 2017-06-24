@@ -2,6 +2,7 @@ package org.pangolin.yx.zhengxu;
 
 import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
+import org.pangolin.yx.PlainHashing;
 import org.pangolin.yx.ReadBufferPoll;
 import org.pangolin.yx.Util;
 import org.pangolin.yx.nixu.LogRebuilder;
@@ -18,11 +19,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 多线程日志解析
  */
 class LogBlock {
-    private static final int COUNT = 30;
+    private static final int COUNT = 12;
     public static LogBlock EMPTY = new LogBlock();
     //ArrayList<LogRecord> logRecords = new ArrayList<>();
 //    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
-    public static final int MAX_LENGTH = 40000;
+    public static final int MAX_LENGTH = 150000;
     long[] ids = new long[MAX_LENGTH];
     long[] preIds = new long[MAX_LENGTH];
     byte[] opTypes = new byte[MAX_LENGTH];
@@ -315,7 +316,7 @@ public class FileParserMT implements FileParser {
                         preid = ZXUtil.parseLong(data, oldPos, oldLen);
                         activeId = id;
                     }
-                    logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % Config.REBUILDER_THREAD)];
+                    logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % (Config.REBUILDER_THREAD))];
                 } else {
                     int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
                     logBlock.columnData[colWriteIndex++] = byteIndex;
@@ -337,7 +338,7 @@ public class FileParserMT implements FileParser {
             logBlock.length++;
             logBlockRebuilder.poss[logBlockRebuilder.length++] = logPos;
             if (op == 'U' && preid != id) {
-                LogBlockRebuilder xrebuilder = logBlock.logBlockRebuilders[(int) ((preid) % Config.REBUILDER_THREAD)];
+                LogBlockRebuilder xrebuilder = logBlock.logBlockRebuilders[(int) ((preid) % (Config.REBUILDER_THREAD))];
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
                 logBlock.opTypes[xpos] = 'X';
@@ -413,12 +414,37 @@ public class FileParserMT implements FileParser {
     }
     */
 
+    private static int bias1Count = 0;
+    private static int bias2Count = 0;
+
     //
     private void dispatch() throws Exception {
         while (true) {
             boolean done = false;
             for (int i = 0; i < logBlocks.size(); i++) {
                 LogBlock logBlock = logBlocks.get(i).take();
+
+                int zeroCount = 0;
+                //StringBuilder sb = new StringBuilder();
+                for (LogBlockRebuilder logBlockRebuilder : logBlock.logBlockRebuilders) {
+                    //  sb.append(logBlockRebuilder.length).append(" ");
+                    if (logBlockRebuilder.length == 0) {
+                        zeroCount++;
+                    }
+                }
+                //System.out.println(logBlock.length);
+
+                if (zeroCount > 0) {
+                    bias1Count++;
+                    //  sb.append(biasCount);
+                    // sb.append("\n");
+                    // System.out.println(sb.toString());
+                }
+                if (zeroCount > 1) {
+                    bias2Count++;
+                }
+
+
                 if (logBlock == LogBlock.EMPTY) {
                     done = true;
                 } else {
@@ -474,6 +500,8 @@ public class FileParserMT implements FileParser {
         //  logger.info(String.format("%d %d",DataStoragePlain.bigIdCount.get(),DataStoragePlain.bigData.size()));
         logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d ",
                 lineCount.get(), insertCount.get(), updateCount.get(), deleteCount.get(), pkUpdate.get()));
+        logger.info(String.format("bias count %d %d",
+                bias1Count, bias2Count));
         //send a empty data
         for (BlockData blockData : blockDatas) {
             blockData.logQueue.put(LogBlock.EMPTY);
