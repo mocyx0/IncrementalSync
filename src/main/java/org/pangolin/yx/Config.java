@@ -115,9 +115,9 @@ public final class Config {
     public static int PRECACHE_DELAY = 3000;
     public static int PRECACHE_THREAD = 4;
     public static int CPU_COUNT = 4;
-    public static int REBUILDER_THREAD = 3;
+    public static int REBUILDER_THREAD = 1;
     public static int COLLECTOR_THREAD = 1;
-    public static int PARSER_THREAD = 1;
+    public static int PARSER_THREAD = 2;
 
     public static int MAX_COL_SIZE = 6;
     //

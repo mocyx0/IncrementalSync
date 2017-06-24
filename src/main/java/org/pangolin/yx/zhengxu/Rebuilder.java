@@ -5,6 +5,7 @@ import org.pangolin.yx.ReadBufferPoll;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -13,22 +14,22 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Rebuilder implements Runnable {
     //啥也不做 用于测试
-    private boolean DO_REBUILD = true;
+    private boolean DO_REBUILD = false;
     CountDownLatch latch;
-    LinkedBlockingQueue<LogBlock> queue;
+    BlockingQueue<LogBlock> queue;
     Logger logger;
     DataStorage dataStorage;
     private int logCount = 0;
     private int index = 0;
     private int reBuilderCount;
 
-    public Rebuilder(LinkedBlockingQueue<LogBlock> queue, CountDownLatch latch, TableInfo tableInfo, int index, int reBuilderCount) {
+    public Rebuilder(BlockingQueue<LogBlock> queue, CountDownLatch latch, TableInfo tableInfo, int index, int reBuilderCount) {
         this.queue = queue;
         this.latch = latch;
         this.index = index;
         this.reBuilderCount = reBuilderCount;
         logger = Config.serverLogger;
-        dataStorage = new DataStoragePlain(tableInfo);
+        dataStorage = new DataStorageTwoLevel(tableInfo);
         //logger.info( String.format(String.format("rebuilder %d %d ",index,reBuilderCount)));
     }
 
@@ -45,9 +46,6 @@ public class Rebuilder implements Runnable {
                 if (logBlock == LogBlock.EMPTY) {
                     break;
                 } else {
-                    if (index == 7) {
-                        //  System.out.println(String.format("file block %d",logBlock.fileBlock.seq));
-                    }
                     if (DO_REBUILD) {
                         LogBlockRebuilder logBlockRebuilder = logBlock.logBlockRebuilders[index];
                         for (int i = 0; i < logBlockRebuilder.length; i++) {

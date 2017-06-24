@@ -186,7 +186,6 @@ public class Parser extends Thread {
 						} // after: :2:0|NULL|阮|...
 //					System.out.println();
 						hashs[columnIndex] = schema.columnHash2NoMap.get(hash);
-
 						i += 4; // after: |NULL|阮|last_name:2:0...
 						// 开始解析列的 新旧值
 						if (op == 'I') {

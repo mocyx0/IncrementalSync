@@ -77,8 +77,8 @@ public final class MServer {
             if (args.length >= 4) {
                 String scheme = args[0];
                 String table = args[1];
-                int startId = Integer.parseInt(args[2]);
-                int endId = Integer.parseInt(args[3]);
+                long startId = Long.parseLong(args[2]);
+                long endId = Long.parseLong(args[3]);
                 //build query
                 QueryData query = new QueryData();
                 query.scheme = scheme;

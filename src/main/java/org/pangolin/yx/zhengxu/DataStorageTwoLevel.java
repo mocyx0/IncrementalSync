@@ -10,12 +10,14 @@ import java.util.ArrayList;
 /**
  * Created by yangxiao on 2017/6/23.
  */
+class RecordData {
+    long preid;
+    long seq;
+    byte[] colData;
+}
+
 public class DataStorageTwoLevel implements DataStorage {
 
-    class RecordData {
-        long preid;
-        byte[] colData;
-    }
 
     static class Level1 {
         byte[] colData;
@@ -43,7 +45,7 @@ public class DataStorageTwoLevel implements DataStorage {
     private static final int BUFFER_SIZE = 1024 * 1024;
     private static final int BUFFER_BITS = 20;
     private int blockSize = 0;
-    PlainHashArr hashing = new PlainHashArr(19);
+    PlainHashing hashing = new PlainHashing(20);
     private ArrayList<byte[]> bytes = new ArrayList<>();
     private int nextBytePos;
     private Level1 level1;
@@ -75,13 +77,14 @@ public class DataStorageTwoLevel implements DataStorage {
         int re = nextBytePos;
         nextBytePos += blockSize;
 
+        //set length to -1
+        /*
         byte[] data = bytes.get(re / BUFFER_SIZE);
         off = re % BUFFER_SIZE;
-        //set length to -1
         for (int i = 0; i < CELL_COUNT; i++) {
             data[off + OFF_CELL + CELL_SIZE * i] = -1;
         }
-
+        */
         return re;
     }
 
@@ -98,10 +101,11 @@ public class DataStorageTwoLevel implements DataStorage {
     }
 
 
-    private void writeDataToBytesRaw(byte[] buff, int bufPos, LogRecord logRecord, byte[] readBuff) {
-        int[] logData = logRecord.columnData;
-        int datalen = logRecord.columnData.length;
-        for (int i = 0; i < datalen; ) {
+    private void writeDataToBytesRaw(byte[] buff, int bufPos, int[] logData, int lofDataPos, byte[] readBuff) {
+        //int[] logData = logRecord.columnData;
+        //int datalen = logRecord.columnData.length;
+        int endi = 3 * GlobalData.colCount + lofDataPos;
+        for (int i = lofDataPos; i < endi; ) {
             int index = logData[i++];
             if (index == 0) {
                 break;
@@ -116,9 +120,12 @@ public class DataStorageTwoLevel implements DataStorage {
                 //writeBytes(bytes, node + OFF_CELL + writePos + 1, readBuff, pos, len);
                 for (int j = 0; j < len; j++) {
                     buff[writePos + 1 + j] = readBuff[pos + j];
+                    // System.out.print((char) buff[writePos + 1 + j]);
                 }
+                //System.out.print(" ");
             }
         }
+        //System.out.print("\n");
     }
 
     private void writeDataToBytes(int node, LogRecord logRecord, byte[] readBuff) {
@@ -131,6 +138,24 @@ public class DataStorageTwoLevel implements DataStorage {
             } else {
                 int pos = logData[i++];
                 int len = logData[i++];
+                int writePos = (index - 1) * CELL_SIZE;
+                //bytes[writePos] = (byte) len;
+                writeByte(bytes, node + OFF_CELL + writePos, (byte) len);
+
+                //System.arraycopy(logRecord.lineData, pos, bytes, writePos + 1, len);
+                writeBytes(bytes, node + OFF_CELL + writePos + 1, readBuff, pos, len);
+            }
+        }
+    }
+
+    private void writeDataToBytesDirect(int node, int[] logData, int logDataOff, byte[] readBuff) {
+        for (int i = 0; i < 3 * GlobalData.colCount; ) {
+            int index = logData[logDataOff + i++];
+            if (index == 0) {
+                break;
+            } else {
+                int pos = logData[logDataOff + i++];
+                int len = logData[logDataOff + i++];
                 int writePos = (index - 1) * CELL_SIZE;
                 //bytes[writePos] = (byte) len;
                 writeByte(bytes, node + OFF_CELL + writePos, (byte) len);
@@ -242,42 +267,80 @@ public class DataStorageTwoLevel implements DataStorage {
     }
 
 
-    public RecordData getRecord(long id, long seq) throws Exception {
+    private RecordData getRecordLevel1(long id, long seq) throws Exception {
         RecordData logRecord = new RecordData();
         int level1Index = (int) (id / Config.REBUILDER_THREAD);
         if (seq == -1) {
             if (level1.flag[level1Index] == FLAG_VALID) {
                 logRecord.preid = level1.preid[level1Index];
                 logRecord.colData = new byte[COL_BLOCK_SIZE];
+                logRecord.seq = level1.seq[level1Index];
                 System.arraycopy(level1.colData, COL_BLOCK_SIZE * level1Index, logRecord.colData, 0, COL_BLOCK_SIZE);
                 return logRecord;
             }
         } else {
-            if (level1.flag[level1Index] == FLAG_VALID) {
-                if (level1.seq[level1Index] < seq) {
-                    logRecord.preid = level1.preid[level1Index];
-                    logRecord.colData = new byte[COL_BLOCK_SIZE];
-                    System.arraycopy(level1.colData, COL_BLOCK_SIZE * level1Index, logRecord.colData, 0, COL_BLOCK_SIZE);
-                    return logRecord;
-                } else {
-                    int next = level1.next[level1Index];
-                    while (true) {
-                        long seqNext = readLong(bytes, next + OFF_SEQ);
-                        if (seqNext < seq) {
-                            logRecord.preid = readLong(bytes, next + OFF_PREID);
-                            logRecord.colData = new byte[COL_BLOCK_SIZE];
-                            readBytes(next, 0, logRecord.colData, 0, COL_BLOCK_SIZE);
-                            return logRecord;
-                        } else {
-                            next = readInt(bytes, next + OFF_NEXT);
-                        }
+            if (level1.seq[level1Index] < seq) {
+                logRecord.preid = level1.preid[level1Index];
+                logRecord.colData = new byte[COL_BLOCK_SIZE];
+                logRecord.seq = level1.seq[level1Index];
+                System.arraycopy(level1.colData, COL_BLOCK_SIZE * level1Index, logRecord.colData, 0, COL_BLOCK_SIZE);
+                return logRecord;
+            } else {
+                int next = level1.next[level1Index];
+                while (true) {
+                    long seqNext = readLong(bytes, next + OFF_SEQ);
+                    if (seqNext < seq) {
+                        logRecord.preid = readLong(bytes, next + OFF_PREID);
+                        logRecord.colData = new byte[COL_BLOCK_SIZE];
+                        logRecord.seq = readLong(bytes, next + OFF_SEQ);
+                        readBytes(next, 0, logRecord.colData, 0, COL_BLOCK_SIZE);
+                        return logRecord;
+                    } else {
+                        next = readInt(bytes, next + OFF_NEXT);
+                    }
+                }
+            }
+
+        }
+        return null;
+    }
+
+    private RecordData getRecordLevel2(long id, long seq) throws Exception {
+        RecordData logRecord = new RecordData();
+        int node = hashing.getOrDefault(id, 0);
+        if (node == 0) {
+            return null;
+        } else {
+            if (seq != -1) {
+                while (node != 0) {
+                    long nodeSeq = readLong(bytes, node + OFF_SEQ);
+                    if (nodeSeq >= seq) {
+                        int next = readInt(bytes, node + OFF_NEXT);
+                        node = next;
+                    } else {
+                        break;
                     }
                 }
             } else {
-                throw new Exception("error");
+                //check valid
+                byte valid = getValid(node);
+                if (valid == 1) {
+                    return null;
+                }
             }
+            logRecord.preid = getPreid(node);
+            logRecord.colData = new byte[COL_BLOCK_SIZE];
+            readBytes(node, 0, logRecord.colData, 0, logRecord.colData.length);
+            return logRecord;
         }
-        throw new Exception("error");
+    }
+
+    public RecordData getRecord(long id, long seq) throws Exception {
+        if (id / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
+            return getRecordLevel2(id, seq);
+        } else {
+            return getRecordLevel1(id, seq);
+        }
     }
 
     //seq=-1 表示不关心seq
@@ -303,6 +366,15 @@ public class DataStorageTwoLevel implements DataStorage {
         }
     }
 
+
+    void clearColData(int index) {
+        //clear old data
+        for (int i = 0; i < CELL_COUNT; i++) {
+            level1.colData[index * COL_BLOCK_SIZE + i * CELL_SIZE] = 0;
+        }
+        //
+    }
+
     int copyDataToLevel2(int index) {
         int next = level1.next[index];
         int node = allocateBlock();
@@ -312,110 +384,91 @@ public class DataStorageTwoLevel implements DataStorage {
         writeByte(bytes, node + OFF_FLAG, level1.flag[index]);
         //writeInt(bytes,node+OFF_NEXT,next);
         writeBytes(bytes, node + OFF_CELL, level1.colData, index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
-
-        return 0;
+        clearColData(index);
+        return node;
     }
 
 
     @Override
     public void doLog(LogRecord logRecord, byte[] data) throws Exception {
-        if (logRecord.opType == 'U') {
-            long id = logRecord.id;
-            if (logRecord.preId != logRecord.id) {
-                int level1Index = (int) (id / Config.REBUILDER_THREAD);
-                if (level1Index > FIRST_LEVEL_MAX) {
+
+    }
+
+    @Override
+    public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
+        long id = logBlock.ids[logPos];
+        long preId = logBlock.preIds[logPos];
+        byte opType = logBlock.opTypes[logPos];
+        long seq = logBlock.seqs[logPos];
+        int[] colData = logBlock.columnData;
+        int colDataPos = logPos * 3 * GlobalData.colCount;
+
+        if (opType == 'U') {
+            if (preId != id) {
+                if (id / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
                     int next = hashing.getOrDefault(id, 0);
                     int newNode = allocateBlock();
                     writeInt(bytes, OFF_NEXT + newNode, next);
-                    writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
-                    writeLong(bytes, OFF_PREID + newNode, logRecord.preId);
-                    writeDataToBytes(newNode, logRecord, data);
+                    writeLong(bytes, OFF_SEQ + newNode, seq);
+                    writeLong(bytes, OFF_PREID + newNode, preId);
+                    writeDataToBytesDirect(newNode, colData, colDataPos, data);
                     hashing.put(id, newNode);
                 } else {
+                    int level1Index = (int) (id / Config.REBUILDER_THREAD);
                     if (level1.flag[level1Index] != FLAG_EMPTY) {
                         level1.next[level1Index] = copyDataToLevel2(level1Index);
                     }
-                    level1.seq[level1Index] = logRecord.seq;
-                    level1.preid[level1Index] = logRecord.preId;
+                    level1.seq[level1Index] = seq;
+                    level1.preid[level1Index] = preId;
                     level1.flag[level1Index] = FLAG_VALID;
-                    writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                    writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
                 }
-                /*
-                int next = hashing.getOrDefault(id, 0);
-                int newNode = allocateBlock();
-                writeInt(bytes, OFF_NEXT + newNode, next);
-                writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
-                writeLong(bytes, OFF_PREID + newNode, logRecord.preId);
-                writeDataToBytes(newNode, logRecord, data);
-                hashing.put(id, newNode);
-                */
             } else {
                 //更新数据
-                int level1Index = (int) (id / Config.REBUILDER_THREAD);
-                if (level1Index > FIRST_LEVEL_MAX) {
+                if (id / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
                     int node = hashing.getOrDefault(id, 0);
-                    writeDataToBytes(node, logRecord, data);
+                    //writeDataToBytes(node, logRecord, data);
+                    writeDataToBytesDirect(node, colData, colDataPos, data);
                 } else {
-                    writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                    int level1Index = (int) (id / Config.REBUILDER_THREAD);
+                    writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
                 }
-
-                /*
-                int node = hashing.getOrDefault(id, 0);
-                if (node == 0) {
-                    System.out.println(id);
-                    throw new Exception("no preid in data");
-                } else {
-                    writeDataToBytes(node, logRecord, data);
-                }
-                */
-
             }
-        } else if (logRecord.opType == 'I') {
-            long id = logRecord.id;
-            int level1Index = (int) (id / Config.REBUILDER_THREAD);
-            if (level1Index > FIRST_LEVEL_MAX) {
+        } else if (opType == 'I') {
+            if (id / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
                 int next = hashing.getOrDefault(id, 0);
                 int newNode = allocateBlock();
                 writeInt(bytes, OFF_NEXT + newNode, next);
-                writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
+                writeLong(bytes, OFF_SEQ + newNode, seq);
                 writeLong(bytes, OFF_PREID + newNode, -1);
-                writeDataToBytes(newNode, logRecord, data);
+                //writeDataToBytes(newNode, logRecord, data);
+                writeDataToBytesDirect(newNode, colData, colDataPos, data);
                 hashing.put(id, newNode);
             } else {
+                int level1Index = (int) (id / Config.REBUILDER_THREAD);
                 if (level1.flag[level1Index] != FLAG_EMPTY) {
                     level1.next[level1Index] = copyDataToLevel2(level1Index);
                 }
-                level1.seq[level1Index] = logRecord.seq;
+                level1.seq[level1Index] = seq;
                 level1.preid[level1Index] = -1;
                 level1.flag[level1Index] = FLAG_VALID;
-                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, logRecord, data);
+                writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
             }
-
-            /*
-            int next = hashing.getOrDefault(id, 0);
-            int newNode = allocateBlock();
-            writeInt(bytes, OFF_NEXT + newNode, next);
-            writeLong(bytes, OFF_SEQ + newNode, logRecord.seq);
-            writeLong(bytes, OFF_PREID + newNode, -1);
-            writeDataToBytes(newNode, logRecord, data);
-            hashing.put(id, newNode);
-            */
-        } else if (logRecord.opType == 'D') {
-            long id = logRecord.preId;
-            int level1Index = (int) (id / Config.REBUILDER_THREAD);
-            if (level1Index > FIRST_LEVEL_MAX) {
-                int node = hashing.getOrDefault(id, 0);
+        } else if (opType == 'D') {
+            if (preId / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
+                int node = hashing.getOrDefault(preId, 0);
                 if (node == 0) {
                     throw new Exception("error");
                 } else {
                     int next = readInt(bytes, node + OFF_NEXT);
                     if (next == 0) {
-                        hashing.remove(id);
+                        hashing.remove(preId);
                     } else {
-                        hashing.put(id, next);
+                        hashing.put(preId, next);
                     }
                 }
             } else {
+                int level1Index = (int) (preId / Config.REBUILDER_THREAD);
                 if (level1.next[level1Index] != 0) {
                     //read the pre node
                     int next = level1.next[level1Index];
@@ -427,44 +480,20 @@ public class DataStorageTwoLevel implements DataStorage {
                     readBytes(next, OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
                 } else {
                     level1.flag[level1Index] = FLAG_EMPTY;
+                    clearColData(level1Index);
                 }
             }
 
-            /*
-            long id = logRecord.preId;
-            int node = hashing.getOrDefault(id, 0);
-            if (node == 0) {
-                throw new Exception("error");
-            } else {
-                int next = readInt(bytes, node + OFF_NEXT);
-                if (next == 0) {
-                    hashing.remove(id);
-                } else {
-                    hashing.put(id, next);
-                }
-            }
-            */
-
-        } else if (logRecord.opType == 'X') {
-            long id = logRecord.id;
-            int level1Index = (int) (id / Config.REBUILDER_THREAD);
-            if (level1Index > FIRST_LEVEL_MAX) {
+        } else if (opType == 'X') {
+            if (id / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
                 int node = hashing.get(id);
                 writeByte(bytes, OFF_FLAG + node, (byte) 1);
             } else {
+                int level1Index = (int) (id / Config.REBUILDER_THREAD);
                 level1.flag[level1Index] = FLAG_X;
             }
-            /*
-            long id = logRecord.id;
-            int node = hashing.get(id);
-            writeByte(bytes, OFF_VALID + node, (byte) 1);
-            */
+
         }
-    }
-
-    @Override
-    public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
-
     }
 
 }

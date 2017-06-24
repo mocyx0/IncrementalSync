@@ -6,20 +6,22 @@ import org.slf4j.Logger;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * Created by yangxiao on 2017/6/16.
  */
 
 class LogQueues {
-    ArrayList<LinkedBlockingQueue<LogBlock>> queues = new ArrayList<>();
+    ArrayList<BlockingQueue<LogBlock>> queues = new ArrayList<>();
 }
 
 
 public class ZXServer implements WorkerServer {
-    private static final int LOG_BLOCK_QUEUE_SIZE = 32;
+    private static final int LOG_BLOCK_QUEUE_SIZE = 16;
     private CountDownLatch latch;
     private Logger logger;
     private LogQueues logQueues = new LogQueues();
@@ -40,7 +42,7 @@ public class ZXServer implements WorkerServer {
         latch = new CountDownLatch(thCount);
         queueCount = thCount;
         for (int i = 0; i < thCount; i++) {
-            LinkedBlockingQueue<LogBlock> logQueue = new LinkedBlockingQueue<LogBlock>(LOG_BLOCK_QUEUE_SIZE);
+            BlockingQueue<LogBlock> logQueue = new LinkedBlockingQueue<LogBlock>(LOG_BLOCK_QUEUE_SIZE);
             logQueues.queues.add(logQueue);
             Rebuilder rebuilder = new Rebuilder(logQueue, latch, LineParser.tableInfo, i, thCount);
             Thread th = new Thread(rebuilder);
@@ -145,7 +147,7 @@ public class ZXServer implements WorkerServer {
                 e = end;
             }
             //DataCollector dataCollector = new DataCollectorHashMap(dataStorages);
-            DataCollector dataCollector = new DataCollectorPlain(dataStorages);
+            DataCollector dataCollector = new DataCollectorTwoLevel(dataStorages);
             Thread th = new Thread(new Collector(dataCollector, s, e, latch, i + 1));
             th.start();
         }
@@ -163,10 +165,14 @@ public class ZXServer implements WorkerServer {
 
     @Override
     public void doData() throws Exception {
+
+
         //Thread.sleep(3000);
         //首先读取列信息
         long t1 = System.currentTimeMillis();
         LineParser.readTableInfo();
+        LogBlock.init();
+        ReadBufferPoll.init();
         //开启rebuilder线程
         startRebuilder();
         //解析线程

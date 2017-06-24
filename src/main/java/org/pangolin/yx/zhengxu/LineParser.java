@@ -2,10 +2,13 @@ package org.pangolin.yx.zhengxu;
 
 import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
+import org.pangolin.yx.PlainHashing;
+import org.pangolin.yx.PlainHashingSimple;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by yangxiao on 2017/6/16.
@@ -24,7 +27,35 @@ class TableInfo {
     byte[][] columnName;//包含pk
     byte[] pkName;
 
-    int getColumnIndex(byte[] data, int off, int len) {
+    private PlainHashingSimple hashToIndex = new PlainHashingSimple(8);
+
+    private long hash(byte[] data, int start, int len) {
+        long hash = 0;
+        for (int j = start; j < len + start; j++) {
+            hash = 31 * hash + data[j];
+        }
+        return hash;
+    }
+
+    public void setColumnName(byte[][] columnName) {
+        this.columnName = columnName;
+        for (int i = 0; i < columnName.length; i++) {
+            byte[] name = columnName[i];
+            long hash = hash(name, 0, name.length);
+            if (hashToIndex.containsKey(hash)) {
+                Config.serverLogger.info("hash ERROR");
+            } else {
+                hashToIndex.put(hash, i);
+            }
+        }
+    }
+
+    int getColumnIndex(byte[] data, int off, int len) throws Exception {
+        long hash = hash(data, off, len);
+        return hashToIndex.get(hash);
+    }
+
+    int getColumnIndex1(byte[] data, int off, int len) {
         for (int i = 0; i < columnName.length; i++) {
             boolean equal = true;
             for (int j = 0; j < len; j++) {
@@ -150,10 +181,11 @@ public class LineParser {
             sb.append(" ");
         }
         logger.info(sb.toString());
-        GlobalData.tableInfo.columnName = new byte[columns.size()][];
+        byte[][] columnName = new byte[columns.size()][];
         for (int i = 0; i < columns.size(); i++) {
-            GlobalData.tableInfo.columnName[i] = columns.get(i);
+            columnName[i] = columns.get(i);
         }
+        GlobalData.tableInfo.setColumnName(columnName);
         GlobalData.colCount = GlobalData.tableInfo.columnName.length - 1;
         tableInfo = GlobalData.tableInfo;
     }
@@ -166,7 +198,7 @@ public class LineParser {
         return v;
     }
 
-    private static LogRecord parseLineReal(LineInfo lineInfo) {
+    private static LogRecord parseLineReal(LineInfo lineInfo)throws Exception {
         LogRecord logRecord = new LogRecord();
         //logRecord.lineData = lineInfo.data;
         logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
@@ -246,7 +278,7 @@ public class LineParser {
     }
     */
 
-    private static LogRecord parseLine(LineInfo lineInfo) {
+    private static LogRecord parseLine(LineInfo lineInfo) throws Exception{
 
 
         lineCount++;

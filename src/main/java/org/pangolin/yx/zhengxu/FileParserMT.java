@@ -43,15 +43,15 @@ class LogBlock {
         }
     }
 
-    private static BlockingQueue<LogBlock> queue;
+    public static void init() throws Exception {
+        for (int i = 0; i < COUNT; i++) {
+            queue.put(new LogBlock());
+        }
+    }
+
+    private static BlockingQueue<LogBlock> queue = new LinkedBlockingQueue(COUNT);
 
     public static LogBlock allocate() throws Exception {
-        if (queue == null) {
-            queue = new LinkedBlockingQueue(COUNT);
-            for (int i = 0; i < COUNT; i++) {
-                queue.put(new LogBlock());
-            }
-        }
         LogBlock logBlock = queue.take();
         return logBlock;
     }
@@ -79,11 +79,10 @@ class FileBlock {
 }
 
 public class FileParserMT implements FileParser {
-    private static int FILE_BLOCK_COUNT = 128;
+    private static int FILE_BLOCK_COUNT = 4;
 
     //缓存多条数据后交给rebuilder处理
-    private static int LOG_BUFFER_SIZE = 10240 / 2;
-    private static int RESULT_QUEUE_SIZE = 4;
+    private static int RESULT_QUEUE_SIZE = 16;
     private LogQueues queues;
     private ArrayList<BlockData> blockDatas = new ArrayList<>();
     int queueCount;
@@ -92,7 +91,7 @@ public class FileParserMT implements FileParser {
     private Logger logger;
 
     private class BlockData {
-        LinkedBlockingQueue<LogBlock> logQueue;
+        BlockingQueue<LogBlock> logQueue;
         //ArrayList<LogRecord> buffQueue;
     }
 
@@ -197,7 +196,7 @@ public class FileParserMT implements FileParser {
             return null;
         }
 
-        LogRecord nextLine(byte[] data) {
+        LogRecord nextLine(byte[] data) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
             LogRecord logRecord = new LogRecord();
             //logRecord.lineData = data;
@@ -261,7 +260,7 @@ public class FileParserMT implements FileParser {
 
         long seqNumber = 0;
 
-        void nextLineDirect(byte[] data, LogBlock logBlock) {
+        void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
 
             // LogRecord logRecord = new LogRecord();
@@ -276,11 +275,12 @@ public class FileParserMT implements FileParser {
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
             //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
-            pos += 14;
+            //pos += 14;
             //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
-            pos += 12;
+            //pos += 12;
             //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
-            pos += 8;
+            //pos += 8;
+            pos += 34;
 
             int opPos = pos;
             op = data[opPos];
@@ -359,72 +359,15 @@ public class FileParserMT implements FileParser {
                         break;
                     } else {
                         LogBlock logBlock = LogBlock.allocate();
-                        /*
-                        ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
-                        for (int i = 0; i < rebuilderCount; i++) {
-                            logRecordsArr.add(new ArrayList<LogRecord>(2048));
-                        }
-                        */
-                        //ArrayList<LogRecord> logRecords = new ArrayList<>();
                         parsePos = 0;
-                        /*
-                        for (int i = 0; i < 1024 * 10; i++) {
-                            logRecords.add(null);
-                        }*/
                         seqNumber = (long) fileBlock.seq << 32;
                         while (parsePos < fileBlock.length) {
-                            //byte[] newData = new byte[fileBlock.buffer.length];
-                            //System.arraycopy(fileBlock.buffer, 0, newData, 0, newData.length);
-                            //LogRecord logRecord = nextLine(fileBlock.buffer);
                             nextLineDirect(fileBlock.buffer, logBlock);
-                            /*
-                            logRecord.seq = seq++;
-                            long id = logRecord.id;
-                            if (logRecord.opType == 'D') {
-                                id = logRecord.preId;
-                            } else if (logRecord.opType == 'U' && logRecord.id != logRecord.preId) {
-                                //添加一个x消息
-                                LogRecord xlog = new LogRecord();
-                                xlog.opType = 'X';
-                                xlog.id = logRecord.preId;
-                                int block = (int) (xlog.id % rebuilderCount);
-                                logRecordsArr.get(block).add(xlog);
-                            }
-                            int block = (int) (id % rebuilderCount);
-                            logRecordsArr.get(block).add(logRecord);
-                            */
-                            //logRecords.add(logRecord);
-//                            lineCount.incrementAndGet();
                             selfLineCount++;
                         }
-                        //ReadBufferPoll.freeReadBuff(fileBlock.buffer);
-                        //System.out.println(lineCount);
-
                         logBlock.fileBlock = fileBlock;
-                        //logBlock.logRecords = logRecords;
-                        //logBlock.logRecordsArr = logRecordsArr;
                         logBlock.ref.set(queueCount);
-                        // System.out.println(logBlock.length);
                         resultQueue.put(logBlock);
-                        /*
-                        synchronized (FileParserMT.class) {
-                            logBlocks.put(seq, logRecords);
-                            int firstKey = logBlocks.firstKey();
-                            while (firstKey == nextReadSeq) {
-                                //这是下一个需要处理的块
-                                for (LogRecord logRecord : logBlocks.get(firstKey)) {
-                                    // handleLog(logRecord);
-                                }
-                                nextReadSeq++;
-                                logBlocks.remove(firstKey);
-                                if (logBlocks.size() != 0) {
-                                    firstKey = logBlocks.firstKey();
-                                } else {
-                                    break;
-                                }
-                            }
-                        }
-                        */
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
@@ -479,7 +422,7 @@ public class FileParserMT implements FileParser {
                 if (logBlock == LogBlock.EMPTY) {
                     done = true;
                 } else {
-                    for (LinkedBlockingQueue<LogBlock> queue : queues.queues) {
+                    for (BlockingQueue<LogBlock> queue : queues.queues) {
                         queue.put(logBlock);
                     }
                 }
@@ -518,7 +461,7 @@ public class FileParserMT implements FileParser {
             BlockingQueue<FileBlock> queue = new ArrayBlockingQueue<FileBlock>(FILE_BLOCK_COUNT);
             fileBlockQueues.add(queue);
 
-            BlockingQueue<LogBlock> logBlockQueue = new LinkedBlockingQueue<>(RESULT_QUEUE_SIZE);
+            BlockingQueue<LogBlock> logBlockQueue = new ArrayBlockingQueue<LogBlock>(RESULT_QUEUE_SIZE);
             logBlocks.add(logBlockQueue);
             Thread th = new Thread(new ParseThread(latch, queue, logBlockQueue));
             th.start();

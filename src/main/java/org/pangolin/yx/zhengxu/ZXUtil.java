@@ -47,14 +47,19 @@ public class ZXUtil {
     }
 
     //返回token的长度
-    public static int nextToken(byte[] data, int off, char delimit) {
+    public static final int nextToken(byte[] data, int off, char delimit) {
         int end = off;
+        while (data[end] != delimit) {
+            end++;
+        }
+        /*
         while (end < data.length) {
             if (data[end] == delimit) {
                 break;
             }
             end++;
         }
+        */
         return end - off;
     }
 
