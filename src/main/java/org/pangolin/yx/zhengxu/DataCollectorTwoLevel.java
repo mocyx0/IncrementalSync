@@ -23,16 +23,15 @@ public class DataCollectorTwoLevel implements DataCollector {
 
     @Override
     public void writeBuffer(long id, ByteBuffer buffer) throws Exception {
-
         DataStorageTwoLevel data = getDataMap(id);
         RecordData recordData = data.getRecord(id, -1);
         if (recordData != null) {
-            byte[] bytes = new byte[recordData.colData.length];
-            System.arraycopy(recordData.colData, 0, bytes, 0, bytes.length);
+            long[] datas = new long[recordData.colData.length];
+            System.arraycopy(recordData.colData, 0, datas, 0, datas.length);
             int colCount = 0;
             for (int i = 0; i < data.CELL_COUNT; i++) {
                 int dataPos = i * data.CELL_SIZE;
-                if (bytes[dataPos] != 0) {
+                if ((datas[dataPos] & 0xff) != 0) {
                     colCount++;
                 }
             }
@@ -42,10 +41,10 @@ public class DataCollectorTwoLevel implements DataCollector {
                 data = getDataMap(preId);
                 RecordData preRecord = data.getRecord(preId, lastSeq);
                 for (int i = 0; i < data.CELL_COUNT; i++) {
-                    int dataPos = i * data.CELL_SIZE;
-                    if (preRecord.colData[dataPos] != 0 && bytes[dataPos] == 0) {
-                        int len = preRecord.colData[dataPos];
-                        System.arraycopy(preRecord.colData, dataPos, bytes, dataPos, len + 1);
+                    if ((datas[i] & 0xff) == 0 && (preRecord.colData[i] & 0xff) != 0) {
+                        //long len = preRecord.colData[i] & 0xff;
+                        //System.arraycopy(preRecord.colData, dataPos, datas, dataPos, len + 1);
+                        datas[i] = preRecord.colData[i];
                         colCount++;
                     }
                 }
@@ -56,9 +55,12 @@ public class DataCollectorTwoLevel implements DataCollector {
             buffer.put(Long.toString(id).getBytes());
             buffer.put((byte) '\t');
             for (int i = 0; i < data.CELL_COUNT; i++) {
-                int dataPos = i * data.CELL_SIZE;
-                int len = bytes[dataPos];
-                buffer.put(bytes, dataPos + 1, len);
+                long v = datas[i];
+                int len = (int) (v & 0xff);
+                for (int j = len - 1; j >= 0; j--) {
+                    buffer.put((byte) (v >> (8 + j * 8) & 0xff));
+                }
+                //buffer.put(datas, dataPos + 1, len);
                 if (i != data.CELL_COUNT - 1) {
                     buffer.put((byte) '\t');
                 }

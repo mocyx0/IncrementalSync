@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 多线程日志解析
  */
 class LogBlock {
-    private static final int COUNT = 12;
     public static LogBlock EMPTY = new LogBlock();
     //ArrayList<LogRecord> logRecords = new ArrayList<>();
 //    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
@@ -27,14 +26,13 @@ class LogBlock {
     long[] ids = new long[MAX_LENGTH];
     long[] preIds = new long[MAX_LENGTH];
     byte[] opTypes = new byte[MAX_LENGTH];
-    int[] columnData = new int[GlobalData.colCount * 3 * MAX_LENGTH];//三个一个单位  列索引, 位置, 长度
+    //int[] columnData = new int[GlobalData.colCount * 3 * MAX_LENGTH];//三个一个单位  列索引, 位置, 长度
+    long[] colData = new long[GlobalData.colCount * MAX_LENGTH];
     long[] seqs = new long[MAX_LENGTH];//log sequence
     int length = 0;
 
     LogBlockRebuilder[] logBlockRebuilders = new LogBlockRebuilder[Config.REBUILDER_THREAD];
 
-    //对应的fileBlock
-    FileBlock fileBlock;
     //引用
     AtomicInteger ref = new AtomicInteger();
 
@@ -45,12 +43,12 @@ class LogBlock {
     }
 
     public static void init() throws Exception {
-        for (int i = 0; i < COUNT; i++) {
+        for (int i = 0; i < Config.LOG_BLOCK_QUEUE; i++) {
             queue.put(new LogBlock());
         }
     }
 
-    private static BlockingQueue<LogBlock> queue = new LinkedBlockingQueue(COUNT);
+    private static BlockingQueue<LogBlock> queue = new LinkedBlockingQueue(Config.LOG_BLOCK_QUEUE);
 
     public static LogBlock allocate() throws Exception {
         LogBlock logBlock = queue.take();
@@ -58,10 +56,11 @@ class LogBlock {
     }
 
     public static void free(LogBlock logBlock) throws Exception {
-        logBlock.fileBlock = null;
+        //logBlock.fileBlock = null;
         for (int i = 0; i < logBlock.logBlockRebuilders.length; i++) {
             logBlock.logBlockRebuilders[i].length = 0;
         }
+
         logBlock.length = 0;
         queue.put(logBlock);
     }
@@ -80,10 +79,6 @@ class FileBlock {
 }
 
 public class FileParserMT implements FileParser {
-    private static int FILE_BLOCK_COUNT = 4;
-
-    //缓存多条数据后交给rebuilder处理
-    private static int RESULT_QUEUE_SIZE = 16;
     private LogQueues queues;
     private ArrayList<BlockData> blockDatas = new ArrayList<>();
     int queueCount;
@@ -261,12 +256,22 @@ public class FileParserMT implements FileParser {
 
         long seqNumber = 0;
 
+        private int nextColValue(byte[] data, int off, char delimit) {
+            int end = off;
+            colValue = 0;
+            while (data[end] != delimit) {
+                colValue = colValue << 8 | ((long) data[end] & 0xff);
+                end++;
+            }
+            colValue = colValue << 8 | ((long) (end - off) & 0xff);
+            return end - off;
+        }
+
+        int colParseIndex = 0;
+        long colValue = 0;
+
         void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
-
-            // LogRecord logRecord = new LogRecord();
-            //logRecord.lineData = data;
-            //logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
 
             int pos = parsePos;
             long id = -1;
@@ -274,6 +279,7 @@ public class FileParserMT implements FileParser {
             byte op;
             //int colWriteIndex = tableInfo.columnName.length - 1;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
+            pos += 15;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
             //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
             //pos += 14;
@@ -282,14 +288,15 @@ public class FileParserMT implements FileParser {
             //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
             //pos += 8;
             pos += 34;
-
+            colParseIndex = 0;
             int opPos = pos;
             op = data[opPos];
             //logRecord.opType = op;
             pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//op
             LogBlockRebuilder logBlockRebuilder = null;
             int logPos = logBlock.length;
-            int colWriteIndex = 3 * logPos * GlobalData.colCount;
+            int colWriteIndex = logPos * GlobalData.colCount;
+
             while (data[pos] != '\n') {
                 int namePos = pos;
                 int nameLen = ZXUtil.nextToken(data, pos, ':');//col name
@@ -301,7 +308,13 @@ public class FileParserMT implements FileParser {
                 int oldLen = ZXUtil.nextToken(data, pos, '|');
                 pos = pos + 1 + oldLen;//old value
                 int newPos = pos;
-                int newLen = ZXUtil.nextToken(data, pos, '|');
+                int newLen = 0;
+                if (isPk == '1') {
+                    newLen = ZXUtil.nextToken(data, pos, '|');
+                } else {
+                    //获取列值 保存在long中 1字节长度 6字节数据
+                    newLen = nextColValue(data, pos, '|');
+                }
                 pos = pos + 1 + newLen;//new value
                 if (isPk == '1') {
                     long activeId = 0;
@@ -319,14 +332,15 @@ public class FileParserMT implements FileParser {
                     logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % (Config.REBUILDER_THREAD))];
                 } else {
                     int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
-                    logBlock.columnData[colWriteIndex++] = byteIndex;
-                    logBlock.columnData[colWriteIndex++] = newPos;
-                    logBlock.columnData[colWriteIndex++] = newLen;
+                    logBlock.colData[colWriteIndex] = ((long) byteIndex << 56) | colValue;
+                    colWriteIndex++;
                 }
             }
+//            printColData(logBlock,logPos);
 
-            if (colWriteIndex < 3 * (logPos + 1) * GlobalData.colCount) {
-                logBlock.columnData[colWriteIndex] = 0;
+            if (colWriteIndex < (logPos + 1) * GlobalData.colCount) {
+                //logBlock.columnData[colWriteIndex] = 0;
+                logBlock.colData[colWriteIndex] = 0;
             }
 
             pos++;//skip \n
@@ -348,6 +362,24 @@ public class FileParserMT implements FileParser {
 
         }
 
+        private void printColData(LogBlock logBlock, int logPos) {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < GlobalData.colCount; i++) {
+                long v = logBlock.colData[logPos * GlobalData.colCount + i];
+                int len = (int) (v & 0xff);
+                if (len == 0) {
+                    break;
+                } else {
+                    for (int j = len - 1; j >= 0; j--) {
+                        byte b = (byte) ((v >> (8 + j * 8)) & 0xff);
+                        sb.append((char) b);
+                    }
+                    sb.append(" ");
+                }
+            }
+            System.out.println(sb.toString());
+        }
+
         @Override
         public void run() {
             try {
@@ -366,7 +398,8 @@ public class FileParserMT implements FileParser {
                             nextLineDirect(fileBlock.buffer, logBlock);
                             selfLineCount++;
                         }
-                        logBlock.fileBlock = fileBlock;
+                        //logBlock.fileBlock = fileBlock;
+                        ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         logBlock.ref.set(queueCount);
                         resultQueue.put(logBlock);
                     }
@@ -484,10 +517,10 @@ public class FileParserMT implements FileParser {
         fileBlockQueues = new ArrayList<>(parserCount);
         CountDownLatch latch = new CountDownLatch(parserCount);
         for (int i = 0; i < Config.PARSER_THREAD; i++) {
-            BlockingQueue<FileBlock> queue = new ArrayBlockingQueue<FileBlock>(FILE_BLOCK_COUNT);
+            BlockingQueue<FileBlock> queue = new ArrayBlockingQueue<FileBlock>(Config.PARSER_IN_QUEUE);
             fileBlockQueues.add(queue);
 
-            BlockingQueue<LogBlock> logBlockQueue = new ArrayBlockingQueue<LogBlock>(RESULT_QUEUE_SIZE);
+            BlockingQueue<LogBlock> logBlockQueue = new ArrayBlockingQueue<LogBlock>(Config.PARSER_OUT_QUEUE);
             logBlocks.add(logBlockQueue);
             Thread th = new Thread(new ParseThread(latch, queue, logBlockQueue));
             th.start();

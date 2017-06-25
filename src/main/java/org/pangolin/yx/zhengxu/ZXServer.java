@@ -6,10 +6,7 @@ import org.slf4j.Logger;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.*;
 
 /**
  * Created by yangxiao on 2017/6/16.
@@ -21,7 +18,6 @@ class LogQueues {
 
 
 public class ZXServer implements WorkerServer {
-    private static final int LOG_BLOCK_QUEUE_SIZE = 16;
     private CountDownLatch latch;
     private Logger logger;
     private LogQueues logQueues = new LogQueues();
@@ -42,7 +38,7 @@ public class ZXServer implements WorkerServer {
         latch = new CountDownLatch(thCount);
         queueCount = thCount;
         for (int i = 0; i < thCount; i++) {
-            BlockingQueue<LogBlock> logQueue = new LinkedBlockingQueue<LogBlock>(LOG_BLOCK_QUEUE_SIZE);
+            BlockingQueue<LogBlock> logQueue = new ArrayBlockingQueue<LogBlock>(Config.REBUILDER_IN_QUEUE);
             logQueues.queues.add(logQueue);
             Rebuilder rebuilder = new Rebuilder(logQueue, latch, LineParser.tableInfo, i, thCount);
             Thread th = new Thread(rebuilder);

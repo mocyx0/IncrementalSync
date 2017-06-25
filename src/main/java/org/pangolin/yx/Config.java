@@ -123,5 +123,11 @@ public final class Config {
     //
     public static Logger serverLogger = LoggerFactory.getLogger(Server.class);
 
+
+    public static int PARSER_IN_QUEUE = 2;
+    public static int PARSER_OUT_QUEUE = 3;
+    public static int REBUILDER_IN_QUEUE = 128;
+    public static int READ_POOL_SIZE = 20;
+    public static int LOG_BLOCK_QUEUE = 28;
 }
 

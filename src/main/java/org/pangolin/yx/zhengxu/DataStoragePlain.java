@@ -331,7 +331,6 @@ public class DataStoragePlain implements DataStorage {
 
     @Override
     public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
-        doLogRaw(data, logBlock.ids[logPos], logBlock.preIds[logPos], logBlock.opTypes[logPos],
-                logBlock.seqs[logPos], logBlock.columnData, logPos * 3 * GlobalData.colCount);
+        //doLogRaw(data, logBlock.ids[logPos], logBlock.preIds[logPos], logBlock.opTypes[logPos], logBlock.seqs[logPos], logBlock.columnData, logPos * 3 * GlobalData.colCount);
     }
 }

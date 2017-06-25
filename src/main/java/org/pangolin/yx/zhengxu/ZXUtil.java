@@ -52,14 +52,6 @@ public class ZXUtil {
         while (data[end] != delimit) {
             end++;
         }
-        /*
-        while (end < data.length) {
-            if (data[end] == delimit) {
-                break;
-            }
-            end++;
-        }
-        */
         return end - off;
     }
 

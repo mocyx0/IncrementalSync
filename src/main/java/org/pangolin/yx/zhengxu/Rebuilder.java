@@ -49,7 +49,7 @@ public class Rebuilder implements Runnable {
                     if (DO_REBUILD) {
                         LogBlockRebuilder logBlockRebuilder = logBlock.logBlockRebuilders[index];
                         for (int i = 0; i < logBlockRebuilder.length; i++) {
-                            dataStorage.doLog(logBlock, logBlock.fileBlock.buffer, logBlockRebuilder.poss[i]);
+                            dataStorage.doLog(logBlock, null, logBlockRebuilder.poss[i]);
                         }
                         /*
                         for (LogRecord log : logBlock.logRecordsArr.get(index)) {
@@ -59,12 +59,12 @@ public class Rebuilder implements Runnable {
                         */
                         //free buffer
                         if (logBlock.ref.decrementAndGet() == 0) {
-                            ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
+                            //ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
                             LogBlock.free(logBlock);
                         }
                     } else {
                         if (logBlock.ref.decrementAndGet() == 0) {
-                            ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
+                            //ReadBufferPoll.freeReadBuff(logBlock.fileBlock.buffer);
                             LogBlock.free(logBlock);
 
                         }
