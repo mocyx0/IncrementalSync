@@ -325,14 +325,13 @@ public class FileParserMT implements FileParser {
                 }
 
                 pos += 1 + nameLen;
-                byte type = data[pos];
                 byte isPk = data[pos + 2];
                 pos += 4;//skip
                 int oldPos = pos;
                 int oldLen = ZXUtil.nextToken(data, pos, '|');
                 pos = pos + 1 + oldLen;//old value
                 int newPos = pos;
-                int newLen = 0;
+                int newLen;
                 if (isPk == '1') {
                     newLen = ZXUtil.nextToken(data, pos, '|');
                 } else {

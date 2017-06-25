@@ -53,7 +53,7 @@ class TableInfo {
     // id first_name last_name sex score score2
     static final int[] indexTable = new int[]{0, 1, 0, 3, 4, 4, 5, 7, 8, 2, 1};
 
-    int getColumnIndex(byte[] data, int off, int len) throws Exception {
+    final int getColumnIndex(byte[] data, int off, int len) throws Exception {
         if (Config.HACK) {
             return indexTable[len];
         } else {
@@ -61,25 +61,6 @@ class TableInfo {
             return hashToIndex.get(hash);
         }
     }
-
-    int getColumnIndex1(byte[] data, int off, int len) {
-        for (int i = 0; i < columnName.length; i++) {
-            boolean equal = true;
-            for (int j = 0; j < len; j++) {
-                if (j < columnName[i].length && columnName[i][j] == data[off + j]) {
-
-                } else {
-                    equal = false;
-                    break;
-                }
-            }
-            if (equal) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
     boolean byteEqual(byte[] b1, byte[] b2) {
         if (b1.length != b2.length) {
             return false;
