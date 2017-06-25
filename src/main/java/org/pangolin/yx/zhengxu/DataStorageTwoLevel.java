@@ -1,9 +1,11 @@
 package org.pangolin.yx.zhengxu;
 
 import org.pangolin.xuzhe.Log;
+import org.pangolin.xuzhe.positiveorder.MyLong2IntHashMap;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.PlainHashArr;
 import org.pangolin.yx.PlainHashing;
+import org.pangolin.yx.PlainHashingSimple;
 
 import java.util.ArrayList;
 
@@ -46,6 +48,7 @@ public class DataStorageTwoLevel implements DataStorage {
     private static final int BUFFER_BITS = 20;
     private int blockSize = 0;
     PlainHashing hashing = new PlainHashing(20);
+    //HashWrapper  hashing = new HashWrapper ();
     private ArrayList<long[]> bytes = new ArrayList<>();
     private int nextBytePos;
     private Level1 level1;

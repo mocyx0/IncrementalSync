@@ -13,6 +13,7 @@ public class DataCollectorTwoLevel implements DataCollector {
         for (DataStorage dataStorage : dataStorages) {
             dataStorageHashMaps.add((DataStorageTwoLevel) dataStorage);
         }
+        datas = new long[GlobalData.colCount];
     }
 
     private DataStorageTwoLevel getDataMap(long id) {
@@ -21,12 +22,16 @@ public class DataCollectorTwoLevel implements DataCollector {
         return data;
     }
 
+    long[] datas;
+
     @Override
     public void writeBuffer(long id, ByteBuffer buffer) throws Exception {
+        for (int i = 0; i < datas.length; i++) {
+            datas[i] = 0;
+        }
         DataStorageTwoLevel data = getDataMap(id);
         RecordData recordData = data.getRecord(id, -1);
         if (recordData != null) {
-            long[] datas = new long[recordData.colData.length];
             System.arraycopy(recordData.colData, 0, datas, 0, datas.length);
             int colCount = 0;
             for (int i = 0; i < data.CELL_COUNT; i++) {
