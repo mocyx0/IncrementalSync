@@ -23,13 +23,13 @@ public class Rebuilder implements Runnable {
     private int index = 0;
     private int reBuilderCount;
 
+
     public Rebuilder(BlockingQueue<LogBlock> queue, CountDownLatch latch, TableInfo tableInfo, int index, int reBuilderCount) {
         this.queue = queue;
         this.latch = latch;
         this.index = index;
         this.reBuilderCount = reBuilderCount;
         logger = Config.serverLogger;
-        dataStorage = new DataStorageTwoLevel(tableInfo);
         //logger.info( String.format(String.format("rebuilder %d %d ",index,reBuilderCount)));
     }
 
@@ -40,6 +40,7 @@ public class Rebuilder implements Runnable {
     @Override
     public void run() {
         try {
+            dataStorage = new DataStorageTwoLevel(GlobalData.tableInfo);
             while (true) {
                 LogBlock logBlock = queue.take();
 

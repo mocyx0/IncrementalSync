@@ -166,11 +166,13 @@ public class ZXServer implements WorkerServer {
         //Thread.sleep(3000);
         //首先读取列信息
         long t1 = System.currentTimeMillis();
+        //System.out.println(t1);
         LineParser.readTableInfo();
         LogBlock.init();
         ReadBufferPoll.init();
         //开启rebuilder线程
         startRebuilder();
+        //System.out.println(System.currentTimeMillis());
         //解析线程
         fileParser.run(logQueues);
         latch.await();

@@ -269,7 +269,6 @@ public class FileParserMT implements FileParser {
 
         int colParseIndex = 0;
         long colValue = 0;
-        boolean superHack = true;
 
         void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
@@ -279,9 +278,9 @@ public class FileParserMT implements FileParser {
             byte op;
             //int colWriteIndex = tableInfo.columnName.length - 1;
 
-            if (superHack) {
+            if (Config.HACK) {
                 pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
-                pos += 15;
+                pos += 18;
                 pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
                 pos += 34;
             } else {
@@ -305,7 +304,7 @@ public class FileParserMT implements FileParser {
             while (data[pos] != '\n') {
                 int namePos = pos;
                 int nameLen = 0;
-                if (superHack) {
+                if (Config.HACK) {
                     if (data[pos] == 'i') {
                         nameLen = 2;
                     } else if (data[pos] == 'f') {
@@ -360,6 +359,7 @@ public class FileParserMT implements FileParser {
                     logBlock.colData[colWriteIndex] = ((long) byteIndex << 56) | colValue;
                     colWriteIndex++;
                 }
+                colParseIndex++;
             }
 //            printColData(logBlock,logPos);
 

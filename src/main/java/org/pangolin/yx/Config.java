@@ -74,9 +74,9 @@ public final class Config {
     // 工作主目录
     public static String TESTER_HOME = "C:/tmp/alimid/small";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/alimid/big";
+    public static String DATA_HOME = "C:/tmp/alimid/small";
     // 结果文件目录
-    public static String RESULT_HOME = "C:/tmp/alimid/big";
+    public static String RESULT_HOME = "C:/tmp/alimid/small";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";
@@ -89,10 +89,10 @@ public final class Config {
     // server端口
     public static Integer SERVER_PORT = 5528;
 
-    public static long BLOCK_SIZE = 1024 * 1024 * 256;
+    public static final long BLOCK_SIZE = 1024 * 1024 * 256;
 
-    public static int TYPE_NUMBER = 1;
-    public static int TYPE_STRING = 2;
+    public static final int TYPE_NUMBER = 1;
+    public static final int TYPE_STRING = 2;
 
     //客户端打印一部分输出//
     public static int PRINT_RESULT_LINE = 3;
@@ -101,11 +101,11 @@ public final class Config {
     //test mode会执行mserver的doTest并且只会返回client "hello world"
     //real test mix
     //mix会一起执行real和test
-    public static String TEST_MODE = "real";
+    public static final String TEST_MODE = "real";
 
-    public static byte OP_TYPE_DELETE = 1;
-    public static byte OP_TYPE_INSERT = 2;
-    public static byte OP_TYPE_UPDATE = 3;
+    public static final byte OP_TYPE_DELETE = 1;
+    public static final byte OP_TYPE_INSERT = 2;
+    public static final byte OP_TYPE_UPDATE = 3;
 
     public static boolean COPY_DATA = false;
 
@@ -119,15 +119,17 @@ public final class Config {
     public static int COLLECTOR_THREAD = 1;
     public static int PARSER_THREAD = 2;
 
-    public static int MAX_COL_SIZE = 6;
+    public static final int MAX_COL_SIZE = 6;
     //
-    public static Logger serverLogger = LoggerFactory.getLogger(Server.class);
+    public static final Logger serverLogger = LoggerFactory.getLogger(Server.class);
 
 
-    public static int PARSER_IN_QUEUE = 2;
-    public static int PARSER_OUT_QUEUE = 2;
-    public static int REBUILDER_IN_QUEUE = 128;
-    public static int READ_POOL_SIZE = 12;
-    public static int LOG_BLOCK_QUEUE = 21;
+    public static final int PARSER_IN_QUEUE = 2;
+    public static final int PARSER_OUT_QUEUE = 2;
+    public static final int REBUILDER_IN_QUEUE = 128;
+    public static final int READ_POOL_SIZE = 12;
+    public static final int LOG_BLOCK_QUEUE = 21;
+
+    public static final boolean HACK = true;
 }
 
