@@ -269,25 +269,30 @@ public class FileParserMT implements FileParser {
 
         int colParseIndex = 0;
         long colValue = 0;
+        boolean superHack = true;
 
         void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
-
             int pos = parsePos;
             long id = -1;
             long preid = -1;
             byte op;
             //int colWriteIndex = tableInfo.columnName.length - 1;
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
-            pos += 15;
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
-            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
-            //pos += 14;
-            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
-            //pos += 12;
-            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
-            //pos += 8;
-            pos += 34;
+
+            if (superHack) {
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
+                pos += 15;
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
+                pos += 34;
+            } else {
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
+                pos += 15;
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
+                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
+            }
+
             colParseIndex = 0;
             int opPos = pos;
             op = data[opPos];
@@ -299,7 +304,27 @@ public class FileParserMT implements FileParser {
 
             while (data[pos] != '\n') {
                 int namePos = pos;
-                int nameLen = ZXUtil.nextToken(data, pos, ':');//col name
+                int nameLen = 0;
+                if (superHack) {
+                    if (data[pos] == 'i') {
+                        nameLen = 2;
+                    } else if (data[pos] == 'f') {
+                        nameLen = 10;
+                    } else if (data[pos] == 'l') {
+                        nameLen = 9;
+                    } else if (data[pos] == 's') {
+                        if (data[pos + 3] == ':') {
+                            nameLen = 3;
+                        } else if (data[pos + 5] == ':') {
+                            nameLen = 5;
+                        } else if (data[pos + 6] == ':') {
+                            nameLen = 6;
+                        }
+                    }
+                } else {
+                    nameLen = ZXUtil.nextToken(data, pos, ':');//col name
+                }
+
                 pos += 1 + nameLen;
                 byte type = data[pos];
                 byte isPk = data[pos + 2];
