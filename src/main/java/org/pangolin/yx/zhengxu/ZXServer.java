@@ -16,6 +16,10 @@ class LogQueues {
     ArrayList<BlockingQueue<LogBlock>> queues = new ArrayList<>();
 }
 
+class MBuffer {
+    byte[] data;
+    int len = 0;
+}
 
 public class ZXServer implements WorkerServer {
     private CountDownLatch latch;
@@ -67,6 +71,7 @@ public class ZXServer implements WorkerServer {
         logger.info(String.format("parse end, cost:%d", t2 - t1));
     }
 
+
     private class Collector implements Runnable {
         private int BUFFER_SIZE = 1024 * 64;
 
@@ -77,6 +82,10 @@ public class ZXServer implements WorkerServer {
         int seq = 0;
         DataCollector dataCollector;
         CountDownLatch latch;
+
+//        byte[] dataBuff = new byte[BUFFER_SIZE];
+ //       int dataPos = 0;
+
         ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
         ByteBuffer sendBuffer = ByteBuffer.allocate(128);
 
@@ -166,19 +175,21 @@ public class ZXServer implements WorkerServer {
         //Thread.sleep(3000);
         //首先读取列信息
         long t1 = System.currentTimeMillis();
-        //System.out.println(t1);
+        // System.out.println(t1);
         LineParser.readTableInfo();
+
         LogBlock.init();
+        //System.out.println(System.currentTimeMillis());
         ReadBufferPoll.init();
+
         //开启rebuilder线程
         startRebuilder();
-        //System.out.println(System.currentTimeMillis());
+
         //解析线程
         fileParser.run(logQueues);
         latch.await();
         long t2 = System.currentTimeMillis();
         logger.info(String.format("Rebuild done cost %d", t2 - t1));
-        logger.info(String.format("read buffer count %d", ReadBufferPoll.size()));
         ArrayList<DataStorage> dataStorages = new ArrayList<>();
         for (Rebuilder rebuilder : rebuilders) {
             dataStorages.add(rebuilder.getDataStorage());

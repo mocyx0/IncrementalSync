@@ -417,10 +417,12 @@ public class DataStorageTwoLevel implements DataStorage {
     @Override
     public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
 
+
+
         long id = logBlock.ids[logPos];
         long preId = logBlock.preIds[logPos];
         byte opType = logBlock.opTypes[logPos];
-        long seq = logBlock.seqs[logPos];
+        //long seq = logBlock.seqs[logPos];
         long[] colData = logBlock.colData;
         int colDataPos = logPos * GlobalData.colCount;
 
@@ -436,7 +438,7 @@ public class DataStorageTwoLevel implements DataStorage {
                     int next = hashing.getOrDefault(id, 0);
                     int newNode = allocateBlock();
                     writeLongToLevel2(OFF_NEXT + newNode, next);
-                    writeLongToLevel2(OFF_SEQ + newNode, seq);
+                    writeLongToLevel2(OFF_SEQ + newNode, logBlock.seqs[logPos]);
                     writeLongToLevel2(OFF_PREID + newNode, preId);
                     writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos);
                     hashing.put(id, newNode);
@@ -450,7 +452,7 @@ public class DataStorageTwoLevel implements DataStorage {
                 int next = hashing.getOrDefault(id, 0);
                 int newNode = allocateBlock();
                 writeLongToLevel2(OFF_NEXT + newNode, next);
-                writeLongToLevel2(OFF_SEQ + newNode, seq);
+                writeLongToLevel2(OFF_SEQ + newNode, logBlock.seqs[logPos]);
                 writeLongToLevel2(OFF_PREID + newNode, -1);
                 //writeDataToBytes(newNode, logRecord, data);
                 //writeDataToBytesDirect(newNode, colData, colDataPos, data);
@@ -480,7 +482,7 @@ public class DataStorageTwoLevel implements DataStorage {
                     if (level1.flag[level1Index] != FLAG_EMPTY) {
                         level1.next[level1Index] = copyDataToLevel2(level1Index);
                     }
-                    level1.seq[level1Index] = seq;
+                    level1.seq[level1Index] = logBlock.seqs[logPos];
                     level1.preid[level1Index] = preId;
                     level1.flag[level1Index] = FLAG_VALID;
                     //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
@@ -493,7 +495,7 @@ public class DataStorageTwoLevel implements DataStorage {
                 if (level1.flag[level1Index] != FLAG_EMPTY) {
                     level1.next[level1Index] = copyDataToLevel2(level1Index);
                 }
-                level1.seq[level1Index] = seq;
+                level1.seq[level1Index] = logBlock.seqs[logPos];
                 level1.preid[level1Index] = -1;
                 level1.flag[level1Index] = FLAG_VALID;
                 //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);

@@ -63,6 +63,7 @@ public class DataCollectorTwoLevel implements DataCollector {
             //finished
             //buffer.put(Long.toString(id).getBytes());
             writeLong(buffer, id);
+
             buffer.put((byte) '\t');
             for (int i = 0; i < data.CELL_COUNT; i++) {
                 long v = datas[i];
