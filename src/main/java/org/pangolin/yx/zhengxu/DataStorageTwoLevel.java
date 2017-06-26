@@ -41,17 +41,17 @@ public class DataStorageTwoLevel implements DataStorage {
     private static final int FIRST_LEVEL_COUNT = 1 << 21;
     private static final int FIRST_LEVEL_MAX = FIRST_LEVEL_COUNT - 1;
     TableInfo tableInfo;
-    int CELL_SIZE;
-    int CELL_COUNT;
-    int COL_BLOCK_SIZE;
+    final int CELL_SIZE;
+    final int CELL_COUNT;
+    final int COL_BLOCK_SIZE;
     private static final int BUFFER_SIZE = 1024 * 1024;
     private static final int BUFFER_BITS = 20;
     private int blockSize = 0;
-    PlainHashing hashing = new PlainHashing(20);
+    private final PlainHashing hashing = new PlainHashing(20);
     //HashWrapper  hashing = new HashWrapper ();
-    private ArrayList<long[]> bytes = new ArrayList<>();
+    private final ArrayList<long[]> bytes = new ArrayList<>();
     private int nextBytePos;
-    private Level1 level1;
+    private final Level1 level1;
 
     DataStorageTwoLevel(TableInfo tableInfo) {
         this.tableInfo = tableInfo;
@@ -94,31 +94,23 @@ public class DataStorageTwoLevel implements DataStorage {
     }
 
 
-    private void writeLogDataToLevel1(int bufPos, long[] logData, int logDataPos) {
+    private void writeLogDataToLevel1(int bufPos, long[] logData, int logDataPos, int len) {
         long[] target = level1.colData;
-        for (int i = 0; i < GlobalData.colCount; i++) {
+        for (int i = 0; i < len; i++) {
             long colv = logData[logDataPos + i];
             int pos = (int) (logData[logDataPos + i] >> 56);
-            if (pos == 0) {
-                break;
-            } else {
-                target[(bufPos + pos - 1)] = colv;
-            }
+            target[(bufPos + pos - 1)] = colv;
         }
     }
 
-    private void writeLogDataToLevel2(int off, long[] logData, int logDataPos) {
+    private void writeLogDataToLevel2(int off, long[] logData, int logDataPos, int len) {
         int index = off >>> BUFFER_BITS;
         int buffOff = off & (BUFFER_SIZE - 1);
         long[] target = bytes.get(index);
-        for (int i = 0; i < COL_BLOCK_SIZE; i++) {
+        for (int i = 0; i < len; i++) {
             long colv = logData[logDataPos + i];
             int pos = (int) (logData[logDataPos + i] >> 56);
-            if (pos == 0) {
-                break;
-            } else {
-                target[(buffOff + pos - 1)] = colv;
-            }
+            target[(buffOff + pos - 1)] = colv;
         }
     }
 /*
@@ -422,8 +414,11 @@ public class DataStorageTwoLevel implements DataStorage {
         byte opType = logBlock.opTypes[logPos];
         //long seq = logBlock.seqs[logPos];
         long[] colData = logBlock.colData;
-        int colDataPos = logPos * GlobalData.colCount;
-
+        //int colDataPos = logPos * GlobalData.colCount;
+        //提取列数据信息
+        int colDataPos = logBlock.colDataInfo[logPos];
+        int colDataLen = colDataPos & 0xff;
+        colDataPos = colDataPos >> 8;
         long offLocal;
         if (opType == 'D') {
             offLocal = preId / Config.REBUILDER_THREAD;
@@ -438,13 +433,11 @@ public class DataStorageTwoLevel implements DataStorage {
                     writeLongToLevel2(OFF_NEXT + newNode, next);
                     writeLongToLevel2(OFF_SEQ + newNode, logBlock.seqs[logPos]);
                     writeLongToLevel2(OFF_PREID + newNode, preId);
-                    writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos);
+                    writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos, colDataLen);
                     hashing.put(id, newNode);
                 } else {
                     int node = hashing.getOrDefault(id, 0);
-                    //writeDataToBytes(node, logRecord, data);
-                    //writeDataToBytesDirect(node, colData, colDataPos, data);
-                    writeLogDataToLevel2(node + OFF_CELL, colData, colDataPos);
+                    writeLogDataToLevel2(node + OFF_CELL, colData, colDataPos, colDataLen);
                 }
             } else if (opType == 'I') {
                 int next = hashing.getOrDefault(id, 0);
@@ -452,9 +445,7 @@ public class DataStorageTwoLevel implements DataStorage {
                 writeLongToLevel2(OFF_NEXT + newNode, next);
                 writeLongToLevel2(OFF_SEQ + newNode, logBlock.seqs[logPos]);
                 writeLongToLevel2(OFF_PREID + newNode, -1);
-                //writeDataToBytes(newNode, logRecord, data);
-                //writeDataToBytesDirect(newNode, colData, colDataPos, data);
-                writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos);
+                writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos, colDataLen);
                 hashing.put(id, newNode);
             } else if (opType == 'D') {
                 int node = hashing.getOrDefault(preId, 0);
@@ -484,10 +475,10 @@ public class DataStorageTwoLevel implements DataStorage {
                     level1.preid[level1Index] = preId;
                     level1.flag[level1Index] = FLAG_VALID;
                     //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
-                    writeLogDataToLevel1(level1Index * COL_BLOCK_SIZE, colData, colDataPos);
+                    writeLogDataToLevel1(level1Index * COL_BLOCK_SIZE, colData, colDataPos, colDataLen);
                 } else {
                     //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
-                    writeLogDataToLevel1(level1Index * COL_BLOCK_SIZE, colData, colDataPos);
+                    writeLogDataToLevel1(level1Index * COL_BLOCK_SIZE, colData, colDataPos, colDataLen);
                 }
             } else if (opType == 'I') {
                 if (level1.flag[level1Index] != FLAG_EMPTY) {
@@ -497,7 +488,7 @@ public class DataStorageTwoLevel implements DataStorage {
                 level1.preid[level1Index] = -1;
                 level1.flag[level1Index] = FLAG_VALID;
                 //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
-                writeLogDataToLevel1(level1Index * COL_BLOCK_SIZE, colData, colDataPos);
+                writeLogDataToLevel1(level1Index * COL_BLOCK_SIZE, colData, colDataPos, colDataLen);
             } else if (opType == 'D') {
                 if (level1.next[level1Index] != 0) {
                     //read the pre node

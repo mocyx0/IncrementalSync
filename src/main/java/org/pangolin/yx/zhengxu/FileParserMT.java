@@ -22,8 +22,9 @@ class LogBlock {
     public static LogBlock EMPTY = new LogBlock();
     //ArrayList<LogRecord> logRecords = new ArrayList<>();
 //    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
-    public static final int MAX_LENGTH = 150000;
+    public static final int MAX_LENGTH = 100000;
     long[] ids = new long[MAX_LENGTH];
+    int[] colDataInfo = new int[MAX_LENGTH];//高位3个字节位置: 低位1个字节:长度
     long[] preIds = new long[MAX_LENGTH];
     byte[] opTypes = new byte[MAX_LENGTH];
     byte[] redoer = new byte[MAX_LENGTH];
@@ -263,58 +264,36 @@ public class FileParserMT implements FileParser {
 
         int colParseIndex = 0;
         long colValue = 0;
+        int colDataPos = 0;//分配coldata的位置
 
         void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
             // int pos = parsePos;
             long id = -1;
             long preid = -1;
+            int logColPos = colDataPos;//保存起始位置
             byte op;
-            //int colWriteIndex = tableInfo.columnName.length - 1;
-
             if (Config.HACK) {
-                //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
                 parsePos += 18;
-                //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
                 nextToken(data, '|');
                 parsePos += 34;
             } else {
-                //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
-                //nextToken(data, '|');
-                //parsePos += 15;
                 nextToken(data, '|');
                 nextToken(data, '|');
                 nextToken(data, '|');
                 nextToken(data, '|');
                 nextToken(data, '|');
-                /*
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
-                */
             }
-
-
             op = data[parsePos];
-            //logRecord.opType = op;
             parsePos += 2;
-            //LogBlockRebuilder logBlockRebuilder = null;
             int logPos = logBlock.length;
-            int colWriteIndex = logPos * GlobalData.colCount;
 
             colParseIndex = 0;
             while (data[parsePos] != '\n') {
                 if (colParseIndex == 0) {
-                    //id
                     parsePos += 7;
                     preid = parseLong(data);
                     id = parseLong(data);
-                    long activeId = id;
-                    if (op == 'D') {
-                        activeId = preid;
-                    }
-                    //logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % (Config.REBUILDER_THREAD))];
                 } else {
                     int namePos = parsePos;
                     int nameLen = nextColName(data);
@@ -322,15 +301,9 @@ public class FileParserMT implements FileParser {
                     nextToken(data, '|');//old value
                     long colValue = nextColValue(data);//new value
                     int colIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
-                    logBlock.colData[colWriteIndex] = ((long) colIndex << 56) | colValue;
-                    colWriteIndex++;
+                    logBlock.colData[colDataPos++] = ((long) colIndex << 56) | colValue;
                 }
                 colParseIndex++;
-            }
-//            printColData(logBlock,logPos);
-            if (colWriteIndex < (logPos + 1) * GlobalData.colCount) {
-                //logBlock.columnData[colWriteIndex] = 0;
-                logBlock.colData[colWriteIndex] = 0;
             }
             parsePos++;//skip \n
             logBlock.ids[logPos] = id;
@@ -338,20 +311,19 @@ public class FileParserMT implements FileParser {
             logBlock.opTypes[logPos] = op;
             logBlock.seqs[logPos] = seqNumber++;
             logBlock.length++;
+            byte colLen = (byte) (colDataPos - logColPos);
+            logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
             if (op == 'D') {
-                logBlock.redoer[logPos] = (byte) (preid % Config.REBUILDER_THREAD);
+                logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
             } else {
-                logBlock.redoer[logPos] = (byte) (id % Config.REBUILDER_THREAD);
+                logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
             }
-            //logBlockRebuilder.poss[logBlockRebuilder.length++] = logPos;
             if (op == 'U' && preid != id) {
-                //LogBlockRebuilder xrebuilder = logBlock.logBlockRebuilders[(int) ((preid) % (Config.REBUILDER_THREAD))];
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
                 logBlock.opTypes[xpos] = 'X';
                 logBlock.length++;
-                logBlock.redoer[xpos] = (byte) (preid % Config.REBUILDER_THREAD);
-                //xrebuilder.poss[xrebuilder.length++] = xpos;
+                logBlock.redoer[xpos] = (byte) ((preid) % Config.REBUILDER_THREAD);
             }
         }
 
@@ -385,12 +357,14 @@ public class FileParserMT implements FileParser {
                         break;
                     } else {
                         LogBlock logBlock = LogBlock.allocate();
+                        colDataPos = 0;
                         parsePos = 0;
                         seqNumber = (long) fileBlock.seq << 32;
                         while (parsePos < fileBlock.length) {
                             nextLineDirect(fileBlock.buffer, logBlock);
                             selfLineCount++;
                         }
+
                         ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         logBlock.ref.set(queueCount);
                         //TEST

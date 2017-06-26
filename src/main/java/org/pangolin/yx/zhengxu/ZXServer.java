@@ -122,7 +122,7 @@ public class ZXServer implements WorkerServer {
                 while (pos < end) {
                     int position = buffer.position();
                     try {
-                        dataCollector.writeBuffer(pos, buffer,pkBuffer);
+                        dataCollector.writeBuffer(pos, buffer, pkBuffer);
                         pos++;
                     } catch (BufferOverflowException e) {
                         buffer.position(position);

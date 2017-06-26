@@ -99,25 +99,6 @@ public class DataCollectorTwoLevel implements DataCollector {
                 buff.put(pkBuffer[i]);
             }
         }
-
-
-        /*
-        int size = 19;
-        long p = 10;
-        for (int i = 1; i < 19; i++) {
-            if (v < p) {
-                size = i;
-                break;
-            }
-            p = 10 * p;
-        }
-        for (int i = size - 1; i >= 0; i--) {
-            p = p / 10;
-            long k = v / p;
-            buff.put((byte) ((k) + '0'));
-            v -= k * p;
-        }
-        */
     }
 }
 
