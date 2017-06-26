@@ -22,7 +22,6 @@ public class Rebuilder implements Runnable {
     private int index = 0;
     private int reBuilderCount;
 
-
     public Rebuilder(BlockingQueue<LogBlock> queue, CountDownLatch latch, TableInfo tableInfo, int index, int reBuilderCount) {
         this.queue = queue;
         this.latch = latch;

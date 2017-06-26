@@ -8,18 +8,17 @@ import java.util.concurrent.LinkedBlockingQueue;
  * Created by yangxiao on 2017/6/20.
  */
 public class ReadBufferPoll {
-    private static int FILE_BLOCK_SIZE = 1024 * 1024*4;//
     private static BlockingQueue<byte[]> bufferPool = new LinkedBlockingQueue<>(Config.READ_POOL_SIZE);
 
 
     public static void init() throws Exception {
         for (int i = 0; i < Config.READ_POOL_SIZE; i++) {
-            bufferPool.put(new byte[FILE_BLOCK_SIZE]);
+            bufferPool.put(new byte[Config.READ_BUFFER_SIZE]);
         }
     }
 
     public static byte[] allocateReadBuff() throws Exception {
-        byte[] re= bufferPool.take();
+        byte[] re = bufferPool.take();
         return re;
 /*
         byte[] buff = bufferPool.poll();

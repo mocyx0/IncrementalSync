@@ -48,10 +48,10 @@ class LogBlock {
         }
     }
 
-    private static BlockingQueue<LogBlock> queue = new LinkedBlockingQueue(Config.LOG_BLOCK_QUEUE);
+    private static BlockingDeque<LogBlock> queue = new LinkedBlockingDeque<>(Config.LOG_BLOCK_QUEUE);
 
     public static LogBlock allocate() throws Exception {
-        LogBlock logBlock = queue.take();
+        LogBlock logBlock = queue.takeFirst();
         return logBlock;
     }
 
@@ -62,7 +62,7 @@ class LogBlock {
         }
 
         logBlock.length = 0;
-        queue.put(logBlock);
+        queue.putFirst(logBlock);
     }
 
 }
@@ -192,79 +192,69 @@ public class FileParserMT implements FileParser {
             return null;
         }
 
-        LogRecord nextLine(byte[] data) throws Exception {
-            TableInfo tableInfo = GlobalData.tableInfo;
-            LogRecord logRecord = new LogRecord();
-            //logRecord.lineData = data;
-            logRecord.columnData = new int[3 * (tableInfo.columnName.length - 1)];
-            int colWriteIndex = 0;
-            int pos = parsePos;
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
-            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
-            pos += 14;
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
-            //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
-            pos += 8;
-
-            int opPos = pos;
-            byte op = data[opPos];
-            logRecord.opType = op;
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//op
-/*
-            if (op == 'I') {
-                insertCount.incrementAndGet();
-            } else if (op == 'U') {
-                updateCount.incrementAndGet();
-            } else if (op == 'D') {
-                deleteCount.incrementAndGet();
-            }
-            */
-            while (data[pos] != '\n') {
-                int namePos = pos;
-                int nameLen = ZXUtil.nextToken(data, pos, ':');//col name
-                pos += 1 + nameLen;
-                byte type = data[pos];
-                byte isPk = data[pos + 2];
-                pos += 4;//skip
-                int oldPos = pos;
-                int oldLen = ZXUtil.nextToken(data, pos, '|');
-                pos = pos + 1 + oldLen;//old value
-                int newPos = pos;
-                int newLen = ZXUtil.nextToken(data, pos, '|');
-                pos = pos + 1 + newLen;//new value
-                if (isPk == '1') {
-                    if (op == 'I') {
-                        logRecord.id = ZXUtil.parseLong(data, newPos, newLen);
-                    } else if (op == 'D') {
-                        logRecord.preId = ZXUtil.parseLong(data, oldPos, oldLen);
-                    } else if (op == 'U') {
-                        logRecord.id = ZXUtil.parseLong(data, newPos, newLen);
-                        logRecord.preId = ZXUtil.parseLong(data, oldPos, oldLen);
-                    }
-                } else {
-                    int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
-                    logRecord.columnData[colWriteIndex++] = byteIndex;
-                    logRecord.columnData[colWriteIndex++] = newPos;
-                    logRecord.columnData[colWriteIndex++] = newLen;
-                }
-            }
-            pos++;//skip \n
-            parsePos = pos;
-            return logRecord;
-        }
-
         long seqNumber = 0;
 
-        private int nextColValue(byte[] data, int off, char delimit) {
-            int end = off;
-            colValue = 0;
-            while (data[end] != delimit) {
-                colValue = colValue << 8 | ((long) data[end] & 0xff);
-                end++;
+        int nextToken(byte[] data, char delimit) {
+            int old = parsePos;
+            while (data[parsePos] != delimit) {
+                parsePos++;
             }
-            colValue = colValue << 8 | ((long) (end - off) & 0xff);
-            return end - off;
+            parsePos++;
+            return parsePos - old - 1;
+        }
+
+        int nextColName(byte[] data) {
+            if (Config.HACK) {
+                int nameLen = 0;
+                byte b1 = data[parsePos];
+                if (b1 == 'i') {
+                    nameLen = 2;
+                } else if (b1 == 'f') {
+                    nameLen = 10;
+                } else if (b1 == 'l') {
+                    nameLen = 9;
+                } else if (b1 == 's') {
+                    if (data[parsePos + 3] == ':') {
+                        nameLen = 3;
+                    } else if (data[parsePos + 5] == ':') {
+                        nameLen = 5;
+                    } else if (data[parsePos + 6] == ':') {
+                        nameLen = 6;
+                    }
+                }
+                parsePos += nameLen + 1;
+                return nameLen;
+            } else {
+                return nextToken(data, ':');
+            }
+        }
+
+        private long nextColValue(byte[] data) {
+            int old = parsePos;
+            colValue = 0;
+            while (data[parsePos] != '|') {
+                colValue = colValue << 8 | ((long) data[parsePos] & 0xff);
+                parsePos++;
+            }
+            colValue = colValue << 8 | ((long) (parsePos - old) & 0xff);
+            parsePos++;
+            return colValue;
+        }
+
+        long parseLong(byte[] data) {
+            if (data[parsePos] == 'N') {
+                parsePos += 5;
+                return -1;
+            } else {
+                long v = 0;
+                byte b = data[parsePos++];
+                while (b != '|') {
+                    v = v * 10 + (b - '0');
+                    b = data[parsePos++];
+                }
+                return v;
+            }
+
         }
 
         int colParseIndex = 0;
@@ -272,103 +262,73 @@ public class FileParserMT implements FileParser {
 
         void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
-            int pos = parsePos;
+            // int pos = parsePos;
             long id = -1;
             long preid = -1;
             byte op;
             //int colWriteIndex = tableInfo.columnName.length - 1;
 
             if (Config.HACK) {
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
-                pos += 18;
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
-                pos += 34;
+                //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
+                parsePos += 18;
+                //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
+                nextToken(data, '|');
+                parsePos += 34;
             } else {
-                pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
-                pos += 15;
+                //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
+                //nextToken(data, '|');
+                parsePos += 15;
+                nextToken(data, '|');
+                nextToken(data, '|');
+                nextToken(data, '|');
+                nextToken(data, '|');
+                /*
                 pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//uid
                 pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//time
                 pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//scheme
                 pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//table
+                */
             }
 
-            colParseIndex = 0;
-            int opPos = pos;
-            op = data[opPos];
+
+            op = data[parsePos];
             //logRecord.opType = op;
-            pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');//op
+            parsePos += 2;
             LogBlockRebuilder logBlockRebuilder = null;
             int logPos = logBlock.length;
             int colWriteIndex = logPos * GlobalData.colCount;
 
-            while (data[pos] != '\n') {
-                int namePos = pos;
-                int nameLen = 0;
-                if (Config.HACK) {
-                    if (data[pos] == 'i') {
-                        nameLen = 2;
-                    } else if (data[pos] == 'f') {
-                        nameLen = 10;
-                    } else if (data[pos] == 'l') {
-                        nameLen = 9;
-                    } else if (data[pos] == 's') {
-                        if (data[pos + 3] == ':') {
-                            nameLen = 3;
-                        } else if (data[pos + 5] == ':') {
-                            nameLen = 5;
-                        } else if (data[pos + 6] == ':') {
-                            nameLen = 6;
-                        }
-                    }
-                } else {
-                    nameLen = ZXUtil.nextToken(data, pos, ':');//col name
-                }
-
-                pos += 1 + nameLen;
-                byte isPk = data[pos + 2];
-                pos += 4;//skip
-                int oldPos = pos;
-                int oldLen = ZXUtil.nextToken(data, pos, '|');
-                pos = pos + 1 + oldLen;//old value
-                int newPos = pos;
-                int newLen;
-                if (isPk == '1') {
-                    newLen = ZXUtil.nextToken(data, pos, '|');
-                } else {
-                    //获取列值 保存在long中 1字节长度 6字节数据
-                    newLen = nextColValue(data, pos, '|');
-                }
-                pos = pos + 1 + newLen;//new value
-                if (isPk == '1') {
-                    long activeId = 0;
-                    if (op == 'I') {
-                        id = ZXUtil.parseLong(data, newPos, newLen);
-                        activeId = id;
-                    } else if (op == 'D') {
-                        preid = ZXUtil.parseLong(data, oldPos, oldLen);
+            colParseIndex = 0;
+            while (data[parsePos] != '\n') {
+                if (colParseIndex == 0) {
+                    //id
+                    parsePos += 7;
+                    preid = parseLong(data);
+                    id = parseLong(data);
+                    long activeId = id;
+                    if (op == 'D') {
                         activeId = preid;
-                    } else if (op == 'U') {
-                        id = ZXUtil.parseLong(data, newPos, newLen);
-                        preid = ZXUtil.parseLong(data, oldPos, oldLen);
-                        activeId = id;
                     }
                     logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % (Config.REBUILDER_THREAD))];
                 } else {
-                    int byteIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
-                    logBlock.colData[colWriteIndex] = ((long) byteIndex << 56) | colValue;
+                    int namePos = parsePos;
+                    int nameLen = nextColName(data);
+                    parsePos += 4;
+                    nextToken(data, '|');//old value
+                    long colValue = nextColValue(data);//new value
+                    int colIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
+                    logBlock.colData[colWriteIndex] = ((long) colIndex << 56) | colValue;
                     colWriteIndex++;
                 }
                 colParseIndex++;
             }
 //            printColData(logBlock,logPos);
-
             if (colWriteIndex < (logPos + 1) * GlobalData.colCount) {
                 //logBlock.columnData[colWriteIndex] = 0;
                 logBlock.colData[colWriteIndex] = 0;
             }
+            parsePos++;//skip \n
 
-            pos++;//skip \n
-            parsePos = pos;
             logBlock.ids[logPos] = id;
             logBlock.preIds[logPos] = preid;
             logBlock.opTypes[logPos] = op;
@@ -383,7 +343,6 @@ public class FileParserMT implements FileParser {
                 logBlock.length++;
                 xrebuilder.poss[xrebuilder.length++] = xpos;
             }
-
         }
 
         private void printColData(LogBlock logBlock, int logPos) {
@@ -422,10 +381,11 @@ public class FileParserMT implements FileParser {
                             nextLineDirect(fileBlock.buffer, logBlock);
                             selfLineCount++;
                         }
-                        //logBlock.fileBlock = fileBlock;
                         ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         logBlock.ref.set(queueCount);
+                        //TEST
                         resultQueue.put(logBlock);
+                        //LogBlock.free(logBlock);
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
@@ -436,6 +396,7 @@ public class FileParserMT implements FileParser {
                 System.exit(0);
             }
         }
+
     }
 
     private static volatile long logSeq = 0;

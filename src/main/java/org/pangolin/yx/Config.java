@@ -74,9 +74,9 @@ public final class Config {
     // 工作主目录
     public static String TESTER_HOME = "C:/tmp/alimid/small";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/alimid/small";
+    public static String DATA_HOME = "C:/tmp/alimid/big";
     // 结果文件目录
-    public static String RESULT_HOME = "C:/tmp/alimid/small";
+    public static String RESULT_HOME = "C:/tmp/alimid/big";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";
@@ -117,7 +117,7 @@ public final class Config {
     public static int CPU_COUNT = 4;
     public static int REBUILDER_THREAD = 1;
     public static int COLLECTOR_THREAD = 1;
-    public static int PARSER_THREAD = 2;
+    public static int PARSER_THREAD = 1;
 
     public static final int MAX_COL_SIZE = 6;
     //
@@ -129,6 +129,7 @@ public final class Config {
     public static final int REBUILDER_IN_QUEUE = 128;
     public static final int READ_POOL_SIZE = 12;
     public static final int LOG_BLOCK_QUEUE = 21;
+    public static final int READ_BUFFER_SIZE = 1024 * 1024 * 4;
 
     public static final boolean HACK = true;
 }
