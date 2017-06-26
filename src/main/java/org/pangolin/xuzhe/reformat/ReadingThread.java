@@ -1,14 +1,13 @@
 package org.pangolin.xuzhe.reformat;
 
+import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.buffer.UnpooledDirectByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -24,7 +23,7 @@ import static org.pangolin.xuzhe.reformat.ResultSenderHandler.latch;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
-    Logger logger = LoggerFactory.getLogger(ReadingThread.class);
+    static Logger logger = LoggerFactory.getLogger(Server.class);
     public static int beginId = 0;
     public static int endId = 0;
 
@@ -176,9 +175,9 @@ public class ReadingThread extends Thread {
 //            logger.info(new String(result, 0, 200));
             logger.info("cnt:{}  time:{} ms", offset, t2-t1);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.info("", e);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.info("", e);
         }
     }
 

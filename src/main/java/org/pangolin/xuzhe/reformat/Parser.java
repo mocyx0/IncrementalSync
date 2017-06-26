@@ -1,5 +1,9 @@
 package org.pangolin.xuzhe.reformat;
 
+import com.alibaba.middleware.race.sync.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -14,7 +18,7 @@ import static org.pangolin.xuzhe.reformat.ReadBufferPool.EMPTY_BUFFER;
  * Created by ubuntu on 17-6-3.as
  */
 public class Parser extends Thread {
-
+	static Logger logger = LoggerFactory.getLogger(Server.class);
 	public BlockingQueue<ByteBuffer> buffers;
 	private int parserNo;
 	public int readLineCnt = 0;
@@ -103,9 +107,9 @@ public class Parser extends Thread {
 				}
 			}
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			logger.info("", e);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.info("", e);
 		}
 
 	}

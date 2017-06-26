@@ -1,5 +1,9 @@
 package org.pangolin.xuzhe.reformat;
 
+import com.alibaba.middleware.race.sync.Server;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
@@ -10,7 +14,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * Created by ubuntu on 17-6-19.
  */
 public class MyLong2IntHashMap {
-//    Logger logger = LoggerFactory.getLogger(Server.class);
+    static Logger logger = LoggerFactory.getLogger(Server.class);
     /**
      * The default initial capacity - MUST be a power of two.
      */
@@ -417,7 +421,7 @@ public class MyLong2IntHashMap {
      *                    is irrelevant).
      */
     void resize(int newCapacity) {
-//        logger.info("{} : Map resize, {} ", Thread.currentThread().getName());
+        logger.info("{} : Map resize, {} ", Thread.currentThread().getName());
         Entry[] oldTable = table;
         int oldCapacity = oldTable.length;
         if (oldCapacity == MAXIMUM_CAPACITY) {

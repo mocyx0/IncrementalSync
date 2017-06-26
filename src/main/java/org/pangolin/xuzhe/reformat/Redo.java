@@ -1,5 +1,6 @@
 package org.pangolin.xuzhe.reformat;
 
+import com.alibaba.middleware.race.sync.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,10 +13,10 @@ import static org.pangolin.xuzhe.reformat.Constants.REDO_NUM;
  * Created by XuZhe on 2017/6/23.
  */
 public class Redo extends Thread {
-    Logger logger = LoggerFactory.getLogger(Redo.class);
+    static Logger logger = LoggerFactory.getLogger(Server.class);
     private static final long firstLevelPKMaxValue = 1200_0000;
     private static byte[][] firstLevelDataStore;
-    private static final int columnCount = 4;
+    private static final int columnCount = 5;
 
     static {
         firstLevelDataStore = new byte[columnCount][(int)(firstLevelPKMaxValue)*8];
@@ -52,11 +53,6 @@ public class Redo extends Thread {
                 Parser parser = parsers[index%parsers.length];
 //                System.out.println(parser.getName() + ", " + parser.blockingQueue[this.id].size());
                 ByteArrayPool.ByteArray uncompressedBuffer = parser.blockingQueue[this.id].take();
-                if(uncompressedBuffer == null) {
-                    for(int i = 0; i < parsers.length; i++) {
-                        System.out.println("Parser " + i + ".blockqueue.size:" + parsers[i].blockingQueue[0].size());
-                    }
-                }
                 byte[] uncompressed = uncompressedBuffer.array;
                 ++index;
                 if(uncompressed.length == 0) {
@@ -152,7 +148,7 @@ public class Redo extends Thread {
 
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.info("", e);
         }
     }
 
