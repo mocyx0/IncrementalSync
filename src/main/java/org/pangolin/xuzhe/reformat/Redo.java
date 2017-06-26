@@ -4,6 +4,7 @@ import com.alibaba.middleware.race.sync.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
@@ -16,15 +17,16 @@ public class Redo extends Thread {
     static Logger logger = LoggerFactory.getLogger(Server.class);
     private static final long firstLevelPKMaxValue = 1200_0000;
     private static byte[][] firstLevelDataStore;
-    private static final int columnCount = 5;
-
-    static {
+    private static int columnCount;
+    private static CountDownLatch latch = new CountDownLatch(1);
+    public static void initFirstLevelStore(int columnCount) {
+        Redo.columnCount = columnCount;
         firstLevelDataStore = new byte[columnCount][(int)(firstLevelPKMaxValue)*8];
+        latch.countDown();
     }
-
     private final int id;
-    Parser[] parsers;
-    private long secondLevelCount = 0;
+    private Parser[] parsers;
+
     private boolean[] firstLevelStoreKeys;
 //    private HashLongIntMap storeIndexMap;
     private MyLong2IntHashMap storeIndexMap;
@@ -39,13 +41,15 @@ public class Redo extends Thread {
 //        storeIndexMap = HashLongIntMaps.getDefaultFactory().withDefaultValue(-1).withHashConfig(
 //                HashConfig.fromLoads(0.8, 0.95, 0.95)).newMutableMap(199_9999);
         storeIndexMap = new MyLong2IntHashMap(199_9999, 0.95f);
-        secondLevelDataStore = new byte[columnCount][(1<<20)*columnCount*8];
         nextStoreIndex = 0;
     }
 
     @Override
     public void run() {
         try {
+            latch.await();
+            secondLevelDataStore = new byte[columnCount][(1<<20)*columnCount*8];
+            long secondLevelCount = 0;
             int index = 0, cnt = 0;
             long newPk = -1, oldPk = -1;
             int pkChanged = 0;

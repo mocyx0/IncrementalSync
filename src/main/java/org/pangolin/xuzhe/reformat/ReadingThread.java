@@ -49,6 +49,7 @@ public class ReadingThread extends Thread {
         for(int i = 0; i< REDO_NUM; i++) {
             redos[i] = new Redo(i, parsers);
             redos[i].start();
+
         }
 //        writerThread = new WriterThread(parsers);
 //        writerThread.start();
@@ -92,6 +93,7 @@ public class ReadingThread extends Thread {
                             parsers[p].setSchema(schema);
                         }
                         ReadingThread.parserLatch.countDown();
+                        Redo.initFirstLevelStore(schema.columnCount);
                         firstRead = false;
                     }
                     remain = remain-lastReadCnt;

@@ -11,7 +11,7 @@ public class Constants {
     static final int UNCOMP_NUM = 9;
     static final int READBUFFER_POOL_SIZE = 20; // 至少2个
     static final int LINE_MAX_LENGTH = 1000;
-    static final int BYTEARRAY_SIZE = 128*1024;
+    static final int BYTEARRAY_SIZE = 512*1024;
     static final int STRING_LIST_SIZE = 5000;
     static final int PARSER_BLOCKING_QUEUE_SIZE = READBUFFER_POOL_SIZE/2;
     static final int BYTEARRAY_POOL_SIZE = PARSER_BLOCKING_QUEUE_SIZE*PARSER_NUM;
