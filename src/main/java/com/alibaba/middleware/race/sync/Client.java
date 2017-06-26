@@ -1,7 +1,7 @@
 package com.alibaba.middleware.race.sync;
 
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
-import org.pangolin.xuzhe.positiveorder.ClientResultReceiverHandler;
+import org.pangolin.xuzhe.reformat.ClientResultReceiverHandler;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.MClient;
 import org.slf4j.Logger;
@@ -53,8 +53,8 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-//        mainXZ(args);
-        mainYX(args);
+        mainXZ(args);
+//        mainYX(args);
     }
 
     /**
@@ -106,7 +106,7 @@ public class Client {
                         lastError = e.getMessage();
                         logger.info("建立连接失败, {}", lastError);
                     }
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 }
             }
         } finally {

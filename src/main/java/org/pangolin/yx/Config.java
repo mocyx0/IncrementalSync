@@ -49,6 +49,15 @@ public final class Config {
             MIDDLE_HOME = "/home/ubuntu/alitest/middle";
             SERVER_PORT = Constants.SERVER_PORT;
             LOG_HOME = "/home/ubuntu/alitest/log";
+        } else if (runtime.equals("xuzhe_win10")) {
+            TESTER_HOME = "D:\\Code\\java\\中间件复赛\\test_data\\1G_S10\\";
+            DATA_HOME = "D:\\Code\\java\\中间件复赛\\test_data\\1G_S10\\";
+            RESULT_HOME = "D:\\Code\\java\\中间件复赛\\test_data\\1G_S10\\";
+            TEAMCODE = Constants.TEAMCODE;
+            LOG_LEVEL = "DEBUG";
+            MIDDLE_HOME = "D:\\Code\\java\\中间件复赛\\test_data\\1G_S10\\";
+            SERVER_PORT = Constants.SERVER_PORT;
+            LOG_HOME = "D:\\Code\\java\\中间件复赛\\test_data\\";
         } else if (runtime.equals("zsn")) {
             TESTER_HOME = "G:/研究生/AliCompetition/quarter-final/home";
             DATA_HOME = "G:/研究生/AliCompetition/quarter-final/home/data";
