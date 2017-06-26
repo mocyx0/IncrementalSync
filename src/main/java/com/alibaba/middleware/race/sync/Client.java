@@ -53,8 +53,8 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
-        mainXZ(args);
-//        mainYX(args);
+//        mainXZ(args);
+        mainYX(args);
     }
 
     /**
@@ -102,7 +102,7 @@ public class Client {
                     f.channel().closeFuture().sync();
                     Thread.sleep(1000);
                 } catch (Exception e) {
-                    if(lastError == null || !lastError.equals(e.getMessage())) {
+                    if (lastError == null || !lastError.equals(e.getMessage())) {
                         lastError = e.getMessage();
                         logger.info("建立连接失败, {}", lastError);
                     }
