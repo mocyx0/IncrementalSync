@@ -138,7 +138,7 @@ public class ReadingThread extends Thread {
             }
             logger.info("TotalSize:"+totalSize);
             long t1 = System.currentTimeMillis();
-            FileOutputStream outputStream = new FileOutputStream("Result.rs");
+//            FileOutputStream outputStream = new FileOutputStream("Result.rs");
 
             latch.countDown();
             byte[] result = new byte[50_000_000];
@@ -150,7 +150,7 @@ public class ReadingThread extends Thread {
                     nettyBuf.writeInt(offset);
                     nettyBuf.writeBytes(result, 0, offset);
                     ResultSenderHandler.resultQueue.put(nettyBuf);
-                    outputStream.write(result, 0, offset);
+//                    outputStream.write(result, 0, offset);
                     offset = 0;
                 }
                 for(int j = 0; j < redos.length; j++) {
@@ -168,10 +168,10 @@ public class ReadingThread extends Thread {
                 nettyBuf.writeBytes(result, 0, offset);
                 ResultSenderHandler.resultQueue.put(nettyBuf);
                 ResultSenderHandler.resultQueue.put(Unpooled.directBuffer(0));
-                outputStream.write(result, 0, offset);
+//                outputStream.write(result, 0, offset);
                 offset = 0;
             }
-            outputStream.close();
+//            outputStream.close();
             long t2 = System.currentTimeMillis();
 //            logger.info(new String(result, 0, 200));
             logger.info("cnt:{}  time:{} ms", offset, t2-t1);
