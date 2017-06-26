@@ -15,11 +15,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Rebuilder implements Runnable {
     //啥也不做 用于测试
     private final boolean DO_REBUILD = true;
-    CountDownLatch latch;
-    BlockingQueue<LogBlock> queue;
-    Logger logger;
-    DataStorage dataStorage;
-    private int index = 0;
+    private final CountDownLatch latch;
+    private final BlockingQueue<LogBlock> queue;
+    private final Logger logger;
+    private DataStorage dataStorage;
+    private final int index;
     private int reBuilderCount;
 
     public Rebuilder(BlockingQueue<LogBlock> queue, CountDownLatch latch, TableInfo tableInfo, int index, int reBuilderCount) {
@@ -46,10 +46,17 @@ public class Rebuilder implements Runnable {
                     break;
                 } else {
                     if (DO_REBUILD) {
+                        for (int i = 0; i < logBlock.length; i++) {
+                            if (logBlock.redoer[i] == index) {
+                                dataStorage.doLog(logBlock, null, i);
+                            }
+                        }
+                        /*
                         LogBlockRebuilder logBlockRebuilder = logBlock.logBlockRebuilders[index];
                         for (int i = 0; i < logBlockRebuilder.length; i++) {
                             dataStorage.doLog(logBlock, null, logBlockRebuilder.poss[i]);
                         }
+                        */
                         /*
                         for (LogRecord log : logBlock.logRecordsArr.get(index)) {
                             //logCount++;

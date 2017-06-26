@@ -417,8 +417,6 @@ public class DataStorageTwoLevel implements DataStorage {
     @Override
     public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
 
-
-
         long id = logBlock.ids[logPos];
         long preId = logBlock.preIds[logPos];
         byte opType = logBlock.opTypes[logPos];

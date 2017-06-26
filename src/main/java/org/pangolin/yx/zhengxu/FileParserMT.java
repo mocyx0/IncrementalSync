@@ -26,20 +26,23 @@ class LogBlock {
     long[] ids = new long[MAX_LENGTH];
     long[] preIds = new long[MAX_LENGTH];
     byte[] opTypes = new byte[MAX_LENGTH];
+    byte[] redoer = new byte[MAX_LENGTH];
     //int[] columnData = new int[GlobalData.colCount * 3 * MAX_LENGTH];//三个一个单位  列索引, 位置, 长度
     long[] colData = new long[GlobalData.colCount * MAX_LENGTH];
     long[] seqs = new long[MAX_LENGTH];//log sequence
     int length = 0;
 
-    LogBlockRebuilder[] logBlockRebuilders = new LogBlockRebuilder[Config.REBUILDER_THREAD];
+    //LogBlockRebuilder[] logBlockRebuilders = new LogBlockRebuilder[Config.REBUILDER_THREAD];
 
     //引用
     AtomicInteger ref = new AtomicInteger();
 
     private LogBlock() {
+        /*
         for (int i = 0; i < logBlockRebuilders.length; i++) {
             logBlockRebuilders[i] = new LogBlockRebuilder();
         }
+        */
     }
 
     public static void init() throws Exception {
@@ -57,10 +60,11 @@ class LogBlock {
 
     public static void free(LogBlock logBlock) throws Exception {
         //logBlock.fileBlock = null;
+        /*
         for (int i = 0; i < logBlock.logBlockRebuilders.length; i++) {
             logBlock.logBlockRebuilders[i].length = 0;
         }
-
+        */
         logBlock.length = 0;
         queue.putFirst(logBlock);
     }
@@ -295,7 +299,7 @@ public class FileParserMT implements FileParser {
             op = data[parsePos];
             //logRecord.opType = op;
             parsePos += 2;
-            LogBlockRebuilder logBlockRebuilder = null;
+            //LogBlockRebuilder logBlockRebuilder = null;
             int logPos = logBlock.length;
             int colWriteIndex = logPos * GlobalData.colCount;
 
@@ -310,7 +314,7 @@ public class FileParserMT implements FileParser {
                     if (op == 'D') {
                         activeId = preid;
                     }
-                    logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % (Config.REBUILDER_THREAD))];
+                    //logBlockRebuilder = logBlock.logBlockRebuilders[(int) ((activeId) % (Config.REBUILDER_THREAD))];
                 } else {
                     int namePos = parsePos;
                     int nameLen = nextColName(data);
@@ -334,14 +338,20 @@ public class FileParserMT implements FileParser {
             logBlock.opTypes[logPos] = op;
             logBlock.seqs[logPos] = seqNumber++;
             logBlock.length++;
-            logBlockRebuilder.poss[logBlockRebuilder.length++] = logPos;
+            if (op == 'D') {
+                logBlock.redoer[logPos] = (byte) (preid % Config.REBUILDER_THREAD);
+            } else {
+                logBlock.redoer[logPos] = (byte) (id % Config.REBUILDER_THREAD);
+            }
+            //logBlockRebuilder.poss[logBlockRebuilder.length++] = logPos;
             if (op == 'U' && preid != id) {
-                LogBlockRebuilder xrebuilder = logBlock.logBlockRebuilders[(int) ((preid) % (Config.REBUILDER_THREAD))];
+                //LogBlockRebuilder xrebuilder = logBlock.logBlockRebuilders[(int) ((preid) % (Config.REBUILDER_THREAD))];
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
                 logBlock.opTypes[xpos] = 'X';
                 logBlock.length++;
-                xrebuilder.poss[xrebuilder.length++] = xpos;
+                logBlock.redoer[xpos] = (byte) (preid % Config.REBUILDER_THREAD);
+                //xrebuilder.poss[xrebuilder.length++] = xpos;
             }
         }
 
@@ -442,6 +452,7 @@ public class FileParserMT implements FileParser {
             for (int i = 0; i < logBlocks.size(); i++) {
                 LogBlock logBlock = logBlocks.get(i).take();
 
+                /*
                 int zeroCount = 0;
                 //StringBuilder sb = new StringBuilder();
                 for (LogBlockRebuilder logBlockRebuilder : logBlock.logBlockRebuilders) {
@@ -461,6 +472,7 @@ public class FileParserMT implements FileParser {
                 if (zeroCount > 1) {
                     bias2Count++;
                 }
+                */
 
 
                 if (logBlock == LogBlock.EMPTY) {
