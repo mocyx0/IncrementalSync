@@ -13,5 +13,5 @@ public interface DataStorage {
 }
 
 interface DataCollector {
-    void writeBuffer(long id, ByteBuffer buffer) throws Exception;
+    void writeBuffer(long id, ByteBuffer buffer,byte[] pkBuff) throws Exception;
 }

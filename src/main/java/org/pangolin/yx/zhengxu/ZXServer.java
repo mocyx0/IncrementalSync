@@ -84,7 +84,7 @@ public class ZXServer implements WorkerServer {
         CountDownLatch latch;
 
 //        byte[] dataBuff = new byte[BUFFER_SIZE];
- //       int dataPos = 0;
+        //       int dataPos = 0;
 
         ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
         ByteBuffer sendBuffer = ByteBuffer.allocate(128);
@@ -113,6 +113,8 @@ public class ZXServer implements WorkerServer {
             sendBuffer.clear();
         }
 
+        private byte[] pkBuffer = new byte[64];
+
         @Override
         public void run() {
             try {
@@ -120,7 +122,7 @@ public class ZXServer implements WorkerServer {
                 while (pos < end) {
                     int position = buffer.position();
                     try {
-                        dataCollector.writeBuffer(pos, buffer);
+                        dataCollector.writeBuffer(pos, buffer,pkBuffer);
                         pos++;
                     } catch (BufferOverflowException e) {
                         buffer.position(position);

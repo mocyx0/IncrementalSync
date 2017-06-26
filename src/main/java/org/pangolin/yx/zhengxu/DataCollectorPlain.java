@@ -22,7 +22,7 @@ public class DataCollectorPlain implements DataCollector {
     }
 
     @Override
-    public void writeBuffer(long id, ByteBuffer buffer) throws Exception {
+    public void writeBuffer(long id, ByteBuffer buffer,byte[] pkBuff) throws Exception {
 
         DataStoragePlain data = getDataMap(id);
         int node = data.getNode(id, -1);

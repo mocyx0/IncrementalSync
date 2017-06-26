@@ -24,7 +24,7 @@ public final class DataCollectorHashMap implements DataCollector {
     }
 
     @Override
-    public void writeBuffer(long id, ByteBuffer buffer) throws Exception {
+    public void writeBuffer(long id, ByteBuffer buffer,byte[] pkBuff) throws Exception {
         DataStorageHashMap data = getDataMap(id);
         DataStorageHashMap.Node node = data.getNode(id, -1);
         //node.valid should be true
