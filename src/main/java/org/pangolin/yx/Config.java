@@ -4,6 +4,8 @@ import com.alibaba.middleware.race.sync.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.TransferQueue;
+
 /**
  * Created by yangxiao on 2017/6/4.
  */
@@ -74,9 +76,9 @@ public final class Config {
     // 工作主目录
     public static String TESTER_HOME = "C:/tmp/alimid/small";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/alimid/big";
+    public static String DATA_HOME = "C:/tmp/alimid/small";
     // 结果文件目录
-    public static String RESULT_HOME = "C:/tmp/alimid/big";
+    public static String RESULT_HOME = "C:/tmp/alimid/small";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";

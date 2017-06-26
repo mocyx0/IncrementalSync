@@ -1,14 +1,12 @@
 package org.pangolin.yx;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 
 /**
  * Created by yangxiao on 2017/6/20.
  */
 public class ReadBufferPoll {
-    private static BlockingQueue<byte[]> bufferPool = new LinkedBlockingQueue<>(Config.READ_POOL_SIZE);
+    private static BlockingDeque<byte[]> bufferPool = new LinkedBlockingDeque<>(Config.READ_POOL_SIZE);
 
 
     public static void init() throws Exception {
@@ -18,7 +16,7 @@ public class ReadBufferPoll {
     }
 
     public static byte[] allocateReadBuff() throws Exception {
-        byte[] re = bufferPool.take();
+        byte[] re = bufferPool.takeFirst();
         return re;
 /*
         byte[] buff = bufferPool.poll();
@@ -31,7 +29,7 @@ public class ReadBufferPoll {
     }
 
     public static void freeReadBuff(byte[] buff) throws Exception {
-        bufferPool.put(buff);
+        bufferPool.putFirst(buff);
     }
 
     public static int size() {

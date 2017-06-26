@@ -277,7 +277,8 @@ public class FileParserMT implements FileParser {
             } else {
                 //pos = pos + 1 + ZXUtil.nextToken(data, pos, '|');
                 //nextToken(data, '|');
-                parsePos += 15;
+                //parsePos += 15;
+                nextToken(data, '|');
                 nextToken(data, '|');
                 nextToken(data, '|');
                 nextToken(data, '|');
@@ -328,7 +329,6 @@ public class FileParserMT implements FileParser {
                 logBlock.colData[colWriteIndex] = 0;
             }
             parsePos++;//skip \n
-
             logBlock.ids[logPos] = id;
             logBlock.preIds[logPos] = preid;
             logBlock.opTypes[logPos] = op;

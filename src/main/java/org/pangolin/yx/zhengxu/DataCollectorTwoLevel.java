@@ -87,14 +87,19 @@ public class DataCollectorTwoLevel implements DataCollector {
     }
 
     private void writeLong(ByteBuffer buff, long v, byte[] pkBuffer) {
-        int len = 0;
-        while (v != 0) {
-            pkBuffer[len++] = (byte) (v % 10 + '0');
-            v /= 10;
+        if (v == 0) {
+            buff.put((byte) '0');
+        } else {
+            int len = 0;
+            while (v != 0) {
+                pkBuffer[len++] = (byte) (v % 10 + '0');
+                v /= 10;
+            }
+            for (int i = len - 1; i >= 0; i--) {
+                buff.put(pkBuffer[i]);
+            }
         }
-        for (int i = len - 1; i >= 0; i--) {
-            buff.put(pkBuffer[i]);
-        }
+
 
         /*
         int size = 19;
