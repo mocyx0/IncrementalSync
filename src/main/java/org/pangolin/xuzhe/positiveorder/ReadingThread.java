@@ -3,7 +3,6 @@ package org.pangolin.xuzhe.positiveorder;
 import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.pangolin.xuzhe.positiveorder.Parser;
 import org.pangolin.yx.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,14 +10,11 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
 
-import static org.pangolin.xuzhe.positiveorder.Constants.LINE_MAX_LENGTH;
-import static org.pangolin.xuzhe.positiveorder.Constants.PARSER_NUM;
-import static org.pangolin.xuzhe.positiveorder.Constants.REDO_NUM;
+import static org.pangolin.xuzhe.positiveorder.Constants.*;
 import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
 
 /**
@@ -53,9 +49,6 @@ public class ReadingThread extends Thread {
         for(int i = 0; i < REDO_NUM; i++) {
             redos[i].start();
         }
-//        filter = new Filter();
-//        filter.start();
-
     }
 
     @Override
@@ -74,6 +67,7 @@ public class ReadingThread extends Thread {
                 long fileSize = channel.size();
                 int lastReadCnt;
                 int remain = (int)fileSize;
+                long time1 = System.nanoTime();
                 while(true) {
                     lastReadCnt = channel.read(currentBuffer);
                     currentBuffer.flip();
@@ -102,7 +96,7 @@ public class ReadingThread extends Thread {
                     transferLastBrokenLine(currentBuffer, nextBuffer);
 //                    }
 //                    pool.put(currentBuffer);
-                    int w = workerIndex% PARSER_NUM;
+                    int w = workerIndex % PARSER_NUM;
                     parsers[w].appendBuffer(currentBuffer);
                     workerIndex++;
                     currentBuffer = nextBuffer;
@@ -110,6 +104,8 @@ public class ReadingThread extends Thread {
                         break;
                     }
                 }
+                long time2 = System.nanoTime();
+                System.out.printf("%s time: %d ns\n",fileName, time2-time1);
                 channel.close();
                 fis.close();
             }
@@ -128,22 +124,10 @@ public class ReadingThread extends Thread {
             }
             endTime = System.currentTimeMillis();
             logger.info("Redo Done!" + (endTime-beginTime) + " ms");
-            int totalLine = 0;
-            long totalReadBytes = 0;
-            for(int i = 0; i < PARSER_NUM; i++) {
-                totalLine += parsers[i].readLineCnt;
-                totalReadBytes += parsers[i].readBytesCnt;
-            }
-
 
             endTime = System.currentTimeMillis();
             //  readingThread.sleep(3000);
-            logger.info("TOTALLINE:" + totalLine);
-            logger.info("TOTALByte:" + totalReadBytes);
             logger.info("elapsed time:" + (endTime - beginTime));
-//            if(totalLine != 108796978) {
-            logger.info("read line count " + totalLine);
-//            }
             ByteBuf buf = Unpooled.directBuffer(20<<20);
 
             beginTime = System.currentTimeMillis();
@@ -300,11 +284,12 @@ public class ReadingThread extends Thread {
         ReadingThread.beginId = Long.parseLong(args[0]);
         ReadingThread.endId = Long.parseLong(args[1]);
         Config.init();
-        String fileBaseName = Config.DATA_HOME + "/";
+        String fileBaseName = "D:\\Code\\java\\中间件复赛\\test_data\\Downloads\\";
 //        String fileBaseName = Config.DATA_HOME + "/small_";
+//        String fileBaseName = Config.DATA_HOME + "/";
 //        String fileBaseName = "G:/研究生/AliCompetition/quarter-final/home/data/";
         int fileCnt = 0;
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= 1; i++) {
             String fileName = fileBaseName + i + ".txt";
             System.out.print("check file:" + fileName);
             File f = new File(fileName);
@@ -313,7 +298,6 @@ public class ReadingThread extends Thread {
                 fileCnt++;
             } else {
                 System.out.println(" not exists");
-
             }
         }
         String[] fileNames = new String[fileCnt];

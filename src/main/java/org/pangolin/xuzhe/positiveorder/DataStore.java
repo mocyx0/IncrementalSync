@@ -8,14 +8,15 @@ import com.koloboke.collect.map.hash.HashLongIntMaps;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.pangolin.xuzhe.positiveorder.Constants.REDO_NUM;
 
 /**
  * Created by ubuntu on 17-6-19.
  */
-public class DataStore {
-    private int[] bitMaps;
+final public class DataStore {
+//    private int[] bitMaps;
     static private final long bitIndexMaxValue = 1<<24; // 16777216
     private static final long FIRST_LEVEL_MAX_KEY = bitIndexMaxValue;
     private static final int FIRST_LEVEL_BLOCK_SIZE = 1<<24;
@@ -41,14 +42,14 @@ public class DataStore {
         this.columnCount = columnCount;
         allColumnByteLength = columnCount<<3;
         firstLevelDataStore = new byte[FIRST_LEVEL_BLOCK_SIZE *columnCount];
-        firstLevelStoreKeys = new boolean[5000_0000/ REDO_NUM];
+        firstLevelStoreKeys = new boolean[(int)bitIndexMaxValue];
         secondLevelDataStore = new ArrayList<>();
         secondLevelDataStore.add(new byte[SECOND_LEVEL_BLOCK_SIZE]);
 //        storeIndexMap = new MyLong2IntHashMap(2000000, 0.95f);
         this.id = id;
         storeIndexMap = HashLongIntMaps.getDefaultFactory().withDefaultValue(-1).withHashConfig(
                 HashConfig.fromLoads(0.8, 0.95, 0.95)).newMutableMap(100_0000);
-        bitMaps = new int[(int)(bitIndexMaxValue>>5)];
+//        bitMaps = new int[(int)(bitIndexMaxValue>>5)];
     }
 
 
@@ -67,21 +68,16 @@ public class DataStore {
                             long newPk = logIndex.getNewPk(i);
                             int intNewPk = (int) newPk;
                             if(newPk != oldPK) {
-                                updateRecordPK(oldPK, newPk);
+                                updateFirstLevelRecordPK(oldPK, newPk);
                             }
                             int columnSize = logIndex.getColumnSize(i);
                             int[] newValues = logIndex.getColumnNewValues(i);
                             int[] names = logIndex.getHashColumnName(i);
                             int[] valueLens = logIndex.getColumnValueLens(i);
                             if(columnSize != 0) {
-                                if (intNewPk % REDO_NUM == this.id) { // 在一级存储中
+                                if (newPk < FIRST_LEVEL_MAX_KEY && intNewPk % REDO_NUM == this.id) { // 在一级存储中
                                     int posBaseInFirstLevelStore = (intNewPk / REDO_NUM) * allColumnByteLength;
-                                    for (int j = 0; j < columnSize; j++) {
-                                        int columnIndex = names[j];
-                                        int columnPos = newValues[j];
-                                        int columnLen = valueLens[j];
-                                        updateFirstLevelStore(posBaseInFirstLevelStore, columnIndex, dataSrc, columnPos, columnLen);
-                                    }
+                                    updateFirstLevelStore(posBaseInFirstLevelStore, columnSize, names, newValues, valueLens, dataSrc);
                                 } else { // 在二级存储中
                                     int indexInSecondLevelStore = storeIndexMap.get(newPk);
                                     for (int j = 0; j < columnSize; j++) {
@@ -99,6 +95,45 @@ public class DataStore {
                     } else { // 不在该线程 直接忽略
 
                     }
+                } else { // 旧主键对应的记录可能在二级存储中
+                    int indexInSecondLevelStore = storeIndexMap.get(oldPK);
+                    if(indexInSecondLevelStore == -1) {
+                        continue;
+                    }
+                    int logType = logIndex.getLogType(i);
+                    if (logType == 'U') { //更新
+                        long newPk = logIndex.getNewPk(i);
+                        int intNewPk = (int) newPk;
+                        if(newPk != oldPK) {
+                            updateSecondLevelRecordPK(oldPK, newPk);
+                        }
+                        int columnSize = logIndex.getColumnSize(i);
+                        int[] newValues = logIndex.getColumnNewValues(i);
+                        int[] names = logIndex.getHashColumnName(i);
+                        int[] valueLens = logIndex.getColumnValueLens(i);
+                        if(columnSize != 0) {
+                            if (newPk < FIRST_LEVEL_MAX_KEY && intNewPk % REDO_NUM == this.id) { // 在一级存储中
+                                int posBaseInFirstLevelStore = (intNewPk / REDO_NUM) * allColumnByteLength;
+                                updateFirstLevelStore(posBaseInFirstLevelStore, columnSize, names, newValues, valueLens, dataSrc);
+                            } else { // 在二级存储中
+//                                int indexInSecondLevelStore = storeIndexMap.get(newPk);
+                                try {
+                                    for (int j = 0; j < columnSize; j++) {
+                                        int columnIndex = names[j];
+                                        int columnPos = newValues[j];
+                                        int columnLen = valueLens[j];
+                                        // TODO 有待优化
+                                        updateSecondLevelStore(indexInSecondLevelStore, columnIndex, dataSrc, columnPos, columnLen);
+                                    }
+                                } catch (Exception e) {
+                                    System.out.println(indexInSecondLevelStore + "\t" + oldPK + "\t" + newPk);
+                                    throw new RuntimeException(e);
+                                }
+                            }
+                        }
+                    } else { // 删除操作
+                        deleteRecord(oldPK);
+                    }
                 }
             } else { // 插入操作
                 long newPk = logIndex.getNewPk(i);
@@ -112,12 +147,7 @@ public class DataStore {
                         int indexInFirstLevelStore = (intNewPk / REDO_NUM);
                         int posBaseInFirstLevelStore = indexInFirstLevelStore * allColumnByteLength;
                         insertRecordToFirstLevel(intNewPk, indexInFirstLevelStore);
-                        for (int j = 0; j < columnSize; j++) {
-                            int columnIndex = names[j];
-                            int columnPos = newValues[j];
-                            int columnLen = valueLens[j];
-                            updateFirstLevelStore(posBaseInFirstLevelStore, columnIndex, dataSrc, columnPos, columnLen);
-                        }
+                        updateFirstLevelStore(posBaseInFirstLevelStore, columnSize, names, newValues, valueLens, dataSrc);
                     } else {
                         int indexInSecondLevelStore = insertRecordToSecondLevel(newPk);
                         for (int j = 0; j < columnSize; j++) {
@@ -129,9 +159,7 @@ public class DataStore {
                         }
                     }
 
-                } else { // 记录不属于该线程
-//                    continue;
-                }
+                } // else 记录不属于该线程
             }
         }
     }
@@ -213,64 +241,63 @@ public class DataStore {
      * @param oldPK
      * @param newPK
      */
-    public void updateRecordPK(long oldPK, long newPK) {
-        if(oldPK < FIRST_LEVEL_MAX_KEY) {
-            int intOldPK = (int)oldPK;
-            int indexInFirstLevelStore = intOldPK / REDO_NUM;
-            bitUpdate(intOldPK, false);
-            if(intOldPK % REDO_NUM == id) { // 对应记录在一级存储中
-                int intNewPK = (int)newPK;
-                if(newPK < FIRST_LEVEL_MAX_KEY && intNewPK % REDO_NUM == id) { // 对应记录应放入一级存储
-                    bitUpdate(intNewPK, true);
-                    int newDataPos = intNewPK / REDO_NUM;
-                    firstLevelStoreKeys[indexInFirstLevelStore] = false;
-                    firstLevelStoreKeys[newDataPos] = true;
-                    System.arraycopy(firstLevelDataStore, indexInFirstLevelStore * allColumnByteLength,
-                            firstLevelDataStore, newDataPos * allColumnByteLength, allColumnByteLength);
-                } else {
-                    int indexInSecondLevelStore = insertRecordToSecondLevel(newPK);
-                    int blockIndex = indexInSecondLevelStore >> (SECOND_LEVEL_BLOCK_SIZE_BIT);
-                    int posInBlock = indexInSecondLevelStore & (SECOND_LEVEL_BLOCK_SIZE-1);
-                    byte[] block = secondLevelDataStore.get(blockIndex);
-                    firstLevelStoreKeys[indexInFirstLevelStore] = false;
-                    storeIndexMap.put(newPK, indexInSecondLevelStore);
-                    System.arraycopy(firstLevelDataStore, indexInFirstLevelStore * allColumnByteLength,
-                            block, posInBlock, allColumnByteLength);
-                }
-            } else { // 对应记录在二级存储中
-                int intNewPK = (int)newPK;
-                if(newPK < FIRST_LEVEL_MAX_KEY && intNewPK % REDO_NUM == id) { // 对应记录应放入一级存储
-                    bitUpdate(intNewPK, true);
-                    int newDataPos = intNewPK / REDO_NUM;
-                    firstLevelStoreKeys[indexInFirstLevelStore] = false;
-                    firstLevelStoreKeys[newDataPos] = true;
-                    System.arraycopy(firstLevelDataStore, indexInFirstLevelStore * allColumnByteLength,
-                            firstLevelDataStore, newDataPos * allColumnByteLength, allColumnByteLength);
-                } else {
-                    int pos = storeIndexMap.get(oldPK);
-                    storeIndexMap.put(newPK, pos);
-                }
-            }
-
-
-        } else { // 对应记录在二级存储中
-            int oldIndexInSecondLevelStore = storeIndexMap.remove(oldPK);
-            if(newPK >= FIRST_LEVEL_MAX_KEY) {
-                storeIndexMap.put(newPK, oldIndexInSecondLevelStore);
+    public void updateFirstLevelRecordPK(long oldPK, long newPK) {
+        int intOldPK = (int)oldPK;
+        int indexInFirstLevelStore = intOldPK / REDO_NUM;
+        bitUpdate(intOldPK, false);
+        if(intOldPK % REDO_NUM == id) { // 对应记录在一级存储中
+            int intNewPK = (int)newPK;
+            if(newPK < FIRST_LEVEL_MAX_KEY && intNewPK % REDO_NUM == id) { // 对应记录应放入一级存储
+                bitUpdate(intNewPK, true);
+                int newDataPos = intNewPK / REDO_NUM;
+//                firstLevelStoreKeys[indexInFirstLevelStore] = false;
+//                firstLevelStoreKeys[newDataPos] = true;
+                System.arraycopy(firstLevelDataStore, indexInFirstLevelStore * allColumnByteLength,
+                        firstLevelDataStore, newDataPos * allColumnByteLength, allColumnByteLength);
             } else {
-                int intNewPK = (int)newPK;
-                if(intNewPK % REDO_NUM == id) { // 对应记录应放入一级存储
-                    int oldPosInStore = (oldIndexInSecondLevelStore*allColumnByteLength)<<3;
-                    int oldBlockIndex = oldPosInStore >> (SECOND_LEVEL_BLOCK_SIZE_BIT);
-                    int oldPosInBlock = oldPosInStore & (SECOND_LEVEL_BLOCK_SIZE-1);
-                    byte[] block = secondLevelDataStore.get(oldBlockIndex);
-                    int indexInFirstLevelStore = intNewPK / REDO_NUM;
-                    int posInStore = indexInFirstLevelStore*allColumnByteLength;
-                    firstLevelStoreKeys[indexInFirstLevelStore] = true;
-                    System.arraycopy(block, oldPosInBlock, firstLevelDataStore, posInStore, allColumnByteLength);
-                } else { // 对应记录应放入二级存储
-                    storeIndexMap.put(newPK, oldIndexInSecondLevelStore);
-                }
+                int indexInSecondLevelStore = insertRecordToSecondLevel(newPK);
+                int blockIndex = indexInSecondLevelStore >> (SECOND_LEVEL_BLOCK_SIZE_BIT);
+                int posInBlock = indexInSecondLevelStore & (SECOND_LEVEL_BLOCK_SIZE-1);
+                byte[] block = secondLevelDataStore.get(blockIndex);
+//                firstLevelStoreKeys[indexInFirstLevelStore] = false;
+                storeIndexMap.put(newPK, indexInSecondLevelStore);
+                System.arraycopy(firstLevelDataStore, indexInFirstLevelStore * allColumnByteLength,
+                        block, posInBlock, allColumnByteLength);
+            }
+        } else { // 对应记录在二级存储中
+            int intNewPK = (int)newPK;
+            if(newPK < FIRST_LEVEL_MAX_KEY && intNewPK % REDO_NUM == id) { // 对应记录应放入一级存储
+                bitUpdate(intNewPK, true);
+                int newDataPos = intNewPK / REDO_NUM;
+//                firstLevelStoreKeys[indexInFirstLevelStore] = false;
+//                firstLevelStoreKeys[newDataPos] = true;
+                System.arraycopy(firstLevelDataStore, indexInFirstLevelStore * allColumnByteLength,
+                        firstLevelDataStore, newDataPos * allColumnByteLength, allColumnByteLength);
+            } else {
+                int pos = storeIndexMap.get(oldPK);
+                storeIndexMap.put(newPK, pos);
+            }
+        }
+    }
+
+    public void updateSecondLevelRecordPK(long oldPK, long newPK) {
+        int oldIndexInSecondLevelStore = storeIndexMap.remove(oldPK);
+        if(newPK >= FIRST_LEVEL_MAX_KEY) {
+            storeIndexMap.put(newPK, oldIndexInSecondLevelStore);
+        } else {
+            int intNewPK = (int)newPK;
+            if(intNewPK % REDO_NUM == id) { // 对应记录应放入一级存储
+                int oldPosInStore = (oldIndexInSecondLevelStore*allColumnByteLength)<<3;
+                int oldBlockIndex = oldPosInStore >> (SECOND_LEVEL_BLOCK_SIZE_BIT);
+                int oldPosInBlock = oldPosInStore & (SECOND_LEVEL_BLOCK_SIZE-1);
+                byte[] block = secondLevelDataStore.get(oldBlockIndex);
+                int indexInFirstLevelStore = intNewPK / REDO_NUM;
+                int posInStore = indexInFirstLevelStore*allColumnByteLength;
+//                firstLevelStoreKeys[indexInFirstLevelStore] = true;
+                bitUpdate(intNewPK, true);
+                System.arraycopy(block, oldPosInBlock, firstLevelDataStore, posInStore, allColumnByteLength);
+            } else { // 对应记录应放入二级存储
+                storeIndexMap.put(newPK, oldIndexInSecondLevelStore);
             }
         }
     }
@@ -297,31 +324,28 @@ public class DataStore {
     /**
      * 在调用该方法前需要确定该条记录确实在本存储中
      * @param posBaseInFirstLevelStore  对应记录在一级存储中的基地址
-     * @param columnIndex  第几列
+     * @param columnValuePos  第几列
+     * @param names
+     * @param columnValuePos
+     * @param valueLens
      * @param dataSrc
-     * @param pos
-     * @param len
      */
-    public void updateFirstLevelStore(int posBaseInFirstLevelStore, int columnIndex, byte[] dataSrc, int pos, int len) {
-//        if(pk < FIRST_LEVEL_MAX_KEY) {
-//            int intPK = (int)pk;
-//            int indexInFirstLevelStore = intPK / REDO_NUM;
-//            if(intPK / REDO_NUM == ) {
-                int posInStore = posBaseInFirstLevelStore + (columnIndex << 3);
-                firstLevelDataStore[posInStore] = (byte)len;
-                System.arraycopy(dataSrc, pos, firstLevelDataStore, posInStore+1, len);
-//            } else {
-//                updateSecondLevelStore(pk, columnIndex, dataSrc, pos, len);
-//            }
-//        } else {
-//            updateSecondLevelStore(pk, columnIndex, dataSrc, pos, len);
-//        }
+    public void updateFirstLevelStore(int posBaseInFirstLevelStore, int columnCount, int[] names,
+                                      int[] columnValuePos, int[] valueLens, byte[] dataSrc) {
+        for(int i = 0; i < columnCount; i++) {
+            int columnIndex = names[i];
+            int columnPos = columnValuePos[i];
+            int columnLen = valueLens[i];
+            int posInStore = posBaseInFirstLevelStore + (columnIndex << 3);
+            firstLevelDataStore[posInStore] = (byte) columnLen;
+            System.arraycopy(dataSrc, columnPos, firstLevelDataStore, posInStore + 1, columnLen);
+        }
     }
 
     public void insertRecordToFirstLevel(int newPK, int indexInFirstLevelStore) {
 //        int indexInFirstLevelStore = newPK / REDO_NUM;
         bitUpdate(newPK, true);
-        firstLevelStoreKeys[indexInFirstLevelStore] = true;
+//        firstLevelStoreKeys[indexInFirstLevelStore] = true;
     }
 
 
@@ -334,7 +358,7 @@ public class DataStore {
         int indexInSecondLevelStore = nextIndexInSecondLevel;
         int posInStore = (indexInSecondLevelStore*columnCount) << 3;
         int blockIndex = posInStore >> (SECOND_LEVEL_BLOCK_SIZE_BIT);
-        if (blockIndex > secondLevelDataStore.size()) {
+        if (blockIndex >= secondLevelDataStore.size()) {
             secondLevelDataStore.add(new byte[SECOND_LEVEL_BLOCK_SIZE]);
         }
         storeIndexMap.put(newPK, indexInSecondLevelStore);
@@ -348,7 +372,7 @@ public class DataStore {
             bitUpdate(intPK, false);
             int indexInFirstLevelStore = intPK / REDO_NUM;
             if(indexInFirstLevelStore % REDO_NUM == id) {
-                firstLevelStoreKeys[indexInFirstLevelStore] = false;
+//                firstLevelStoreKeys[indexInFirstLevelStore] = false;
             } else {
                 storeIndexMap.remove(oldPK);
             }
@@ -358,25 +382,30 @@ public class DataStore {
     }
 
     private int bitScan(int key) {
+        if(key < 0) {
+            System.out.println("Error");
+        }
         --key;
-        int blockNumber = key >> 5;
-        int curpos = key & 0x1F;
-        int value = bitMaps[blockNumber];
-        int bitValue = (value >> curpos) & 0x01;
-        return bitValue;
+        return firstLevelStoreKeys[key] ? 1 : 0;
+//        int blockNumber = key >> 5;
+//        int curpos = key & 0x1F;
+//        int value = bitMaps[blockNumber];
+//        int bitValue = (value >> curpos) & 0x01;
+//        return bitValue;
     }
 
     public void bitUpdate(int key, boolean bitFlag) {
         --key;
-        int blockNumber = key >> 5;
-        int curpos = key & 0x1F;
-        int value = bitMaps[blockNumber];
-        if(bitFlag == true){
-            value = value | (1 << curpos);
-        }else{
-            value = value ^ (1 << curpos);
-        }
-
-        bitMaps[blockNumber] = value;
+        firstLevelStoreKeys[key] = bitFlag;
+//        int blockNumber = key >> 5;
+//        int curpos = key & 0x1F;
+//        int value = bitMaps[blockNumber];
+//        if(bitFlag == true){
+//            value = value | (1 << curpos);
+//        }else{
+//            value = value ^ (1 << curpos);
+//        }
+//
+//        bitMaps[blockNumber] = value;
     }
 }

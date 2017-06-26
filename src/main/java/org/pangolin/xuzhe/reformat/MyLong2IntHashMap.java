@@ -1,16 +1,20 @@
-package org.pangolin.xuzhe.positiveorder;
+package org.pangolin.xuzhe.reformat;
 
 import com.alibaba.middleware.race.sync.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Created by ubuntu on 17-6-19.
  */
 public class MyLong2IntHashMap {
+    static Logger logger = LoggerFactory.getLogger(Server.class);
     /**
      * The default initial capacity - MUST be a power of two.
      */
@@ -216,7 +220,7 @@ public class MyLong2IntHashMap {
             // lower quality "random" seed value--still better than zero and not
             // not practically reversible.
             int hashing_seed[] = {
-                    System.identityHashCode(MyLong2ObjHashMap.class),
+                    System.identityHashCode(MyLong2IntHashMap.class),
                     System.identityHashCode(instance),
                     System.identityHashCode(Thread.currentThread()),
                     (int) Thread.currentThread().getId(),
@@ -417,6 +421,7 @@ public class MyLong2IntHashMap {
      *                    is irrelevant).
      */
     void resize(int newCapacity) {
+        logger.info("{} : Map resize, {} ", Thread.currentThread().getName());
         Entry[] oldTable = table;
         int oldCapacity = oldTable.length;
         if (oldCapacity == MAXIMUM_CAPACITY) {
@@ -626,20 +631,12 @@ public class MyLong2IntHashMap {
 
     public static void main(String[] args) {
         long begin = System.currentTimeMillis();
-        HashMap map = new HashMap(2000000);
-        for(long i = 0; i < 1500000; i++) {
-            map.put(i, (int)i);
-        }
+//        HashMap map = new HashMap(15000000);
+//        for(long i = 0; i < 10000000; i++) {
+//            map.put(i, (int)i);
+//        }
         long end = System.currentTimeMillis();
         System.out.println(end-begin);
-        begin = System.currentTimeMillis();
-        for(long i = 0; i < 1500000; i++) {
-            map.get(i);
-        }
-        end = System.currentTimeMillis();
-        System.out.println(end-begin);
-        map = null;
-        System.gc();
 //        System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(map)));
 //        Iterator it = map.entrySet().iterator();
 //        Object a = it.next();
@@ -651,14 +648,14 @@ public class MyLong2IntHashMap {
 //        a = it.next();
 //        System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(a)));
         begin = System.currentTimeMillis();
-        MyLong2IntHashMap myMap = new MyLong2IntHashMap(2000000);
-        for(long i = 0; i < 1500000; i++) {
+        MyLong2IntHashMap myMap = new MyLong2IntHashMap(10000000);
+        for(long i = 0; i < 10000000; i++) {
             myMap.put(i, (int)i);
         }
         end = System.currentTimeMillis();
         System.out.println(end-begin);
         begin = System.currentTimeMillis();
-        for(long i = 0; i < 1500000; i++) {
+        for(long i = 0; i < 10000000; i++) {
             int value = myMap.get(i);
             if(value != i)
                 System.out.println(i + ":" + value);;

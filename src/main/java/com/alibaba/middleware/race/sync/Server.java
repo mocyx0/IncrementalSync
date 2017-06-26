@@ -4,8 +4,8 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.pangolin.xuzhe.positiveorder.ReadingThread;
-import org.pangolin.xuzhe.positiveorder.ResultSenderHandler;
+import org.pangolin.xuzhe.reformat.ReadingThread;
+import org.pangolin.xuzhe.reformat.ResultSenderHandler;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.MServer;
 import org.slf4j.Logger;
@@ -54,8 +54,8 @@ public class Server {
             initProperties();
 
             printInput(logger, args);
-            ReadingThread.beginId = Long.parseLong(args[2]);
-            ReadingThread.endId = Long.parseLong(args[3]);
+            ReadingThread.beginId = Integer.parseInt(args[2]);
+            ReadingThread.endId = Integer.parseInt(args[3]);
             String fileBaseName = Config.DATA_HOME + "/";
             int fileCnt = 0;
             for (int i = 1; i <= 10; i++) {
@@ -85,8 +85,8 @@ public class Server {
     }
 
     public static void main(String[] args) throws InterruptedException {
-//        mainXZ(args);
-        mainYX(args);
+        mainXZ(args);
+//        mainYX(args);
     }
 
     /**
