@@ -51,4 +51,7 @@ public interface Constants {
     int PARSER_THREAD = 7;
 
     int COLLECTOR_THREAD = 7;
+
+
+    boolean DO_LOG=false;
 }
