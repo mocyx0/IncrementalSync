@@ -2,7 +2,7 @@ package org.pangolin.yx.zhengxu;
 
 import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
-import org.slf4j.Logger;
+import org.pangolin.yx.MLog;
 
 import java.io.RandomAccessFile;
 import java.nio.BufferOverflowException;
@@ -24,12 +24,8 @@ public class LineParserDirect {
     public static long pkUpdate = 0;
 
 
-    private static Logger logger;
     public static TableInfo tableInfo = new TableInfo();
 
-    static {
-        logger = Config.serverLogger;
-    }
 
     private static int BUFFER_SIZE = 1024 * 32;
     private static ArrayList<RandomAccessFile> rafs = new ArrayList<>();
@@ -114,7 +110,7 @@ public class LineParserDirect {
             sb.append(s);
             sb.append(" ");
         }
-        logger.info(sb.toString());
+        MLog.info(sb.toString());
         tableInfo.columnName = new byte[columns.size()][];
         for (int i = 0; i < columns.size(); i++) {
             tableInfo.columnName[i] = columns.get(i);
@@ -235,7 +231,7 @@ public class LineParserDirect {
                 fileIndex++;
                 offInFile = 0;
                 if (fileIndex >= fileSizes.size()) {
-                    logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d",
+                    MLog.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d",
                             lineCount, insertCount, updateCount, deleteCount, pkUpdate, maxColSize));
                     return null;
                 }

@@ -1,16 +1,12 @@
 package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 
@@ -19,7 +15,6 @@ import java.util.concurrent.CountDownLatch;
  */
 public class PreCache {
 
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
     private static CountDownLatch latch;
     private static ConcurrentLinkedQueue<Task> fileTasks = new ConcurrentLinkedQueue<>();
     private static int BLOCK_SIZE = 1024 * 1024 * 128;
@@ -48,7 +43,7 @@ public class PreCache {
                     }
                 }
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
             }
 
 
@@ -66,7 +61,7 @@ public class PreCache {
         @Override
         public void run() {
             try {
-                logger.info("precache start");
+                MLog.info("precache start");
                 for (String s : paths) {
                     File file = new File(s);
                     if (file.exists()) {
@@ -91,9 +86,9 @@ public class PreCache {
                     PreCache.class.notifyAll();
                 }
                 //
-                logger.info("precache end");
+                MLog.info("precache end");
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
                 System.exit(0);
             }
 

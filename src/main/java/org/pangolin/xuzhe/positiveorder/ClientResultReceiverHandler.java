@@ -6,8 +6,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.pangolin.yx.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -18,9 +17,9 @@ import java.security.MessageDigest;
  * Created by ubuntu on 17-6-18.
  */
 public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
     FileOutputStream fileOutputStream = null;
     private boolean ok = false;
+
     public ClientResultReceiverHandler() {
 
     }
@@ -33,7 +32,7 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
 
 
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        logger.info("Client side, channelActive");
+        MLog.info("Client side, channelActive");
         String msg = "I am prepared to receive messages";
         ByteBuf encoded = ctx.alloc().buffer(4 * msg.length());
         encoded.writeBytes(msg.getBytes());
@@ -45,7 +44,7 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-        if(ok) {
+        if (ok) {
             ctx.close();
         } else {
             ctx.read();
@@ -67,16 +66,17 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
             fileOutputStream.close();
 //            Thread.sleep(10000); //  休眠10秒
 //            logger.info("File {} size:{}  MD5:{}", f.getAbsolutePath(), f.length(), MD5(result1));
-            logger.info("File {} size:{} ", f.getAbsolutePath(), f.length());
+            MLog.info("File {} size:{} " + f.getAbsolutePath() + f.length());
             ok = true;
             System.exit(0);
         } catch (IOException e) {
-            logger.info("", e);
+            MLog.info("" + e.toString());
         }
 
     }
 
-    private static char hexDigits[]={'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+    private static char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
     public final static String MD5(byte[] result) {
         try {
             byte[] btInput = result;

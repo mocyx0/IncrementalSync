@@ -91,7 +91,7 @@ public class ResultWriter {
         } else {
             clearWaitBuff();
             if (buffer.limit() == 0) {
-                Config.serverLogger.info("buffer limit =0");
+                MLog.info("buffer limit =0");
             }
             ByteBuf byteBuf = Unpooled.wrappedBuffer(data, 0, data.length);
             channel.writeAndFlush(byteBuf);

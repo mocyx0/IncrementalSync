@@ -1,8 +1,7 @@
 package org.pangolin.xuzhe.test;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -14,7 +13,6 @@ import java.nio.channels.FileChannel;
  */
 public class IOPerfTest {
     private static final int BUFFER_SIZE = 4 << 20;
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
 
     public static void reverseOrderReadByFileChannel(String fileName) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocateDirect(BUFFER_SIZE);
@@ -39,7 +37,7 @@ public class IOPerfTest {
 
         }
         long end = System.nanoTime();
-        logger.info("reverseOrderReadByFileChannel fileSize:{} read:{} elapsed time:{} ns", size, cnt, (end - begin));
+        MLog.info("reverseOrderReadByFileChannel fileSize:{} read:{} elapsed time:{} ns" + size + " " + cnt + " " + (end - begin));
     }
 
     public static void positiveOrderReadByFileChannel(String fileName) throws IOException {
@@ -60,7 +58,7 @@ public class IOPerfTest {
 
         }
         long end = System.nanoTime();
-        logger.info("positiveOrderReadByFileChannel fileSize:{} read:{} elapsed time:{} ns", size, cnt, (end - begin));
+        MLog.info("positiveOrderReadByFileChannel fileSize:{} read:{} elapsed time:{} ns "+ size+" " +cnt+" " +(end - begin));
     }
 
     public static void main(String[] args) {

@@ -8,8 +8,6 @@ import org.pangolin.xuzhe.test.IOPerfTest;
 import org.pangolin.xuzhe.test.ReadingThread;
 import org.pangolin.yx.nixu.NXServer;
 import org.pangolin.yx.zhengxu.ZXServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -20,8 +18,6 @@ import java.util.ArrayList;
  * Created by yangxiao on 2017/6/4.
  */
 public final class MServer {
-    private static Logger logger;
-
     private static void initProperties() {
         System.setProperty("middleware.test.home", Config.TESTER_HOME);
         System.setProperty("middleware.log.home", Config.LOG_HOME);
@@ -50,13 +46,13 @@ public final class MServer {
                 } else {
                     throw new Exception("wrong test mode");
                 }
-                logger.info("send result to client");
+                MLog.info("send result to client");
                 //System.exit(0);
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
                 System.exit(0);
             } catch (Error e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
                 throw e;
             }
         }
@@ -65,12 +61,11 @@ public final class MServer {
     public static void main(String[] args) {
         Config.init();
         initProperties();
-        logger = LoggerFactory.getLogger(Server.class);
-        logger.info("mserver start ");
-        logger.info("args:  ");
+        MLog.info("mserver start ");
+        MLog.info("args:  ");
 
         for (String s : args) {
-            logger.info(s);
+            MLog.info(s);
         }
 
         try {
@@ -94,14 +89,14 @@ public final class MServer {
                 th.start();
                 NetServer.start();
             } else {
-                logger.info("参数错误");
+                MLog.info("参数错误");
             }
         } catch (Exception e) {
-            logger.info("{}", e);
+            MLog.info(e.toString());
             System.exit(0);
         } catch (Error e) {
-            logger.info("{}", e);
-            logger.info(e.toString());
+            MLog.info(e.toString());
+            MLog.info(e.toString());
             throw e;
         }
     }

@@ -5,23 +5,13 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.pangolin.yx.nixu.NXClient;
 import org.pangolin.yx.zhengxu.ZXClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.TreeMap;
 
 /**
  * Created by yangxiao on 2017/6/7.
  */
 public class NetClientHandler extends ChannelInboundHandlerAdapter {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
-
 
     private static WorkerClient workerClient;
 
@@ -51,7 +41,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
     // 连接成功后，向server发送消息
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        logger.info("channelActive");
+        MLog.info("channelActive");
 
         workerClient.onActive();
 

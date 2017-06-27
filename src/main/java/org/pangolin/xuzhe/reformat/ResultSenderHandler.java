@@ -4,8 +4,7 @@ import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -15,13 +14,12 @@ import java.util.concurrent.CountDownLatch;
  * Created by ubuntu on 17-6-18.
  */
 public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
     public static CountDownLatch latch = new CountDownLatch(1);
     public static BlockingQueue<ByteBuf> resultQueue = new ArrayBlockingQueue<ByteBuf>(50);
 
 
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        logger.info("client与Server建立连接成功" + ctx);
+        MLog.info("client与Server建立连接成功" + ctx);
     }
 
     @Override
@@ -45,7 +43,7 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
 
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
-                        logger.info("Server发送消息完成！");
+                        MLog.info("Server发送消息完成！");
 //                        System.exit(0);
                     }
                 });

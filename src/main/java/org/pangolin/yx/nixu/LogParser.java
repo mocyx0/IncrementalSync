@@ -2,8 +2,6 @@ package org.pangolin.yx.nixu;
 
 import com.alibaba.middleware.race.sync.Server;
 import org.pangolin.yx.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -97,7 +95,6 @@ class LogRecord {
 
 
 public class LogParser {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
     //private static ConcurrentLinkedQueue<FileBlock> fileBlocks = new ConcurrentLinkedQueue<>();
     private static ArrayList<LogBlock> logBlocks = new ArrayList<>();
     private static final AliLogData aliLogData = new AliLogData();
@@ -142,7 +139,7 @@ public class LogParser {
             }
             fileIndex++;
         }
-        logger.info(String.format("file total len %d", totalLen));
+        MLog.info(String.format("file total len %d", totalLen));
         return len;
     }
 
@@ -315,7 +312,7 @@ public class LogParser {
                 }
                 blockLog.indexDone();
                 latch.countDown();
-                logger.info(String.format("worker done index %d  line %d", logBlock.index, logBlock.lineCount));
+                MLog.info(String.format("worker done index %d  line %d", logBlock.index, logBlock.lineCount));
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -376,7 +373,7 @@ public class LogParser {
             info.append(logBlocks.get(i).lineCount);
             info.append(" ");
         }
-        logger.info(info.toString());
+        MLog.info(info.toString());
 
         sortBlock();
         return aliLogData;

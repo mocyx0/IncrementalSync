@@ -2,8 +2,7 @@ package org.pangolin.xuzhe.test;
 
 import com.alibaba.middleware.race.sync.Server;
 import org.pangolin.yx.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,7 +19,6 @@ import static org.pangolin.xuzhe.test.Constants.WORKER_NUM;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
     String[] fileNameArray;
     Worker[] workers;
 
@@ -46,12 +44,12 @@ public class ReadingThread extends Thread {
                 int fileNo = Integer.parseInt(fileName.substring(fileName.lastIndexOf("/") + 1, fileName.length() - 4));
                 File f = new File(fileName);
                 if (!f.exists()) {
-                    logger.info("file: {} not exist", fileName);
+                    MLog.info("file: {} not exist "+ fileName);
                     continue;
                 }
                 fis = new FileInputStream(f);
                 FileChannel channel = fis.getChannel();
-                logger.info("read filename:{}", fileName);
+                MLog.info("read filename:{}"+fileName);
                 while (true) {
                     ByteBuffer buffer = pool.get();
                     long pos = channel.position();
@@ -75,10 +73,10 @@ public class ReadingThread extends Thread {
                 }
                 channel.close();
                 fis.close();
-                logger.info("read file: {} done!", fileName);
+                MLog.info("read file: {} done! "+ fileName);
             }
 
-            logger.info("Reading Done!");
+            MLog.info("Reading Done!");
             for (Worker worker : workers) {
                 worker.appendBuffer(Worker.EMPTY_BUFFER, 0, 0);
             }
@@ -121,15 +119,15 @@ public class ReadingThread extends Thread {
                     }
                 }
             }
-            logger.info("每个表的log行数:{}", tableLogCountMap);
-            logger.info("每种操作的数量:{}", opCountMap);
-            logger.info("每个文件的行数：{}", lineCountMap);
+            MLog.info("每个表的log行数:{}"+tableLogCountMap);
+            MLog.info("每种操作的数量:{}"+ opCountMap);
+            MLog.info("每个文件的行数：{}"+ lineCountMap);
         } catch (IOException e) {
-            logger.info("{}", e);
+            MLog.info("{}"+ e);
         } catch (InterruptedException e) {
-            logger.info("{}", e);
+            MLog.info("{}"+ e);
         } catch (Exception e) {
-            logger.info("{}", e);
+            MLog.info("{}"+ e);
         }
     }
 
@@ -146,6 +144,6 @@ public class ReadingThread extends Thread {
         readingThread.join();
         Long time2 = System.currentTimeMillis();
         //  readingThread.sleep(3000);
-        logger.info("从pagecache读时，需要花费的时间：{} ms", time2 - time1);
+        MLog.info("从pagecache读时，需要花费的时间：{} ms "+ (time2 - time1));
     }
 }

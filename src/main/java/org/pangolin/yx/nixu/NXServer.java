@@ -3,7 +3,6 @@ package org.pangolin.yx.nixu;
 import org.pangolin.xuzhe.test.IOPerfTest;
 import org.pangolin.xuzhe.test.ReadingThread;
 import org.pangolin.yx.*;
-import org.slf4j.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -15,7 +14,7 @@ public class NXServer implements WorkerServer {
 
     @Override
     public void doTest() throws Exception {
-        Config.serverLogger.info("doTest start");
+        MLog.info("doTest start");
 
         //yx test
         LogParserTest.parseLog();
@@ -30,7 +29,7 @@ public class NXServer implements WorkerServer {
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
-        Config.serverLogger.info("doTest done");
+        MLog.info("doTest done");
         //
         ByteBuffer bf = ByteBuffer.allocate(16);
         bf.putInt(0);
@@ -40,13 +39,12 @@ public class NXServer implements WorkerServer {
 
     @Override
     public void doData() throws Exception {
-        Logger logger = Config.serverLogger;
 
         // Thread.sleep(5000);
 
         if (Config.COPY_DATA) {
             ArrayList<String> files = Util.logFiles(Config.DATA_HOME);
-            logger.info("start copy");
+            MLog.info("start copy");
             FileCopy.copyFile(files, Config.MIDDLE_HOME, false);
         }
 
@@ -66,10 +64,10 @@ public class NXServer implements WorkerServer {
         // Thread.sleep(2000);
         //read log
         AliLogData data = parser.parseLog();
-        logger.info("parseLog done");
-        logger.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
-        logger.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
-        logger.info(String.format("insert %d udpate %d delete %d   pkUpdate %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get(), LogParser.pkUpdateCount.get()));
+        MLog.info("parseLog done");
+        MLog.info(String.format("linear hashing mem: %d", LinearHashing.TOTAL_MEM.get()));
+        MLog.info(String.format("byte index mem: %d", LogOfTable.TOTAL_MEM.get()));
+        MLog.info(String.format("insert %d udpate %d delete %d   pkUpdate %d", LogParser.insertCount.get(), LogParser.updateCount.get(), LogParser.deleteCount.get(), LogParser.pkUpdateCount.get()));
         //rebuild
         /*
         LogRebuilder rebuider = new LogRebuilder(data);
@@ -81,11 +79,11 @@ public class NXServer implements WorkerServer {
         LogRebuilderLarge.init(data);
         LogRebuilderLarge.run();
         long t3 = System.currentTimeMillis();
-        logger.info("rebuild done");
-        logger.info(String.format("cost time  index:%d   rebuild:%d", t2 - t1, t3 - t2));
+        MLog.info("rebuild done");
+        MLog.info(String.format("cost time  index:%d   rebuild:%d", t2 - t1, t3 - t2));
         // logger.info(String.format("parse log count: %d", Util.parseLogCount.get()));
-        logger.info(String.format("read load count: %d", NXUtil.readLogCount.get()));
-        logger.info(String.format("out put line : %d,  byte %d", LogRebuilderLarge.outputCount.get(), LogRebuilderLarge.sendSize.get()));
+        MLog.info(String.format("read load count: %d", NXUtil.readLogCount.get()));
+        MLog.info(String.format("out put line : %d,  byte %d", LogRebuilderLarge.outputCount.get(), LogRebuilderLarge.sendSize.get()));
 
     }
 }

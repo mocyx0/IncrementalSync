@@ -2,6 +2,7 @@ package org.pangolin.yx.nixu;
 
 
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.ResultWriter;
 import org.pangolin.yx.Util;
 
@@ -77,7 +78,7 @@ public class LogRebuilderLarge {
                     }
                 }
             } catch (Exception e) {
-                Config.serverLogger.info("{}", e);
+                MLog.info(e.toString());
                 System.exit(0);
             }
             latch.countDown();
@@ -175,7 +176,7 @@ public class LogRebuilderLarge {
                         }
 
                         if (lastLog.id != testId) {
-                            Config.serverLogger.info(String.format("id not equal in %d rawid %d %s", testId, id, sline));
+                            MLog.info(String.format("id not equal in %d rawid %d %s", testId, id, sline));
                             //System.exit();
                         }
                         testId = lastLog.preId;

@@ -1,5 +1,7 @@
 package org.pangolin.xuzhe;
 
+import org.pangolin.yx.MLog;
+
 import static org.pangolin.xuzhe.Constants.LINE_MAX_LENGTH;
 
 import java.io.File;
@@ -16,14 +18,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by ubuntu on 17-6-3.
  */
 public class Worker extends Thread {
-    Logger logger = LoggerFactory.getLogger(Worker.class);
     public static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 //    public static final TreeMap<Long, LogMessage> firstScan = new TreeMap<>(new Comparator<Long>(){
 //		@Override
@@ -103,7 +102,7 @@ public class Worker extends Thread {
             
             validate();
         } catch (InterruptedException e) {
-            logger.error("Worker was interrupted", e);
+            MLog.info("Worker was interrupted "+ e.toString());
         }
 
     }

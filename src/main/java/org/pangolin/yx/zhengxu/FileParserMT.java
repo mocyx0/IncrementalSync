@@ -1,9 +1,9 @@
 package org.pangolin.yx.zhengxu;
 
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.ReadBufferPoll;
 import org.pangolin.yx.Util;
-import org.slf4j.Logger;
 
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -85,8 +85,6 @@ public class FileParserMT implements FileParser {
     int queueCount;
 
 
-    private Logger logger;
-
     private class BlockData {
         BlockingQueue<LogBlock> logQueue;
         //ArrayList<LogRecord> buffQueue;
@@ -143,9 +141,9 @@ public class FileParserMT implements FileParser {
                 for (BlockingQueue<FileBlock> queue : fileBlockQueues) {
                     queue.put(new FileBlock());
                 }
-                logger.info("ReadThread done");
+                MLog.info("ReadThread done");
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info("{}" + e);
                 System.exit(0);
             }
         }
@@ -380,10 +378,10 @@ public class FileParserMT implements FileParser {
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
-                logger.info(String.format("ParseThread  line:%d ", selfLineCount));
+                //MLog.info(String.format("ParseThread  line:%d ", selfLineCount));
                 latch.countDown();
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info("{}" + e);
                 System.exit(0);
             }
         }
@@ -479,7 +477,6 @@ public class FileParserMT implements FileParser {
     @Override
     public void run(LogQueues queues) throws Exception {
         //init log buffer
-        logger = Config.serverLogger;
         this.queues = queues;
         queueCount = this.queues.queues.size();
         for (int i = 0; i < queues.queues.size(); i++) {
@@ -509,9 +506,9 @@ public class FileParserMT implements FileParser {
         //flushLogInMap();
         dispatch();
         //  logger.info(String.format("%d %d",DataStoragePlain.bigIdCount.get(),DataStoragePlain.bigData.size()));
-        logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d ",
+        MLog.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d ",
                 lineCount.get(), insertCount.get(), updateCount.get(), deleteCount.get(), pkUpdate.get()));
-        logger.info(String.format("bias count %d %d",
+        MLog.info(String.format("bias count %d %d",
                 bias1Count, bias2Count));
         //send a empty data
         for (BlockData blockData : blockDatas) {

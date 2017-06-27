@@ -6,20 +6,16 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Created by yangxiao on 2017/6/7.
  */
 public class NetServer {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
 
 
     public static void start() throws Exception {
-        logger.info("NetServer start");
+        MLog.info("NetServer start");
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {

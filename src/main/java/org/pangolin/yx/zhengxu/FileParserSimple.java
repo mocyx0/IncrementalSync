@@ -2,8 +2,8 @@ package org.pangolin.yx.zhengxu;
 
 import com.alibaba.middleware.race.sync.Constants;
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.Util;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -14,7 +14,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 
 public class FileParserSimple implements FileParser {
-    Logger logger;
 
     private class BlockData {
         LinkedBlockingQueue<ArrayList<LogRecord>> logQueue;
@@ -73,7 +72,7 @@ public class FileParserSimple implements FileParser {
             }
             //
             long t2 = System.currentTimeMillis();
-            logger.info(String.format("parse end, cost:%d", t2 - t1));
+            MLog.info(String.format("parse end, cost:%d", t2 - t1));
         }
 
         @Override
@@ -81,7 +80,7 @@ public class FileParserSimple implements FileParser {
             try {
                 startParser();
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
                 System.exit(0);
             }
 
@@ -90,13 +89,12 @@ public class FileParserSimple implements FileParser {
 
     @Override
     public void run(LogQueues queues) {
-        logger = Config.serverLogger;
         this.queues = queues;
         queueCount = this.queues.queues.size();
         for (int i = 0; i < queues.queues.size(); i++) {
             BlockData blockData = new BlockData();
             //TODO
-           // blockData.logQueue = queues.queues.get(i);
+            // blockData.logQueue = queues.queues.get(i);
             blockData.buffQueue = new ArrayList<>(BUFFER_SIZE);
             blockDatas.add(blockData);
         }

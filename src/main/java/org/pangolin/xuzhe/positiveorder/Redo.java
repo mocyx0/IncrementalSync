@@ -1,8 +1,7 @@
 package org.pangolin.xuzhe.positiveorder;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -17,7 +16,6 @@ import static org.pangolin.xuzhe.positiveorder.ReadingThread.parserLatch;
  * Created by 29146 on 2017/6/16.
  */
 public class Redo extends Thread {
-    static Logger logger = LoggerFactory.getLogger(Server.class);
     private Parser[] parser;
     int redoId;
     private DataStore dataStore;
@@ -93,7 +91,7 @@ public class Redo extends Thread {
                 }
             }
             long time2 = System.currentTimeMillis();
-            logger.info( off + "bytes, Done," + (time2-time1) + " ms");
+            MLog.info( off + "bytes, Done," + (time2-time1) + " ms");
         } catch (Exception e) {
             e.printStackTrace();
         }

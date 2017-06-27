@@ -1,8 +1,7 @@
 package org.pangolin.xuzhe.stringparser;
 
 import org.pangolin.yx.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,17 +18,17 @@ import static org.pangolin.xuzhe.stringparser.Constants.WORKER_NUM;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
-    private static Logger logger = LoggerFactory.getLogger(ReadingThread.class);
     String[] fileNameArray;
     Worker[] workers;
+
     public ReadingThread(String[] fileNameArray) {
         super("ReadingThread");
         this.fileNameArray = fileNameArray;
         workers = new Worker[WORKER_NUM];
-        for(int i = 0; i < WORKER_NUM; i++) {
+        for (int i = 0; i < WORKER_NUM; i++) {
             workers[i] = new Worker();
         }
-        for(int i = 0; i < WORKER_NUM; i++) {
+        for (int i = 0; i < WORKER_NUM; i++) {
             workers[i].start();
         }
     }
@@ -95,7 +94,7 @@ public class ReadingThread extends Thread {
 ////            for(Worker worker : workers) {
 ////                worker.appendBuffer(Worker.EMPTY_BUFFER, 0, 0);
 ////            }
-            for(Worker worker : workers) {
+            for (Worker worker : workers) {
                 worker.join();
             }
 //            for(Worker worker : workers) {
@@ -109,19 +108,19 @@ public class ReadingThread extends Thread {
 //            LocalLogIndex allIndexex =workers[0].getIndexes();
 //            System.out.println(allIndexex.indexes.size());
             end = System.currentTimeMillis();
-            logger.info("Worker Done! elapsed time: {} ms", (end-begin));
+            MLog.info("Worker Done! elapsed time: {} ms" + (end - begin));
 //              searchResult();
 //            logger.info("Worker Done! elapsed time: {} ms", (end - begin));
 //            maxPK();
 //            searchTest();
- //             searchTest(allIndexex);
+            //             searchTest(allIndexex);
         } /*catch (IOException e) {
             logger.info("{}", e);
-        } */catch (InterruptedException e) {
+        } */ catch (InterruptedException e) {
 
-            logger.info("{}", e);
+            MLog.info("{}" + e);
         } catch (Exception e) {
-            logger.info("{}", e);
+            MLog.info("{}" + e);
         }
     }
 
@@ -132,23 +131,23 @@ public class ReadingThread extends Thread {
         ReadingThread readingThread = new ReadingThread(fileNameArray);
         readingThread.start();
         readingThread.join();
-	    Long time2 = System.currentTimeMillis();
-	  //  readingThread.sleep(3000);
-	    logger.info("从pagecache读时，需要花费的时间:{} ms", time2-time1);
+        Long time2 = System.currentTimeMillis();
+        //  readingThread.sleep(3000);
+        MLog.info("从pagecache读时，需要花费的时间:{} ms" + (time2 - time1));
     }
 
     public static void searchTest() {
         System.out.println("开始测试索引信息，请输入主键（quit退出）：");
         Scanner scanner = new Scanner(System.in);
-        while(scanner.hasNext()) {
+        while (scanner.hasNext()) {
             String line = scanner.nextLine().trim();
-            if(line.startsWith("quit")) break;
+            if (line.startsWith("quit")) break;
             try {
                 Long pk = Long.valueOf(line);
                 long[] _indexes = getAllIndexesByPK(pk);
-                if(_indexes != null) {
+                if (_indexes != null) {
 //                    System.out.println(Arrays.toString(_indexes));
-                    for(long index : _indexes) {
+                    for (long index : _indexes) {
                         System.out.println(String.format("%d:%10d %s",
                                 getFileNoFromLong(index), getPositionFromLong(index),
                                 getLineByPosition(getFileNoFromLong(index), getPositionFromLong(index))
@@ -165,18 +164,19 @@ public class ReadingThread extends Thread {
             }
         }
     }
+
     public static void searchResult() {
         Scanner scanner = new Scanner(System.in);
-        while(scanner.hasNext()) {
+        while (scanner.hasNext()) {
             String line = scanner.nextLine().trim();
-            if(line.startsWith("quit")) break;
+            if (line.startsWith("quit")) break;
             try {
                 Long pk = Long.valueOf(line);
                 String[] result = Redo.redo(pk);
 
-                for(String s : result){
-                    if(s != null)
-                    System.out.print(s + " ");
+                for (String s : result) {
+                    if (s != null)
+                        System.out.print(s + " ");
                 }
 //                System.out.print(result.getPk() + "\t");
 //                for(Map.Entry<String, Object> entry : result.getValues().entrySet()){
@@ -191,22 +191,24 @@ public class ReadingThread extends Thread {
             }
         }
     }
+
     private static Map<Integer, FileChannel> fileMap = new HashMap<>();
-    private static ByteBuffer lineBuffer = ByteBuffer.allocate(1<<10);
+    private static ByteBuffer lineBuffer = ByteBuffer.allocate(1 << 10);
+
     public static String getLineByPosition(int fileNo, int position) {
         FileChannel fileChannel = fileMap.get(fileNo);
         try {
-            if(fileChannel == null) {
+            if (fileChannel == null) {
                 fileChannel = new RandomAccessFile(Constants.getFileNameByNo(fileNo), "r").getChannel();
                 fileMap.put(fileNo, fileChannel);
             }
             lineBuffer.clear();
             fileChannel.read(lineBuffer, position);
             lineBuffer.flip();
-            while(lineBuffer.get() != '\n') {
+            while (lineBuffer.get() != '\n') {
                 ; // no op
             }
-            int lineLength = lineBuffer.position()-1;
+            int lineLength = lineBuffer.position() - 1;
             String str = new String(lineBuffer.array(), 0, lineLength, "utf-8");
             return str;
         } catch (IOException e) {

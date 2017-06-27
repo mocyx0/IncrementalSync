@@ -5,8 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -14,7 +13,6 @@ import java.util.concurrent.CountDownLatch;
  * Created by ubuntu on 17-6-18.
  */
 public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
     public static CountDownLatch latch = new CountDownLatch(1);
     public static volatile ByteBuf byteBuf;
     private static volatile Channel clientChannel;
@@ -24,7 +22,7 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
 
 
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        logger.info("channelActive");
+        MLog.info("channelActive");
         clientChannel = ctx.channel();
     }
 
@@ -35,7 +33,7 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        logger.info("server side, channel read. {}", msg);
+        MLog.info("server side, channel read. {}"+ msg);
         latch.await();
         if(byteBuf == null) {
             return;
@@ -49,7 +47,7 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
 
             @Override
             public void operationComplete(ChannelFuture future) throws Exception {
-                logger.info("Server发送消息成功！ byte length:{}", byteBuf.writerIndex()-4);
+                MLog.info("Server发送消息成功！ byte length:{}"+ (byteBuf.writerIndex()-4));
                 byteBuf = null;
                 System.exit(0);
             }
@@ -59,7 +57,7 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
     public static void sendResult(ByteBuf byteBuf) throws InterruptedException {
 
         while(clientChannel == null) {
-            logger.info("client还未与Server建立连接，将等待200ms");
+            MLog.info("client还未与Server建立连接，将等待200ms");
             Thread.sleep(200);
         }
         //发送查询结果
@@ -67,6 +65,6 @@ public class ResultSenderHandler extends ChannelInboundHandlerAdapter {
         ResultSenderHandler.byteBuf = byteBuf;
         latch.countDown();
 //        clientChannel.writeAndFlush(byteBuf);
-        logger.info("send data done");
+        MLog.info("send data done");
     }
 }

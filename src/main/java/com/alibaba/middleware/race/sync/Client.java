@@ -4,8 +4,7 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import org.pangolin.xuzhe.reformat.ClientResultReceiverHandler;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.MClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
@@ -23,7 +22,6 @@ import java.net.ConnectException;
  * Created by wanshao on 2017/5/25.
  */
 public class Client {
-    static Logger logger = LoggerFactory.getLogger(Client.class);
     private final static int port = Constants.SERVER_PORT;
     // idle时间
     private static String ip;
@@ -36,15 +34,15 @@ public class Client {
 
     private static void mainXZ(String[] args) throws Exception {
 
-        logger.info("mclient start");
+        MLog.info("mclient start");
         Config.init();
         initProperties();
 
-        logger.info("args: ");
+        MLog.info("args: ");
         for (String s : args) {
-            logger.info(s);
+            MLog.info(s);
         }
-        logger.info("Welcome to Client");
+        MLog.info("Welcome to Client");
         // 从args获取server端的ip
         ip = args[0];
         Client client = new Client();
@@ -53,6 +51,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws Exception {
+        MLog.init("/home/admin/logs/7250941rrv/client-custom.log");
 //        mainXZ(args);
         mainYX(args);
     }
@@ -104,7 +103,7 @@ public class Client {
                 } catch (Exception e) {
                     if (lastError == null || !lastError.equals(e.getMessage())) {
                         lastError = e.getMessage();
-                        logger.info("建立连接失败, {}", lastError);
+                        MLog.info(lastError);
                     }
                     Thread.sleep(50);
                 }

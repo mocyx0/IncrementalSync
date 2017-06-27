@@ -7,9 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.pangolin.xuzhe.reformat.ReadingThread;
 import org.pangolin.xuzhe.reformat.ResultSenderHandler;
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.MServer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -27,7 +26,6 @@ import static com.alibaba.middleware.race.sync.Constants.SERVER_PORT;
  * 服务器类，负责push消息到client Created by wanshao on 2017/5/25.
  */
 public class Server {
-
     // 保存channel
     private static Map<String, Channel> map = new ConcurrentHashMap<String, Channel>();
     // 接收评测程序的三个参数
@@ -43,17 +41,17 @@ public class Server {
     }
 
     private static void mainYX(String[] args) {
+        MLog.init("/home/admin/logs/7250941rrv/server-custom.log");
         MServer.main(args);
     }
 
     private static void mainXZ(String[] args) {
-        Logger logger = LoggerFactory.getLogger(Server.class);
+        MLog.init("/home/admin/logs/7250941rrv/server-custom.log");
         try {
-            logger.info("server start");
+            MLog.info("server start");
             Config.init();
             initProperties();
-
-            printInput(logger, args);
+            //printInput(logger, args);
             ReadingThread.beginId = Integer.parseInt(args[2]);
             ReadingThread.endId = Integer.parseInt(args[3]);
             String fileBaseName = Config.DATA_HOME + "/";
@@ -73,14 +71,14 @@ public class Server {
             readingThread.start();
 
             Server server = new Server();
-            logger.info("com.alibaba.middleware.race.sync.Server is running....");
+            MLog.info("com.alibaba.middleware.race.sync.Server is running....");
 
             server.startServer(SERVER_PORT);
             readingThread.join();
             long time2 = System.currentTimeMillis();
             System.out.println("elapsed time:" + (time2 - time1) + "ms");
         } catch (Exception e) {
-            logger.info("{}", e);
+            MLog.info(e.toString());
         }
     }
 
@@ -94,6 +92,7 @@ public class Server {
      * 上面表示，查询的schema为middleware，查询的表为student,主键的查询范围是(100,200)，注意是开区间 对应DB的SQL为： select * from middleware.student where
      * id>100 and id<200
      */
+    /*
     private static void printInput(Logger logger, String[] args) {
         // 第一个参数是Schema Name
         logger.info("Schema:" + args[0]);
@@ -105,6 +104,7 @@ public class Server {
         logger.info("end:" + args[3]);
 
     }
+    */
 
     /**
      * 初始化系统属性
@@ -117,7 +117,6 @@ public class Server {
 
 
     private void startServer(int port) throws InterruptedException {
-        Logger logger = LoggerFactory.getLogger(Server.class);
         EventLoopGroup bossGroup = new NioEventLoopGroup();
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
@@ -139,7 +138,7 @@ public class Server {
             ChannelFuture f = b.bind(port).sync();
 
             f.channel().closeFuture().sync();
-            logger.info("server closed!");
+            MLog.info("server closed!");
         } finally {
             workerGroup.shutdownGracefully();
             bossGroup.shutdownGracefully();

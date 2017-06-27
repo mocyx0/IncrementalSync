@@ -2,10 +2,9 @@ package org.pangolin.yx.nixu;
 
 import com.alibaba.middleware.race.sync.Server;
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.Util;
 import org.pangolin.yx.nixu.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -143,14 +142,14 @@ public class LogParserTest {
                     }
                 }
                 latch.countDown();
-                logger.info("worker done");
+                MLog.info("worker done");
 
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
                 System.exit(0);
             } catch (Error e) {
-                logger.info("{}", e);
-                logger.info(e.toString());
+                MLog.info(e.toString());
+                MLog.info(e.toString());
                 throw e;
             }
         }
@@ -171,17 +170,15 @@ public class LogParserTest {
             }
             blockLog.indexDone();
         } catch (Exception e) {
-            logger.info(String.format("parseLogBlock error  index:%d line:%s", lineIndex, line.line));
+            MLog.info(String.format("parseLogBlock error  index:%d line:%s", lineIndex, line.line));
             throw e;
         }
 
         return blockLog;
     }
 
-    private static Logger logger;
 
     public static AliLogData parseLog() throws Exception {
-        logger = LoggerFactory.getLogger(Server.class);
         long t1 = System.currentTimeMillis();
         splitLogFile(Config.CPU_COUNT);
 
@@ -193,11 +190,11 @@ public class LogParserTest {
         latch.await();
 
         long t2 = System.currentTimeMillis();
-        logger.info(String.format("parser test done ,cost time %d", t2 - t1));
-        logger.info(String.format("line:%d update:%d insert:%d delete:%d ", lineCount.get(), updateCount.get(), insertCount.get(), deleteCount.get()));
+        MLog.info(String.format("parser test done ,cost time %d", t2 - t1));
+        MLog.info(String.format("line:%d update:%d insert:%d delete:%d ", lineCount.get(), updateCount.get(), insertCount.get(), deleteCount.get()));
         for (String s : tableOpCount.keySet()) {
             OpCount opCount = tableOpCount.get(s);
-            logger.info(String.format("table %s line:%d update:%d insert:%d delete:%d ", s, opCount.lineCount.get(), opCount.updateCount.get(), opCount.insertCount.get(), deleteCount.get()));
+            MLog.info(String.format("table %s line:%d update:%d insert:%d delete:%d ", s, opCount.lineCount.get(), opCount.updateCount.get(), opCount.insertCount.get(), deleteCount.get()));
         }
         return aliLogData;
 

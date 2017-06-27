@@ -2,8 +2,7 @@ package org.pangolin.xuzhe.positiveorder;
 
 import com.alibaba.middleware.race.sync.Server;
 import org.pangolin.xuzhe.stringparser.MyStringBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +28,6 @@ import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
  * Created by ubuntu on 17-6-3.as
  */
 final public class Parser extends Thread {
-	Logger logger = LoggerFactory.getLogger(Server.class);
 
 	private BlockingQueue<ByteBuffer> buffers; // 原始数据输入队列
 	private BlockingQueue<LogIndex>[] logIndexBlockingQueueArray; // 中间信息输出队列
@@ -86,11 +84,11 @@ final public class Parser extends Thread {
 				}
 				process(buffer);
 			}
-			logger.info("{} done!", Thread.currentThread().getName());
+			MLog.info("{} done!"+Thread.currentThread().getName());
 		} catch (InterruptedException e) {
-			logger.error("Worker was interrupted", e);
+			MLog.info("Worker was interrupted"+e.toString());
 		} catch (Exception e) {
-			logger.info("{}", e);
+			MLog.info("{}"+ e.toString());
 		}
 
 	}

@@ -1,8 +1,8 @@
 package org.pangolin.yx.zhengxu;
 
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.ReadBufferPoll;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
@@ -17,7 +17,6 @@ public class Rebuilder implements Runnable {
     private final boolean DO_REBUILD = true;
     private final CountDownLatch latch;
     private final BlockingQueue<LogBlock> queue;
-    private final Logger logger;
     private DataStorage dataStorage;
     private final int index;
     private int reBuilderCount;
@@ -27,7 +26,6 @@ public class Rebuilder implements Runnable {
         this.latch = latch;
         this.index = index;
         this.reBuilderCount = reBuilderCount;
-        logger = Config.serverLogger;
         //logger.info( String.format(String.format("rebuilder %d %d ",index,reBuilderCount)));
     }
 
@@ -80,7 +78,7 @@ public class Rebuilder implements Runnable {
             //logger.info(String.format("rebuild handle log:%d", logCount));
             latch.countDown();
         } catch (Exception e) {
-            logger.info("{}", e);
+            MLog.info(e.toString());
             System.exit(0);
         }
     }

@@ -1,7 +1,6 @@
 package org.pangolin.yx.zhengxu;
 
 import org.pangolin.yx.*;
-import org.slf4j.Logger;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
@@ -23,13 +22,11 @@ class MBuffer {
 
 public class ZXServer implements WorkerServer {
     private CountDownLatch latch;
-    private Logger logger;
     private LogQueues logQueues = new LogQueues();
     private ArrayList<Rebuilder> rebuilders = new ArrayList<>();
     private int queueCount;
 
     public ZXServer() {
-        logger = Config.serverLogger;
     }
 
     @Override
@@ -68,7 +65,7 @@ public class ZXServer implements WorkerServer {
             logRecord = LineParserDirect.nextLine();
         }
         long t2 = System.currentTimeMillis();
-        logger.info(String.format("parse end, cost:%d", t2 - t1));
+        MLog.info(String.format("parse end, cost:%d", t2 - t1));
     }
 
 
@@ -135,7 +132,7 @@ public class ZXServer implements WorkerServer {
                 }
                 latch.countDown();
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info("{}" + e);
                 System.exit(0);
             }
         }
@@ -172,8 +169,6 @@ public class ZXServer implements WorkerServer {
 
     @Override
     public void doData() throws Exception {
-
-
         //Thread.sleep(3000);
         //首先读取列信息
         long t1 = System.currentTimeMillis();
@@ -193,7 +188,7 @@ public class ZXServer implements WorkerServer {
         latch.await();
 
         long t2 = System.currentTimeMillis();
-        logger.info(String.format("Rebuild done cost %d", t2 - t1));
+        MLog.info(String.format("Rebuild done cost %d", t2 - t1));
         ArrayList<DataStorage> dataStorages = new ArrayList<>();
         for (Rebuilder rebuilder : rebuilders) {
             dataStorages.add(rebuilder.getDataStorage());
@@ -201,7 +196,7 @@ public class ZXServer implements WorkerServer {
         startCollector(dataStorages);
         //
         long t3 = System.currentTimeMillis();
-        logger.info(String.format("collect done cost %d", t3 - t2));
+        MLog.info(String.format("collect done cost %d", t3 - t2));
         //直接读取
         //startParser1();
 

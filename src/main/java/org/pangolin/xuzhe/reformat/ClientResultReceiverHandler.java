@@ -4,8 +4,7 @@ import com.alibaba.middleware.race.sync.Client;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import org.pangolin.yx.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -16,7 +15,6 @@ import java.security.MessageDigest;
  * Created by ubuntu on 17-6-18.
  */
 public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
     FileOutputStream fileOutputStream = null;
     private boolean ok = false;
     File f;
@@ -25,13 +23,13 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
         try {
             fileOutputStream = new FileOutputStream(f);
         } catch (IOException e) {
-            logger.info("打开Result.rs文件出错：", e);
+            MLog.info("打开Result.rs文件出错："+ e);
         }
     }
 
 
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        logger.info("Client side, channelActive");
+        MLog.info("Client side, channelActive");
         String msg = "I am prepared to receive messages";
         ByteBuf encoded = ctx.alloc().buffer(4 * msg.length());
         encoded.writeBytes(msg.getBytes());
@@ -56,12 +54,12 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
         byte[] result1 = new byte[result.readableBytes()];
         if(result1.length == 1) {
             fileOutputStream.close();
-            logger.info("File {} size:{} ", f.getAbsolutePath(), f.length());
+            MLog.info("File {} size:{} "+f.getAbsolutePath()+ f.length());
             ctx.close().addListener(new ChannelFutureListener() {
 
                 @Override
                 public void operationComplete(ChannelFuture future) throws Exception {
-                    logger.info("通道关闭！");
+                    MLog.info("通道关闭！");
 //                        System.exit(0);
                     System.exit(0);
                 }
@@ -81,7 +79,7 @@ public class ClientResultReceiverHandler extends ChannelInboundHandlerAdapter {
             encoded.writeBytes(msgs.getBytes());
             ctx.writeAndFlush(encoded);
         } catch (IOException e) {
-            logger.info("", e);
+            MLog.info(""+ e);
         }
 
     }

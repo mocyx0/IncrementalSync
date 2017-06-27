@@ -1,8 +1,7 @@
 package org.pangolin.xuzhe.positiveorder;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -17,7 +16,6 @@ import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
  * Created by XuZhe on 2017/6/20.
  */
 public class ParserAndRedo extends Thread {
-    Logger logger = LoggerFactory.getLogger(Server.class);
 
     private BlockingQueue<ByteBuffer> buffers;
     private ArrayBlockingQueue<LogIndex>[] logIndexBlockingQueueArray;
@@ -88,9 +86,9 @@ public class ParserAndRedo extends Thread {
 //            }
             //logger.info("{} done!", Thread.currentThread().getName());
         } catch (InterruptedException e) {
-            logger.error("Worker was interrupted", e);
+            MLog.info("Worker was interrupted"+ e);
         } catch (Exception e) {
-            logger.info("{}", e);
+            MLog.info("{}"+e);
         }
 
     }

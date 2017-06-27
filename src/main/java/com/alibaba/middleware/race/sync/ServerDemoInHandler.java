@@ -1,7 +1,6 @@
 package com.alibaba.middleware.race.sync;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -16,7 +15,6 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
  */
 public class ServerDemoInHandler extends ChannelInboundHandlerAdapter {
 
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
 
     /**
      * 根据channel
@@ -38,14 +36,14 @@ public class ServerDemoInHandler extends ChannelInboundHandlerAdapter {
         // 保存channel
         Server.getMap().put(getIPString(ctx), ctx.channel());
 
-        logger.info("com.alibaba.middleware.race.sync.ServerDemoInHandler.channelRead");
+        MLog.info("com.alibaba.middleware.race.sync.ServerDemoInHandler.channelRead");
         ByteBuf result = (ByteBuf) msg;
         byte[] result1 = new byte[result.readableBytes()];
         // msg中存储的是ByteBuf类型的数据，把数据读取到byte[]中
         result.readBytes(result1);
         String resultStr = new String(result1);
         // 接收并打印客户端的信息
-        logger.info("com.alibaba.middleware.race.sync.Client said:" + resultStr);
+        MLog.info("com.alibaba.middleware.race.sync.Client said:" + resultStr);
 
         while (true) {
             // 向客户端发送消息
@@ -57,7 +55,7 @@ public class ServerDemoInHandler extends ChannelInboundHandlerAdapter {
 
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
-                        logger.info("Server发送消息成功！");
+                        MLog.info("Server发送消息成功！");
                     }
                 });
             }

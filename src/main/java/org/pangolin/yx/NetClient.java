@@ -7,8 +7,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by yangxiao on 2017/6/7.
@@ -16,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 
 public class NetClient {
-    private static Logger logger = LoggerFactory.getLogger(Client.class);
 
     public static void start(String host) throws Exception {
         EventLoopGroup workerGroup = new NioEventLoopGroup();
@@ -39,14 +36,14 @@ public class NetClient {
             int n = 10000;
             while (n > 0) {
                 n--;
-                logger.info("try connect");
+                MLog.info("try connect");
                 try {
                     ChannelFuture f = b.connect(host, Config.SERVER_PORT).sync();
                     // Wait until the connection is closed.
                     f.channel().closeFuture().sync();
                     System.exit(0);
                 } catch (Exception e) {
-                    logger.info("{}", e);
+                    MLog.info(e.toString());
 
                 }
                 Thread.sleep(1000);

@@ -4,8 +4,7 @@ import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.pangolin.yx.Config;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -21,7 +20,6 @@ import static org.pangolin.xuzhe.positiveorder.ReadBufferPool.EMPTY_BUFFER;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
     public static long beginId = 0;
     public static long endId = 0;
 
@@ -110,7 +108,7 @@ public class ReadingThread extends Thread {
                 fis.close();
             }
             long endTime = System.currentTimeMillis();
-            logger.info("Reading Done! " + (endTime-beginTime) + " ms");
+            MLog.info("Reading Done! " + (endTime-beginTime) + " ms");
             for(Parser parser : parsers) {
                 parser.appendBuffer(EMPTY_BUFFER);
             }
@@ -118,16 +116,16 @@ public class ReadingThread extends Thread {
                 parser.join();
             }
             endTime = System.currentTimeMillis();
-            logger.info("Parser Done!" + (endTime-beginTime) + " ms");
+            MLog.info("Parser Done!" + (endTime-beginTime) + " ms");
             for(Redo redo : redos) {
                 redo.join();
             }
             endTime = System.currentTimeMillis();
-            logger.info("Redo Done!" + (endTime-beginTime) + " ms");
+            MLog.info("Redo Done!" + (endTime-beginTime) + " ms");
 
             endTime = System.currentTimeMillis();
             //  readingThread.sleep(3000);
-            logger.info("elapsed time:" + (endTime - beginTime));
+            MLog.info("elapsed time:" + (endTime - beginTime));
             ByteBuf buf = Unpooled.directBuffer(20<<20);
 
             beginTime = System.currentTimeMillis();
@@ -135,13 +133,13 @@ public class ReadingThread extends Thread {
             saveResultToByteBuf(buf, beginId, endId);
             ResultSenderHandler.sendResult(buf);
             endTime = System.currentTimeMillis();
-            logger.info("Send to client elapsed time: " + (endTime-beginTime));
+            MLog.info("Send to client elapsed time: " + (endTime-beginTime));
 //            this.searchResult();
 //            System.exit(0);
         } catch (IOException e) {
-            logger.info("{}", e);
+            MLog.info("{}"+ e);
         } catch (InterruptedException e) {
-            logger.info("{}", e);
+            MLog.info("{}"+ e);
         }
     }
 
@@ -251,7 +249,7 @@ public class ReadingThread extends Thread {
         buf.writeInt(len - 4);
         buf.writerIndex(len);
         long endTime = System.currentTimeMillis();
-        logger.info("save to buf elapsed time:{}", (endTime - beginTime));
+        MLog.info("save to buf elapsed time:{}"+ (endTime - beginTime));
     }
 
     public void searchResult() {

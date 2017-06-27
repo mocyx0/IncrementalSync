@@ -1,8 +1,6 @@
 package org.pangolin.yx;
 
 import com.alibaba.middleware.race.sync.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.TransferQueue;
 
@@ -132,8 +130,6 @@ public final class Config {
 
     public static final int MAX_COL_SIZE = 6;
     //
-    public static final Logger serverLogger = LoggerFactory.getLogger(Server.class);
-
     public static final int PARSER_IN_QUEUE = 2;
     public static final int PARSER_OUT_QUEUE = 2;
     public static final int REBUILDER_IN_QUEUE = 128;

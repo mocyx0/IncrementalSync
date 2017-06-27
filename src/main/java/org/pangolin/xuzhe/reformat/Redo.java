@@ -1,8 +1,7 @@
 package org.pangolin.xuzhe.reformat;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.zip.DataFormatException;
@@ -14,7 +13,6 @@ import static org.pangolin.xuzhe.reformat.Constants.REDO_NUM;
  * Created by XuZhe on 2017/6/23.
  */
 public class Redo extends Thread {
-    static Logger logger = LoggerFactory.getLogger(Server.class);
     private static final long firstLevelPKMaxValue = 1200_0000;
     private static byte[][] firstLevelDataStore;
     private static int columnCount;
@@ -62,9 +60,9 @@ public class Redo extends Thread {
                 if(uncompressed.length == 0) {
                     ++cnt;
                     if(cnt == parsers.length) {
-                        logger.info(getName() + ", block Cnt:" + index);
-                        logger.info(getName() + ", SecondLevel Cnt:" + secondLevelCount);
-                        logger.info(getName() + ", StoreIndexMap.size:" + storeIndexMap.size());
+                        MLog.info(getName() + ", block Cnt:" + index);
+                        MLog.info(getName() + ", SecondLevel Cnt:" + secondLevelCount);
+                        MLog.info(getName() + ", StoreIndexMap.size:" + storeIndexMap.size());
                         break;
                     }
                     continue;
@@ -152,7 +150,7 @@ public class Redo extends Thread {
 
 
         } catch (Exception e) {
-            logger.info("", e);
+            MLog.info(""+e);
         }
     }
 

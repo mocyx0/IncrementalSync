@@ -1,8 +1,5 @@
 package org.pangolin.yx;
 
-import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -19,7 +16,6 @@ import java.util.concurrent.CountDownLatch;
 public class FileCopy {
 
     private static int BUFFER_SIZE = 4096;
-    private static Logger logger = LoggerFactory.getLogger(Server.class);
 
     private static CountDownLatch latch;
     private static ConcurrentLinkedQueue<Task> tasks = new ConcurrentLinkedQueue<>();
@@ -65,7 +61,7 @@ public class FileCopy {
 
                 latch.countDown();
             } catch (Exception e) {
-                logger.info("{}", e);
+                MLog.info(e.toString());
                 System.exit(0);
             }
 
@@ -111,7 +107,7 @@ public class FileCopy {
         }
         long t2 = System.currentTimeMillis();
         float speed = (copySize / (1024 * 1024)) / ((t2 - t1) / 1000);
-        logger.info(String.format("write %d time %d speed %f", copySize, t2 - t1, speed));
+        MLog.info(String.format("write %d time %d speed %f", copySize, t2 - t1, speed));
     }
 
     public static void main(String[] args) {
@@ -121,8 +117,6 @@ public class FileCopy {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
 
 }

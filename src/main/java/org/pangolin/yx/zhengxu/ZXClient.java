@@ -4,9 +4,8 @@ import com.alibaba.middleware.race.sync.Client;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.WorkerClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -18,7 +17,6 @@ import java.util.TreeMap;
  * Created by yangxiao on 2017/6/16.
  */
 public class ZXClient implements WorkerClient {
-    private Logger logger;
     private RandomAccessFile raf;
 
     private static class DumpBlock {
@@ -27,7 +25,6 @@ public class ZXClient implements WorkerClient {
     }
 
     public ZXClient() throws Exception {
-        logger = LoggerFactory.getLogger(Client.class);
         String path = Config.RESULT_HOME + "/" + Config.RESULT_NAME;
         File f = new File(path);
         if (f.exists()) {
@@ -39,7 +36,7 @@ public class ZXClient implements WorkerClient {
     private static int printLineCount = 0;
 
     private void dumpToFile() throws Exception {
-        logger.info(String.format("start dump recv size %d", writeOff));
+        MLog.info(String.format("start dump recv size %d", writeOff));
 
         ByteBuffer bf = ByteBuffer.wrap(buffer);
         bf.position(writeOff);
@@ -79,7 +76,7 @@ public class ZXClient implements WorkerClient {
                     String[] ss = s.split("\\n");
                     int j = 0;
                     while (j < ss.length && printLineCount < Config.PRINT_RESULT_LINE) {
-                        logger.info(ss[j]);
+                        MLog.info(ss[j]);
                         printLineCount++;
                         j++;
                     }
@@ -88,7 +85,7 @@ public class ZXClient implements WorkerClient {
                 raf.write(buffer, (int) block.pos, block.length);
             }
         }
-        logger.info(String.format("end dump,file size:%d", raf.length()));
+        MLog.info(String.format("end dump,file size:%d", raf.length()));
         raf.close();
 
     }
@@ -112,7 +109,7 @@ public class ZXClient implements WorkerClient {
         if (writeOff > 0 && buffer[writeOff - 1] == 0) {
             dumpToFile();
             //ctx.channel().close().sync();
-            logger.info(String.format("%d", System.currentTimeMillis()));
+            MLog.info(String.format("%d", System.currentTimeMillis()));
             System.exit(0);
         }
     }

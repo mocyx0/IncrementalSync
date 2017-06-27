@@ -1,8 +1,8 @@
 package org.pangolin.yx.zhengxu;
 
 import org.pangolin.yx.Config;
+import org.pangolin.yx.MLog;
 import org.pangolin.yx.PlainHashingSimple;
-import org.slf4j.Logger;
 
 import java.util.ArrayList;
 
@@ -39,7 +39,7 @@ class TableInfo {
             byte[] name = columnName[i];
             long hash = hash(name, 0, name.length);
             if (hashToIndex.containsKey(hash)) {
-                Config.serverLogger.info("hash ERROR");
+                MLog.info("hash ERROR");
             } else {
                 hashToIndex.put(hash, i);
             }
@@ -74,7 +74,6 @@ class TableInfo {
 }
 
 public class LineParser {
-    private static Logger logger;
     public static TableInfo tableInfo = new TableInfo();
     public static long lineCount = 0;
     private static LineReader lineReader;
@@ -86,7 +85,6 @@ public class LineParser {
     public static long pkUpdate = 0;
 
     static {
-        logger = Config.serverLogger;
     }
 
     public static void init(ArrayList<String> paths) throws Exception {
@@ -101,7 +99,7 @@ public class LineParser {
             //printLogRecord(re);
             return re;
         } else {
-            logger.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d lineMax",
+            MLog.info(String.format("line:%d insert:%d update:%d delete:%d pkupdate:%d colMaxSize:%d lineMax",
                     lineCount, insertCount, updateCount, deleteCount, pkUpdate, maxColSize, maxLineSize));
             return null;
         }
@@ -165,7 +163,7 @@ public class LineParser {
             sb.append(s);
             sb.append(" ");
         }
-        logger.info(sb.toString());
+        MLog.info(sb.toString());
         byte[][] columnName = new byte[columns.size()][];
         for (int i = 0; i < columns.size(); i++) {
             columnName[i] = columns.get(i);

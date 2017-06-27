@@ -1,8 +1,6 @@
 package org.pangolin.xuzhe.positiveorder;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -284,7 +282,7 @@ public class MyLong2IntHashMap {
 //        // number of collisions (approximately 8 at default load factor).
 //        h ^= (h >>> 20) ^ (h >>> 12);
 //        return h ^ (h >>> 7) ^ (h >>> 4);
-        return (int)k;
+        return (int) k;
     }
 
     /**
@@ -555,7 +553,7 @@ public class MyLong2IntHashMap {
     void createEntry(int hash, long key, int value, int bucketIndex) {
         Entry e = table[bucketIndex];
         Entry newE = removedEntry.pollLast();
-        if(newE == null) {
+        if (newE == null) {
             newE = new Entry(hash, key, value, e);
         } else {
             newE.update(hash, key, value, e);
@@ -567,15 +565,15 @@ public class MyLong2IntHashMap {
     /**
      * Removes the mapping for the specified key from this map if present.
      *
-     * @param  key key whose mapping is to be removed from the map
+     * @param key key whose mapping is to be removed from the map
      * @return the previous value associated with <tt>key</tt>, or
-     *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     *         (A <tt>null</tt> return can also indicate that the map
-     *         previously associated <tt>null</tt> with <tt>key</tt>.)
+     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     * (A <tt>null</tt> return can also indicate that the map
+     * previously associated <tt>null</tt> with <tt>key</tt>.)
      */
     public int remove(long key) {
         Entry e = removeEntryForKey(key);
-        if(e != null && removedEntry.size() < DEQUE_SIZE) {
+        if (e != null && removedEntry.size() < DEQUE_SIZE) {
             e.reset();
             removedEntry.push(e);
         }
@@ -627,17 +625,17 @@ public class MyLong2IntHashMap {
     public static void main(String[] args) {
         long begin = System.currentTimeMillis();
         HashMap map = new HashMap(2000000);
-        for(long i = 0; i < 1500000; i++) {
-            map.put(i, (int)i);
+        for (long i = 0; i < 1500000; i++) {
+            map.put(i, (int) i);
         }
         long end = System.currentTimeMillis();
-        System.out.println(end-begin);
+        System.out.println(end - begin);
         begin = System.currentTimeMillis();
-        for(long i = 0; i < 1500000; i++) {
+        for (long i = 0; i < 1500000; i++) {
             map.get(i);
         }
         end = System.currentTimeMillis();
-        System.out.println(end-begin);
+        System.out.println(end - begin);
         map = null;
         System.gc();
 //        System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(map)));
@@ -652,19 +650,20 @@ public class MyLong2IntHashMap {
 //        System.out.println(SizeOf.humanReadable(SizeOf.deepSizeOf(a)));
         begin = System.currentTimeMillis();
         MyLong2IntHashMap myMap = new MyLong2IntHashMap(2000000);
-        for(long i = 0; i < 1500000; i++) {
-            myMap.put(i, (int)i);
+        for (long i = 0; i < 1500000; i++) {
+            myMap.put(i, (int) i);
         }
         end = System.currentTimeMillis();
-        System.out.println(end-begin);
+        System.out.println(end - begin);
         begin = System.currentTimeMillis();
-        for(long i = 0; i < 1500000; i++) {
+        for (long i = 0; i < 1500000; i++) {
             int value = myMap.get(i);
-            if(value != i)
-                System.out.println(i + ":" + value);;
+            if (value != i)
+                System.out.println(i + ":" + value);
+            ;
         }
         end = System.currentTimeMillis();
-        System.out.println(end-begin);
+        System.out.println(end - begin);
     }
 
 }

@@ -1,8 +1,7 @@
 package org.pangolin.xuzhe.pipeline;
 
 import com.alibaba.middleware.race.sync.Server;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -23,7 +22,6 @@ import static org.pangolin.xuzhe.pipeline.StringArrayListPool.EMPTY_STRING_LIST;
  * Created by ubuntu on 17-6-3.
  */
 public class Parser extends Thread {
-	Logger logger = LoggerFactory.getLogger(Server.class);
 
 	public static AtomicInteger lineCnt = new AtomicInteger(0);
 	private static final byte newLine = (byte)'\n';
@@ -99,10 +97,10 @@ public class Parser extends Thread {
 //				long end = System.nanoTime();
 //				pool.put(buffer);
 //			}
-			logger.info("{} done!", Thread.currentThread().getName());
+			MLog.info("{} done!"+ Thread.currentThread().getName());
 
 		} catch (Exception e) {
-			logger.info("{}", e);
+			MLog.info("{}"+ e.toString());
 		}
 	}
 

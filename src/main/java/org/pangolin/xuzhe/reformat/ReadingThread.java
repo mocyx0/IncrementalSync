@@ -3,8 +3,7 @@ package org.pangolin.xuzhe.reformat;
 import com.alibaba.middleware.race.sync.Server;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pangolin.yx.MLog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,7 +22,6 @@ import static org.pangolin.xuzhe.reformat.ResultSenderHandler.latch;
  * Created by ubuntu on 17-6-3.
  */
 public class ReadingThread extends Thread {
-    static Logger logger = LoggerFactory.getLogger(Server.class);
     public static int beginId = 0;
     public static int endId = 0;
 
@@ -31,22 +29,23 @@ public class ReadingThread extends Thread {
     Parser[] parsers;
     Schema schema;
     Redo[] redos;
-//    WriterThread writerThread;
+    //    WriterThread writerThread;
     public static final CountDownLatch parserLatch = new CountDownLatch(1);
-//    Filter filter;
+
+    //    Filter filter;
     public ReadingThread(String[] fileNameArray) {
         super("ReadingThread");
         this.fileNameArray = fileNameArray;
         parsers = new Parser[PARSER_NUM];
-        for(int i = 0; i < PARSER_NUM; i++) {
+        for (int i = 0; i < PARSER_NUM; i++) {
             parsers[i] = new Parser(i);
 
         }
-        for(int i = 0; i < PARSER_NUM; i++) {
+        for (int i = 0; i < PARSER_NUM; i++) {
             parsers[i].start();
         }
         redos = new Redo[REDO_NUM];
-        for(int i = 0; i< REDO_NUM; i++) {
+        for (int i = 0; i < REDO_NUM; i++) {
             redos[i] = new Redo(i, parsers);
             redos[i].start();
 
@@ -69,34 +68,34 @@ public class ReadingThread extends Thread {
             boolean firstRead = true;
             currentBuffer = pool.get();
             for (String fileName : fileNameArray) {
-                logger.info(fileName);
+                MLog.info(fileName);
                 fis = new FileInputStream(new File(fileName));
                 FileChannel channel = fis.getChannel();
                 long fileSize = channel.size();
                 int lastReadCnt;
-                int remain = (int)fileSize;
-                while(true) {
+                int remain = (int) fileSize;
+                while (true) {
                     lastReadCnt = channel.read(currentBuffer);
                     currentBuffer.flip();
-                    if(firstRead) {
+                    if (firstRead) {
                         byte[] data = currentBuffer.array();
-                        for(int i = 0; i < data.length; i++) {
-                            if(data[i] == '\n') {
-                                schema = Schema.generateFromInsertLog(Arrays.copyOf(data, i+1));
+                        for (int i = 0; i < data.length; i++) {
+                            if (data[i] == '\n') {
+                                schema = Schema.generateFromInsertLog(Arrays.copyOf(data, i + 1));
                                 break;
                             }
                         }
-                        if(schema == null) {
+                        if (schema == null) {
                             throw new RuntimeException("严重错误，Schema未解析成功！");
                         }
-                        for(int p = 0; p < PARSER_NUM; ++p) {
+                        for (int p = 0; p < PARSER_NUM; ++p) {
                             parsers[p].setSchema(schema);
                         }
                         ReadingThread.parserLatch.countDown();
                         Redo.initFirstLevelStore(schema.columnCount);
                         firstRead = false;
                     }
-                    remain = remain-lastReadCnt;
+                    remain = remain - lastReadCnt;
                     nextBuffer = pool.get();
                     transferLastBrokenLine(currentBuffer, nextBuffer);
                     int w = workerIndex % PARSER_NUM;
@@ -108,7 +107,7 @@ public class ReadingThread extends Thread {
 //                    pool.put(currentBuffer);
                     workerIndex++;
                     currentBuffer = nextBuffer;
-                    if(remain == 0) {
+                    if (remain == 0) {
                         break;
                     }
                 }
@@ -116,28 +115,28 @@ public class ReadingThread extends Thread {
                 fis.close();
             }
             long endTime = System.currentTimeMillis();
-            logger.info("Reading Done! " + (endTime-beginTime) + " ms");
-            for(Parser parser : parsers) {
+            MLog.info("Reading Done! " + (endTime - beginTime) + " ms");
+            for (Parser parser : parsers) {
                 parser.appendBuffer(EMPTY_BUFFER);
             }
-            for(Parser parser : parsers) {
+            for (Parser parser : parsers) {
                 parser.join();
             }
 //            writerThread.join();
-            for(Redo redo : redos) {
+            for (Redo redo : redos) {
                 redo.join();
             }
             endTime = System.currentTimeMillis();
-            logger.info("Redo Done! " + (endTime-beginTime) + " ms");
+            MLog.info("Redo Done! " + (endTime - beginTime) + " ms");
             int totalLine = 0;
             long totalReadBytes = 0;
             long totalSize = 0;
-            for(int i = 0; i < PARSER_NUM; i++) {
+            for (int i = 0; i < PARSER_NUM; i++) {
                 totalLine += parsers[i].readLineCnt;
                 totalReadBytes += parsers[i].readBytesCnt;
                 totalSize += parsers[i].getTotalSize();
             }
-            logger.info("TotalSize:"+totalSize);
+            MLog.info("TotalSize:" + totalSize);
             long t1 = System.currentTimeMillis();
 //            FileOutputStream outputStream = new FileOutputStream("Result.rs");
 
@@ -145,16 +144,16 @@ public class ReadingThread extends Thread {
             byte[] result = new byte[50_000_000];
             final int blockSize = 5000_000;
             int offset = 0;
-            for(int i = beginId+1; i < endId; i++) {
-                if(offset > blockSize) {
-                    ByteBuf nettyBuf = Unpooled.directBuffer(blockSize+1000);
+            for (int i = beginId + 1; i < endId; i++) {
+                if (offset > blockSize) {
+                    ByteBuf nettyBuf = Unpooled.directBuffer(blockSize + 1000);
                     nettyBuf.writeInt(offset);
                     nettyBuf.writeBytes(result, 0, offset);
                     ResultSenderHandler.resultQueue.put(nettyBuf);
 //                    outputStream.write(result, 0, offset);
                     offset = 0;
                 }
-                for(int j = 0; j < redos.length; j++) {
+                for (int j = 0; j < redos.length; j++) {
                     int tmp = redos[j].getRecord(i, result, offset);
 
                     if (tmp != -1) {
@@ -163,8 +162,8 @@ public class ReadingThread extends Thread {
                     }
                 }
             }
-            if(offset != 0) {
-                ByteBuf nettyBuf = Unpooled.directBuffer(blockSize+1000);
+            if (offset != 0) {
+                ByteBuf nettyBuf = Unpooled.directBuffer(blockSize + 1000);
                 nettyBuf.writeInt(offset);
                 nettyBuf.writeBytes(result, 0, offset);
                 ResultSenderHandler.resultQueue.put(nettyBuf);
@@ -175,11 +174,11 @@ public class ReadingThread extends Thread {
 //            outputStream.close();
             long t2 = System.currentTimeMillis();
 //            logger.info(new String(result, 0, 200));
-            logger.info("cnt:{}  time:{} ms", offset, t2-t1);
+            MLog.info("cnt:{}  time:{} ms" + offset + " " + (t2 - t1));
         } catch (IOException e) {
-            logger.info("", e);
+            MLog.info("" + e);
         } catch (InterruptedException e) {
-            logger.info("", e);
+            MLog.info("" + e);
         }
     }
 
@@ -187,17 +186,17 @@ public class ReadingThread extends Thread {
         int currentPos = src.position();
         int currentLimit = src.limit();
         int i;
-        for(i = currentLimit-1; i >= currentPos; --i) {
+        for (i = currentLimit - 1; i >= currentPos; --i) {
             byte b = src.get(i);
-            if(b == '\n') {
+            if (b == '\n') {
                 break;
             }
         }
 //        lastBrokenLineTest(src, currentLimit-i-1, i+1);
-        src.position(i+1);
+        src.position(i + 1);
         dst.put(src);
         src.position(0); // src.flip
-        src.limit(i+1);
+        src.limit(i + 1);
         return currentLimit - i;
     }
 
