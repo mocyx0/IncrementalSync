@@ -144,7 +144,7 @@ public final class Config {
     public static final boolean OPTIMIZE = true;
 
     public static final int ALI_ID_MIN = 1000000;
-    public static final int ALI_ID_MAX = 2000000;
+    public static final int ALI_ID_MAX = 8000000;
 
 
 }
