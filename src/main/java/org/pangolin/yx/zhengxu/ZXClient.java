@@ -106,13 +106,13 @@ public class ZXClient implements WorkerClient {
     @Override
     public void onData(ByteBuf result, ChannelHandlerContext ctx) throws Exception {
         //logger.info("onData");
-
         int readlLen = result.readableBytes();
         result.readBytes(buffer, writeOff, result.readableBytes());
         writeOff += readlLen;
         if (writeOff > 0 && buffer[writeOff - 1] == 0) {
             dumpToFile();
             //ctx.channel().close().sync();
+            logger.info(String.format("%d", System.currentTimeMillis()));
             System.exit(0);
         }
     }

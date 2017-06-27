@@ -19,10 +19,13 @@ public class MClient {
 
     public static void main(String[] args) {
         logger.info("mclient start");
+        logger.info(String.format("time %d", System.currentTimeMillis()));
+        /*
         logger.info("args: ");
         for (String s : args) {
             logger.info(s);
         }
+        */
         Config.init();
         try {
             initProperties();
