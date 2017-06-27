@@ -50,5 +50,5 @@ public interface Constants {
     int REBUILDER_THREAD = 7;
     int PARSER_THREAD = 7;
 
-    int COLLECTOR_THREAD = 16;
+    int COLLECTOR_THREAD = 7;
 }

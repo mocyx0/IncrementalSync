@@ -247,7 +247,6 @@ public class FileParserMT implements FileParser {
                 }
                 return v;
             }
-
         }
 
         int colParseIndex = 0;

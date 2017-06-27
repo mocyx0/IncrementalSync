@@ -179,6 +179,7 @@ public class ZXServer implements WorkerServer {
         long t1 = System.currentTimeMillis();
         // System.out.println(t1);
         LineParser.readTableInfo();
+        DataStorageTwoLevel.init(GlobalData.tableInfo);
 
         LogBlock.init();
         //System.out.println(System.currentTimeMillis());
@@ -190,6 +191,7 @@ public class ZXServer implements WorkerServer {
         //解析线程
         fileParser.run(logQueues);
         latch.await();
+
         long t2 = System.currentTimeMillis();
         logger.info(String.format("Rebuild done cost %d", t2 - t1));
         ArrayList<DataStorage> dataStorages = new ArrayList<>();
