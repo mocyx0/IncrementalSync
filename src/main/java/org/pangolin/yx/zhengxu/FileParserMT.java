@@ -1,16 +1,12 @@
 package org.pangolin.yx.zhengxu;
 
-import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
-import org.pangolin.yx.PlainHashing;
 import org.pangolin.yx.ReadBufferPoll;
 import org.pangolin.yx.Util;
-import org.pangolin.yx.nixu.LogRebuilder;
 import org.slf4j.Logger;
 
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.TreeMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -171,7 +167,8 @@ public class FileParserMT implements FileParser {
         blockData.buffQueue.add(log);
     }
     */
-
+    public int idInCount = 0;
+    public int idOutCount = 0;
 
     private class ParseThread implements Runnable {
 
@@ -188,15 +185,6 @@ public class FileParserMT implements FileParser {
             rebuilderCount = Config.REBUILDER_THREAD;
         }
 
-        LogRecord nextLineTest(byte[] data) {
-
-            while (data[parsePos] != '\n') {
-                parsePos++;
-            }
-            parsePos++;
-            return null;
-        }
-
         long seqNumber = 0;
 
         int nextToken(byte[] data, char delimit) {
@@ -209,7 +197,7 @@ public class FileParserMT implements FileParser {
         }
 
         int nextColName(byte[] data) {
-            if (Config.HACK) {
+            if (Config.OPTIMIZE) {
                 int nameLen = 0;
                 byte b1 = data[parsePos];
                 if (b1 == 'i') {
@@ -273,7 +261,7 @@ public class FileParserMT implements FileParser {
             long preid = -1;
             int logColPos = colDataPos;//保存起始位置
             byte op;
-            if (Config.HACK) {
+            if (Config.OPTIMIZE) {
                 parsePos += 18;
                 nextToken(data, '|');
                 parsePos += 34;
@@ -306,10 +294,19 @@ public class FileParserMT implements FileParser {
                 colParseIndex++;
             }
             parsePos++;//skip \n
+/*
+            boolean accept = true;
+            if (Config.OPTIMIZE) {
+                if (id >= Config.ALI_ID_MAX) {
+                    accept = false;
+                }
+            }
+            */
             logBlock.ids[logPos] = id;
             logBlock.preIds[logPos] = preid;
             logBlock.opTypes[logPos] = op;
-            logBlock.seqs[logPos] = seqNumber++;
+            //logBlock.seqs[logPos] = seqNumber++;
+            logBlock.seqs[logPos] = 0;
             logBlock.length++;
             byte colLen = (byte) (colDataPos - logColPos);
             logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
@@ -318,7 +315,15 @@ public class FileParserMT implements FileParser {
             } else {
                 logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
             }
-            if (op == 'U' && preid != id) {
+
+            if (preid != id && op == 'U') {
+                if (id < Config.ALI_ID_MAX && preid >= Config.ALI_ID_MAX) {
+                    //System.out.println(String.format("%d %d", preid, id));
+                    idInCount++;
+                }
+                if (id >= Config.ALI_ID_MAX && preid < Config.ALI_ID_MAX) {
+                    idOutCount++;
+                }
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
                 logBlock.opTypes[xpos] = 'X';
@@ -373,7 +378,7 @@ public class FileParserMT implements FileParser {
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
-                logger.info(String.format("ParseThread  line:%d ", selfLineCount));
+                logger.info(String.format("ParseThread  line:%d  in:%d out:%d", selfLineCount, idInCount, idOutCount));
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("{}", e);

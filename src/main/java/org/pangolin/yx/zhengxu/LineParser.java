@@ -1,14 +1,10 @@
 package org.pangolin.yx.zhengxu;
 
-import org.pangolin.xuzhe.Log;
 import org.pangolin.yx.Config;
-import org.pangolin.yx.PlainHashing;
 import org.pangolin.yx.PlainHashingSimple;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by yangxiao on 2017/6/16.
@@ -54,13 +50,14 @@ class TableInfo {
     static final int[] indexTable = new int[]{0, 1, 0, 3, 4, 4, 5, 7, 8, 2, 1};
 
     final int getColumnIndex(byte[] data, int off, int len) throws Exception {
-        if (Config.HACK) {
+        if (Config.OPTIMIZE) {
             return indexTable[len];
         } else {
             long hash = hash(data, off, len);
             return hashToIndex.get(hash);
         }
     }
+
     boolean byteEqual(byte[] b1, byte[] b2) {
         if (b1.length != b2.length) {
             return false;

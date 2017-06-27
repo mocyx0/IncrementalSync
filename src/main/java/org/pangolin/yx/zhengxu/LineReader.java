@@ -14,7 +14,7 @@ class LineInfo {
 
 public class LineReader {
 
-    private static int BUFFER_SIZE = 1024 * 64;
+    private static int BUFFER_SIZE = 1024 * 4;
     ArrayList<RandomAccessFile> rafs = new ArrayList<>();
     int fileIndex = 0;
 
