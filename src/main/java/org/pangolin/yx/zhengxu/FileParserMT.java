@@ -306,7 +306,7 @@ public class FileParserMT implements FileParser {
             logBlock.preIds[logPos] = preid;
             logBlock.opTypes[logPos] = op;
             //logBlock.seqs[logPos] = seqNumber++;
-            logBlock.seqs[logPos] = 0;
+            //logBlock.seqs[logPos] = 0;
             logBlock.length++;
             byte colLen = (byte) (colDataPos - logColPos);
             logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
@@ -317,6 +317,7 @@ public class FileParserMT implements FileParser {
             }
 
             if (preid != id && op == 'U') {
+                /*
                 if (id < Config.ALI_ID_MAX && preid >= Config.ALI_ID_MAX) {
                     //System.out.println(String.format("%d %d", preid, id));
                     idInCount++;
@@ -324,8 +325,10 @@ public class FileParserMT implements FileParser {
                 if (id >= Config.ALI_ID_MAX && preid < Config.ALI_ID_MAX) {
                     idOutCount++;
                 }
+                */
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
+                logBlock.preIds[xpos] = -1;
                 logBlock.opTypes[xpos] = 'X';
                 logBlock.length++;
                 logBlock.redoer[xpos] = (byte) ((preid) % Config.REBUILDER_THREAD);
@@ -378,7 +381,7 @@ public class FileParserMT implements FileParser {
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
-                logger.info(String.format("ParseThread  line:%d  in:%d out:%d", selfLineCount, idInCount, idOutCount));
+                logger.info(String.format("ParseThread  line:%d ", selfLineCount));
                 latch.countDown();
             } catch (Exception e) {
                 logger.info("{}", e);
