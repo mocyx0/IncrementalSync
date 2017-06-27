@@ -9,7 +9,6 @@ import java.util.Random;
  */
 public class DataCollectorTwoLevel implements DataCollector {
     private ArrayList<DataStorageTwoLevel> dataStorageHashMaps = new ArrayList<>();
-    private DataStorageTwoLevel dataStorageTwoLevel;
 
     private final int cellCount;
     private final int cellSize;
@@ -19,7 +18,6 @@ public class DataCollectorTwoLevel implements DataCollector {
             dataStorageHashMaps.add((DataStorageTwoLevel) dataStorage);
         }
         datas = new long[GlobalData.colCount];
-        dataStorageTwoLevel = dataStorageHashMaps.get(0);
 
         cellCount = DataStorageTwoLevel.CELL_COUNT;
         cellSize = DataStorageTwoLevel.CELL_SIZE;
@@ -39,7 +37,7 @@ public class DataCollectorTwoLevel implements DataCollector {
         for (int i = 0; i < datas.length; i++) {
             datas[i] = 0;
         }
-        DataStorageTwoLevel data = dataStorageTwoLevel;
+        DataStorageTwoLevel data = getDataMap(id);
 
         RecordData recordData = data.getRecord(id, -1);
         if (recordData != null) {
@@ -58,7 +56,7 @@ public class DataCollectorTwoLevel implements DataCollector {
             long lastSeq = recordData.seq;
             long preId = recordData.preid;
             while (colCount != cellCount && preId != -1) {
-                //data = getDataMap(preId);
+                data = getDataMap(preId);
                 RecordData preRecord = data.getRecord(preId, lastSeq);
                 for (int i = 0; i < cellCount; i++) {
                     if ((datas[i] & 0xff) == 0 && (preRecord.colData[i] & 0xff) != 0) {

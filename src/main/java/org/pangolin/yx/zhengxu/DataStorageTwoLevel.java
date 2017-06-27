@@ -51,7 +51,7 @@ public class DataStorageTwoLevel implements DataStorage {
     //HashWrapper  hashing = new HashWrapper ();
     private final ArrayList<long[]> bytes = new ArrayList<>();
     private int nextBytePos;
-    private static Level1 level1;
+    private Level1 level1;
 
 
     public static void init(TableInfo tableInfo) {
@@ -59,18 +59,18 @@ public class DataStorageTwoLevel implements DataStorage {
         CELL_COUNT = GlobalData.colCount;
         blockSize = 1 + 1 + 1 + 1 + CELL_SIZE * CELL_COUNT;
         COL_BLOCK_SIZE = CELL_SIZE * CELL_COUNT;
-        level1 = new Level1();
-        level1.colData = new long[CELL_SIZE * CELL_COUNT * Config.ALI_ID_MAX];
-        level1.next = new int[Config.ALI_ID_MAX];
-        level1.preid = new long[Config.ALI_ID_MAX];
-        level1.seq = new long[Config.ALI_ID_MAX];
-        level1.flag = new byte[Config.ALI_ID_MAX];
     }
 
     DataStorageTwoLevel(TableInfo tableInfo) {
         this.tableInfo = tableInfo;
         nextBytePos = blockSize;
         bytes.add(new long[BUFFER_SIZE]);
+        level1 = new Level1();
+        level1.colData = new long[CELL_SIZE * CELL_COUNT * FIRST_LEVEL_COUNT];
+        level1.next = new int[FIRST_LEVEL_COUNT];
+        level1.preid = new long[FIRST_LEVEL_COUNT];
+        level1.seq = new long[FIRST_LEVEL_COUNT];
+        level1.flag = new byte[FIRST_LEVEL_COUNT];
     }
 
     int allocateBlock() {
@@ -258,11 +258,9 @@ public class DataStorageTwoLevel implements DataStorage {
         buf[buffOff + 7] = (byte) (0xff & v >>> 56);
     }
 
-
     private RecordData getRecordLevel1(long id, long seq) throws Exception {
-
-        //int level1Index = (int) (id / Config.REBUILDER_THREAD);
-        int level1Index = (int) (id);
+        int level1Index = (int) (id / Config.REBUILDER_THREAD);
+        //int level1Index = (int) (id);
         if (seq == -1) {
             if (level1.flag[level1Index] == FLAG_VALID) {
                 RecordData logRecord = new RecordData();
@@ -435,18 +433,18 @@ public class DataStorageTwoLevel implements DataStorage {
         int colDataPos = logBlock.colDataInfo[logPos];
         int colDataLen = colDataPos & 0xff;
         colDataPos = colDataPos >> 8;
-        /*
         long offLocal;
         if (opType == 'D') {
             offLocal = preId / Config.REBUILDER_THREAD;
         } else {
             offLocal = id / Config.REBUILDER_THREAD;
         }
-        */
-        int level1Index = (int) id;
+        int level1Index = (int) offLocal;
+        /*
         if (opType == 'D') {
             level1Index = (int) preId;
         }
+        */
         if (opType == 'U') {
             if (preId != id) {
                 if (level1.flag[level1Index] != FLAG_EMPTY) {

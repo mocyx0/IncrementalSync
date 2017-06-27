@@ -39,7 +39,6 @@ public class FileParserSimple implements FileParser {
     }
 
     private class ParserThread implements Runnable {
-
         private void startParser() throws Exception {
             long t1 = System.currentTimeMillis();
             ArrayList<String> paths = Util.logFiles(Config.DATA_HOME);
