@@ -38,7 +38,7 @@ public class DataStorageTwoLevel implements DataStorage {
     private static final int OFF_PREID = 2;
     private static final int OFF_FLAG = 3;  //valid=1 表示无效
     private static final int OFF_CELL = 4;
-    private static final int FIRST_LEVEL_COUNT = 1 << 21;
+    private static final int FIRST_LEVEL_COUNT = 1 << 20;
     private static final int FIRST_LEVEL_MAX = FIRST_LEVEL_COUNT - 1;
     TableInfo tableInfo;
     public static int CELL_SIZE;
