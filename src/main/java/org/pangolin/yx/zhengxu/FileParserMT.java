@@ -25,8 +25,10 @@ class LogBlock {
     long ids;
     int[] colDataInfo = new int[MAX_LENGTH];//高位3个字节位置: 低位1个字节:长度
     long preIds;
-    byte[] opTypes = new byte[MAX_LENGTH];
-    byte[] redoer = new byte[MAX_LENGTH];
+    //byte[] opTypes = new byte[MAX_LENGTH];
+    long opTypes;
+    //byte[] redoer = new byte[MAX_LENGTH];
+    long redoer;
     //int[] columnData = new int[GlobalData.colCount * 3 * MAX_LENGTH];//三个一个单位  列索引, 位置, 长度
     //long[] colData = new long[GlobalData.colCount * MAX_LENGTH];
     long colData;
@@ -47,6 +49,8 @@ class LogBlock {
         colData = ZXUtil.unsafe.allocateMemory(8 * GlobalData.colCount * MAX_LENGTH);
         ids = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
         preIds = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
+        opTypes = ZXUtil.unsafe.allocateMemory(MAX_LENGTH);
+        redoer = ZXUtil.unsafe.allocateMemory(MAX_LENGTH);
         //colDataInfo = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
     }
 
@@ -338,7 +342,8 @@ public class FileParserMT implements FileParser {
             unsafe.putLong(logBlock.ids + (logPos << 3), id);
             //logBlock.preIds[logPos] = preid;
             unsafe.putLong(logBlock.preIds + (logPos << 3), preid);
-            logBlock.opTypes[logPos] = op;
+            //logBlock.opTypes[logPos] = op;
+            unsafe.putByte(logBlock.opTypes + logPos, op);
             //logBlock.seqs[logPos] = seqNumber++;
             //logBlock.seqs[logPos] = 0;
             logBlock.length++;
@@ -346,9 +351,11 @@ public class FileParserMT implements FileParser {
             logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
             //unsafe.putLong(logBlock.colDataInfo + (logPos) << 3, logColPos << 8 | colLen);
             if (op == 'D') {
-                logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
+                //logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
+                unsafe.putByte(logBlock.redoer + logPos, (byte) ((preid) % Config.REBUILDER_THREAD));
             } else {
-                logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
+                //logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
+                unsafe.putByte(logBlock.redoer + logPos, (byte) ((id) % Config.REBUILDER_THREAD));
             }
             //  }
             if (preid != id && op == 'U') {
@@ -357,9 +364,11 @@ public class FileParserMT implements FileParser {
                 unsafe.putLong(logBlock.ids + (xpos << 3), preid);
                 //logBlock.preIds[xpos] = -1;
                 unsafe.putLong(logBlock.preIds + (xpos << 3), -1);
-                logBlock.opTypes[xpos] = 'X';
+                //logBlock.opTypes[xpos] = 'X';
+                unsafe.putByte(logBlock.opTypes + xpos, (byte) 'X');
                 logBlock.length++;
-                logBlock.redoer[xpos] = (byte) ((preid) % Config.REBUILDER_THREAD);
+                //logBlock.redoer[xpos] = (byte) ((preid) % Config.REBUILDER_THREAD);
+                unsafe.putByte(logBlock.redoer + xpos, (byte) ((preid) % Config.REBUILDER_THREAD));
             }
         }
 

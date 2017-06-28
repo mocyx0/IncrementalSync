@@ -3,6 +3,7 @@ package org.pangolin.yx.zhengxu;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.MLog;
 import org.pangolin.yx.ReadBufferPoll;
+import sun.misc.Unsafe;
 
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
@@ -27,11 +28,14 @@ public class Rebuilder implements Runnable {
         this.index = index;
         this.reBuilderCount = reBuilderCount;
         //logger.info( String.format(String.format("rebuilder %d %d ",index,reBuilderCount)));
+        unsafe = ZXUtil.unsafe;
     }
 
     DataStorage getDataStorage() {
         return dataStorage;
     }
+
+    Unsafe unsafe;
 
     @Override
     public void run() {
@@ -45,7 +49,8 @@ public class Rebuilder implements Runnable {
                 } else {
                     if (DO_REBUILD) {
                         for (int i = 0; i < logBlock.length; i++) {
-                            if (logBlock.redoer[i] == index) {
+                            //if (logBlock.redoer[i] == index) {
+                            if (unsafe.getByte(logBlock.redoer + i) == index) {
                                 dataStorage.doLog(logBlock, null, i);
                             }
                         }

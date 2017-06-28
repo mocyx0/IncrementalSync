@@ -431,8 +431,8 @@ public class DataStorageTwoLevel implements DataStorage {
         long id = unsafe.getLong(logBlock.ids + (logPos << 3));
         //long preId = logBlock.preIds[logPos];
         long preId = unsafe.getLong(logBlock.preIds + (logPos << 3));
-        byte opType = logBlock.opTypes[logPos];
-
+        //byte opType = logBlock.opTypes[logPos];
+        byte opType = unsafe.getByte(logBlock.opTypes + logPos);
         if (opType == 'D') {
             if (preId >= Config.ALI_ID_MAX) {
                 return;
