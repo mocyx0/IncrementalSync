@@ -6,6 +6,7 @@ import org.pangolin.yx.Config;
 import org.pangolin.yx.PlainHashArr;
 import org.pangolin.yx.PlainHashing;
 import org.pangolin.yx.PlainHashingSimple;
+import sun.misc.Unsafe;
 
 import java.util.ArrayList;
 
@@ -52,7 +53,7 @@ public class DataStorageTwoLevel implements DataStorage {
     private final ArrayList<long[]> bytes = new ArrayList<>();
     private int nextBytePos;
     private Level1 level1;
-
+    private Unsafe unsafe;
 
     public static void init(TableInfo tableInfo) {
         CELL_SIZE = 1;//1字节长度6字节数据1字节位置
@@ -62,6 +63,7 @@ public class DataStorageTwoLevel implements DataStorage {
     }
 
     DataStorageTwoLevel(TableInfo tableInfo) {
+        unsafe = ZXUtil.unsafe;
         this.tableInfo = tableInfo;
         nextBytePos = blockSize;
         bytes.add(new long[BUFFER_SIZE]);
@@ -98,10 +100,11 @@ public class DataStorageTwoLevel implements DataStorage {
     }
 
 
-    private void writeLogDataToLevel1(int bufPos, long[] logData, int logDataPos, int len) {
+    private void writeLogDataToLevel1(int bufPos, long logData, int logDataPos, int len) {
         long[] target = level1.colData;
         for (int i = 0; i < len; i++) {
-            long colv = logData[logDataPos + i];
+            //long colv = logData[logDataPos + i];
+            long colv = unsafe.getLong(logData + ((logDataPos + i) << 3));
             int pos = (int) (colv >> 56);
             target[FIRST_LEVEL_COUNT * (pos - 1) + bufPos] = colv;
         }
@@ -424,9 +427,10 @@ public class DataStorageTwoLevel implements DataStorage {
 
     @Override
     public void doLog(LogBlock logBlock, byte[] data, int logPos) throws Exception {
-
-        long id = logBlock.ids[logPos];
-        long preId = logBlock.preIds[logPos];
+        //long id = logBlock.ids[logPos];
+        long id = unsafe.getLong(logBlock.ids + (logPos << 3));
+        //long preId = logBlock.preIds[logPos];
+        long preId = unsafe.getLong(logBlock.preIds + (logPos << 3));
         byte opType = logBlock.opTypes[logPos];
 
         if (opType == 'D') {
@@ -455,11 +459,12 @@ public class DataStorageTwoLevel implements DataStorage {
 
 
         //long seq = logBlock.seqs[logPos];
-        long[] colData = logBlock.colData;
+        long colData = logBlock.colData;
         //int colDataPos = logPos * GlobalData.colCount;
         //提取列数据信息
         int colDataPos = logBlock.colDataInfo[logPos];
-        int colDataLen = colDataPos & 0xff;
+        //int colDataPos = (int) unsafe.getLong(logBlock.colDataInfo + (logPos << 3));
+        int colDataLen = (int) (colDataPos & 0xff);
         colDataPos = colDataPos >> 8;
         long offLocal;
         if (opType == 'D') {

@@ -21,14 +21,15 @@ class LogBlock {
     public static LogBlock EMPTY = new LogBlock();
     //ArrayList<LogRecord> logRecords = new ArrayList<>();
 //    ArrayList<ArrayList<LogRecord>> logRecordsArr = new ArrayList<>();
-    public static final int MAX_LENGTH = 100000;
-    long[] ids = new long[MAX_LENGTH];
+    public static final int MAX_LENGTH = 70000;
+    long ids;
     int[] colDataInfo = new int[MAX_LENGTH];//高位3个字节位置: 低位1个字节:长度
-    long[] preIds = new long[MAX_LENGTH];
+    long preIds;
     byte[] opTypes = new byte[MAX_LENGTH];
     byte[] redoer = new byte[MAX_LENGTH];
     //int[] columnData = new int[GlobalData.colCount * 3 * MAX_LENGTH];//三个一个单位  列索引, 位置, 长度
-    long[] colData = new long[GlobalData.colCount * MAX_LENGTH];
+    //long[] colData = new long[GlobalData.colCount * MAX_LENGTH];
+    long colData;
     long[] seqs = new long[MAX_LENGTH];//log sequence
     int length = 0;
 
@@ -43,6 +44,10 @@ class LogBlock {
             logBlockRebuilders[i] = new LogBlockRebuilder();
         }
         */
+        colData = ZXUtil.unsafe.allocateMemory(8 * GlobalData.colCount * MAX_LENGTH);
+        ids = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
+        preIds = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
+        //colDataInfo = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
     }
 
     public static void init() throws Exception {
@@ -310,7 +315,9 @@ public class FileParserMT implements FileParser {
                     nextToken();//old value
                     long colValue = nextColValue();//new value
                     int colIndex = tableInfo.getColumnIndex(null, namePos, nameLen);
-                    logBlock.colData[colDataPos++] = ((long) colIndex << 56) | colValue;
+                    //logBlock.colData[colDataPos++] = ((long) colIndex << 56) | colValue;
+                    unsafe.putLong(logBlock.colData + (colDataPos << 3), ((long) colIndex << 56) | colValue);
+                    colDataPos++;
                 }
                 colParseIndex++;
             }
@@ -327,14 +334,17 @@ public class FileParserMT implements FileParser {
             }
             */
             // if (accept) {
-            logBlock.ids[logPos] = id;
-            logBlock.preIds[logPos] = preid;
+            //logBlock.ids[logPos] = id;
+            unsafe.putLong(logBlock.ids + (logPos << 3), id);
+            //logBlock.preIds[logPos] = preid;
+            unsafe.putLong(logBlock.preIds + (logPos << 3), preid);
             logBlock.opTypes[logPos] = op;
             //logBlock.seqs[logPos] = seqNumber++;
             //logBlock.seqs[logPos] = 0;
             logBlock.length++;
             byte colLen = (byte) (colDataPos - logColPos);
             logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
+            //unsafe.putLong(logBlock.colDataInfo + (logPos) << 3, logColPos << 8 | colLen);
             if (op == 'D') {
                 logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
             } else {
@@ -343,8 +353,10 @@ public class FileParserMT implements FileParser {
             //  }
             if (preid != id && op == 'U') {
                 int xpos = logBlock.length;
-                logBlock.ids[xpos] = preid;
-                logBlock.preIds[xpos] = -1;
+                //logBlock.ids[xpos] = preid;
+                unsafe.putLong(logBlock.ids + (xpos << 3), preid);
+                //logBlock.preIds[xpos] = -1;
+                unsafe.putLong(logBlock.preIds + (xpos << 3), -1);
                 logBlock.opTypes[xpos] = 'X';
                 logBlock.length++;
                 logBlock.redoer[xpos] = (byte) ((preid) % Config.REBUILDER_THREAD);
@@ -354,7 +366,8 @@ public class FileParserMT implements FileParser {
         private void printColData(LogBlock logBlock, int logPos) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < GlobalData.colCount; i++) {
-                long v = logBlock.colData[logPos * GlobalData.colCount + i];
+                //long v = logBlock.colData[logPos * GlobalData.colCount + i];
+                long v = unsafe.getLong(logBlock.colData + ((logPos * GlobalData.colCount + i) << 3));
                 int len = (int) (v & 0xff);
                 if (len == 0) {
                     break;
