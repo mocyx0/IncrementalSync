@@ -50,12 +50,14 @@ class TableInfo {
     static final int[] indexTable = new int[]{0, 1, 0, 3, 4, 4, 5, 7, 8, 2, 1};
 
     final int getColumnIndex(byte[] data, int off, int len) throws Exception {
-        if (Config.OPTIMIZE) {
-            return indexTable[len];
+        //if (Config.OPTIMIZE) {
+        return indexTable[len];
+            /*
         } else {
             long hash = hash(data, off, len);
             return hashToIndex.get(hash);
         }
+        */
     }
 
     boolean byteEqual(byte[] b1, byte[] b2) {

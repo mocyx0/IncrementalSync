@@ -1,11 +1,23 @@
 package org.pangolin.yx.zhengxu;
 
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 /**
  * Created by yangxiao on 2017/6/16.
  */
 public class ZXUtil {
+
+
+    public static volatile Unsafe unsafe;
+
+    public static void init() throws Exception {
+        Field singleoneInstanceField = Unsafe.class.getDeclaredField("theUnsafe");
+        singleoneInstanceField.setAccessible(true);
+        unsafe = (Unsafe) singleoneInstanceField.get(null);
+    }
 
     private int readInt(byte[] buffer, int off) {
         int re = (buffer[off] & 0xff)

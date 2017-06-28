@@ -4,8 +4,11 @@ import org.pangolin.yx.Config;
 import org.pangolin.yx.MLog;
 import org.pangolin.yx.ReadBufferPoll;
 import org.pangolin.yx.Util;
+import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,7 +77,7 @@ class LogBlockRebuilder {
 }
 
 class FileBlock {
-    byte[] buffer;//这个buff会被重复使用
+    ByteBuffer buffer;//这个buff会被重复使用
     int seq;
     int length;
 }
@@ -118,11 +121,12 @@ public class FileParserMT implements FileParser {
                     while (pos < fileLen) {
                         FileBlock fileBlock = new FileBlock();
                         fileBlock.buffer = ReadBufferPoll.allocateReadBuff();
-
-                        fileBlock.length = raf.read(fileBlock.buffer);
+                        fileBlock.length = raf.getChannel().read(fileBlock.buffer);
                         //find the last \n, so we have a full line
                         int last = fileBlock.length;
-                        while (fileBlock.buffer[last - 1] != '\n') {
+                        DirectBuffer directBuffer = (DirectBuffer) fileBlock.buffer;
+                        long add = directBuffer.address();
+                        while (ZXUtil.unsafe.getByte(add + last - 1) != '\n') {//fileBlock.buffer[last - 1] != '\n'
                             last--;
                         }
                         //
@@ -173,57 +177,61 @@ public class FileParserMT implements FileParser {
         BlockingQueue<FileBlock> queue;
         BlockingQueue<LogBlock> resultQueue;
         int rebuilderCount;
-
+        Unsafe unsafe;
 
         ParseThread(CountDownLatch latch, BlockingQueue<FileBlock> queue, BlockingQueue<LogBlock> resultQueue) {
             this.latch = latch;
             this.queue = queue;
             this.resultQueue = resultQueue;
             rebuilderCount = Config.REBUILDER_THREAD;
+            unsafe = ZXUtil.unsafe;
         }
 
         long seqNumber = 0;
 
-        int nextToken(byte[] data, char delimit) {
+        int nextToken() {
             int old = parsePos;
-            while (data[parsePos] != delimit) {
+            //while (data[parsePos] != delimit) {
+            while (unsafe.getByte(buffAddr + parsePos) != '|') {
                 parsePos++;
             }
             parsePos++;
             return parsePos - old - 1;
         }
 
-        int nextColName(byte[] data) {
-            if (Config.OPTIMIZE) {
-                int nameLen = 0;
-                byte b1 = data[parsePos];
-                if (b1 == 'i') {
-                    nameLen = 2;
-                } else if (b1 == 'f') {
-                    nameLen = 10;
-                } else if (b1 == 'l') {
-                    nameLen = 9;
-                } else if (b1 == 's') {
-                    if (data[parsePos + 3] == ':') {
-                        nameLen = 3;
-                    } else if (data[parsePos + 5] == ':') {
-                        nameLen = 5;
-                    } else if (data[parsePos + 6] == ':') {
-                        nameLen = 6;
-                    }
+        int nextColName() {
+            //if (Config.OPTIMIZE) {
+            int nameLen = 0;
+            byte b1 = unsafe.getByte(buffAddr + parsePos);
+            if (b1 == 'i') {
+                nameLen = 2;
+            } else if (b1 == 'f') {
+                nameLen = 10;
+            } else if (b1 == 'l') {
+                nameLen = 9;
+            } else if (b1 == 's') {
+                if (unsafe.getByte(buffAddr + parsePos + 3) == ':') {
+                    nameLen = 3;
+                } else if (unsafe.getByte(buffAddr + parsePos + 5) == ':') {
+                    nameLen = 5;
+                } else if (unsafe.getByte(buffAddr + parsePos + 6) == ':') {
+                    nameLen = 6;
                 }
-                parsePos += nameLen + 1;
-                return nameLen;
+            }
+            parsePos += nameLen + 1;
+            return nameLen;
+                /*
             } else {
                 return nextToken(data, ':');
             }
+            */
         }
 
-        private long nextColValue(byte[] data) {
+        private long nextColValue() {
             int old = parsePos;
             colValue = 0;
-            while (data[parsePos] != '|') {
-                colValue = colValue << 8 | ((long) data[parsePos] & 0xff);
+            while (unsafe.getByte(buffAddr + parsePos) != '|') {
+                colValue = colValue << 8 | ((long) unsafe.getByte(buffAddr + parsePos) & 0xff);
                 parsePos++;
             }
             colValue = colValue << 8 | ((long) (parsePos - old) & 0xff);
@@ -231,16 +239,18 @@ public class FileParserMT implements FileParser {
             return colValue;
         }
 
-        long parseLong(byte[] data) {
-            if (data[parsePos] == 'N') {
+        long parseLong() {
+            if (unsafe.getByte(buffAddr + parsePos) == 'N') {
                 parsePos += 5;
                 return -1;
             } else {
                 long v = 0;
-                byte b = data[parsePos++];
+                byte b = unsafe.getByte(buffAddr + parsePos);
+                parsePos++;
                 while (b != '|') {
                     v = v * 10 + (b - '0');
-                    b = data[parsePos++];
+                    b = unsafe.getByte(buffAddr + parsePos);
+                    parsePos++;
                 }
                 return v;
             }
@@ -250,7 +260,7 @@ public class FileParserMT implements FileParser {
         long colValue = 0;
         int colDataPos = 0;//分配coldata的位置
 
-        void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
+        void nextLineDirect() throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
             // int pos = parsePos;
             long id = -1;
@@ -259,26 +269,27 @@ public class FileParserMT implements FileParser {
             byte op;
             if (Config.OPTIMIZE) {
                 parsePos += 18;
-                nextToken(data, '|');
+                nextToken();
                 parsePos += 34;
             } else {
-                nextToken(data, '|');
-                nextToken(data, '|');
-                nextToken(data, '|');
-                nextToken(data, '|');
-                nextToken(data, '|');
+                nextToken();
+                nextToken();
+                nextToken();
+                nextToken();
+                nextToken();
             }
-            op = data[parsePos];
+            //op = data[parsePos];
+            op = unsafe.getByte(buffAddr + parsePos);
             parsePos += 2;
             int logPos = logBlock.length;
 
             //boolean accept = true;
             colParseIndex = 0;
-            while (data[parsePos] != '\n') {
+            while (unsafe.getByte(buffAddr + parsePos) != '\n') {
                 if (colParseIndex == 0) {
                     parsePos += 7;
-                    preid = parseLong(data);
-                    id = parseLong(data);
+                    preid = parseLong();
+                    id = parseLong();
                     /*
                     long activeId = id;
                     if (op == 'D') {
@@ -294,11 +305,11 @@ public class FileParserMT implements FileParser {
 
                 } else {
                     int namePos = parsePos;
-                    int nameLen = nextColName(data);
+                    int nameLen = nextColName();
                     parsePos += 4;
-                    nextToken(data, '|');//old value
-                    long colValue = nextColValue(data);//new value
-                    int colIndex = tableInfo.getColumnIndex(data, namePos, nameLen);
+                    nextToken();//old value
+                    long colValue = nextColValue();//new value
+                    int colIndex = tableInfo.getColumnIndex(null, namePos, nameLen);
                     logBlock.colData[colDataPos++] = ((long) colIndex << 56) | colValue;
                 }
                 colParseIndex++;
@@ -358,6 +369,10 @@ public class FileParserMT implements FileParser {
             System.out.println(sb.toString());
         }
 
+        DirectBuffer directBuffer;
+        LogBlock logBlock;
+        long buffAddr;
+
         @Override
         public void run() {
             try {
@@ -369,12 +384,15 @@ public class FileParserMT implements FileParser {
                         queue.put(fileBlock);
                         break;
                     } else {
-                        LogBlock logBlock = LogBlock.allocate();
+                        logBlock = LogBlock.allocate();
                         colDataPos = 0;
                         parsePos = 0;
                         seqNumber = (long) fileBlock.seq << 32;
+                        directBuffer = (DirectBuffer) fileBlock.buffer;
+                        buffAddr = directBuffer.address();
+
                         while (parsePos < fileBlock.length) {
-                            nextLineDirect(fileBlock.buffer, logBlock);
+                            nextLineDirect();
                             selfLineCount++;
                         }
                         ReadBufferPoll.freeReadBuff(fileBlock.buffer);

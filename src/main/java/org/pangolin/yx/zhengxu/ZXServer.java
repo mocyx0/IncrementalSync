@@ -115,6 +115,7 @@ public class ZXServer implements WorkerServer {
         @Override
         public void run() {
             try {
+
                 pos = start;
                 while (pos < end) {
                     int position = buffer.position();
@@ -171,6 +172,7 @@ public class ZXServer implements WorkerServer {
 
     @Override
     public void doData() throws Exception {
+        ZXUtil.init();
         //Thread.sleep(3000);
         //首先读取列信息
         long t1 = System.currentTimeMillis();
