@@ -251,6 +251,13 @@ public class FileParserMT implements FileParser {
         long colValue = 0;
         int colDataPos = 0;//分配coldata的位置
 
+        int idInCount = 0;
+        long idInMin = Long.MAX_VALUE;
+        long idInMax = 0;
+        int idOutCount = 0;
+        long idOutMin = Long.MAX_VALUE;
+        long idOutMax = 0;
+
         void nextLineDirect(byte[] data, LogBlock logBlock) throws Exception {
             TableInfo tableInfo = GlobalData.tableInfo;
             // int pos = parsePos;
@@ -291,6 +298,9 @@ public class FileParserMT implements FileParser {
                 colParseIndex++;
             }
             parsePos++;//skip \n
+
+
+
 /*
             boolean accept = true;
             if (Config.OPTIMIZE) {
@@ -314,15 +324,17 @@ public class FileParserMT implements FileParser {
             }
 
             if (preid != id && op == 'U') {
-                /*
-                if (id < Config.ALI_ID_MAX && preid >= Config.ALI_ID_MAX) {
+                if (id > Config.ALI_ID_MIN && id < Config.ALI_ID_MAX && preid <= Config.ALI_ID_MIN) {
                     //System.out.println(String.format("%d %d", preid, id));
                     idInCount++;
+                    idInMin = Math.min(preid, idInMin);
+                    idInMax = Math.max(preid, idInMax);
                 }
-                if (id >= Config.ALI_ID_MAX && preid < Config.ALI_ID_MAX) {
+                if (preid > Config.ALI_ID_MIN && preid < Config.ALI_ID_MAX && id <= Config.ALI_ID_MIN) {
                     idOutCount++;
+                    idOutMin = Math.min(id, idOutMin);
+                    idOutMax = Math.max(id, idOutMax);
                 }
-                */
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
                 logBlock.preIds[xpos] = -1;
@@ -378,7 +390,11 @@ public class FileParserMT implements FileParser {
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
-                //MLog.info(String.format("ParseThread  line:%d ", selfLineCount));
+                MLog.info(String.format("ParseThread  line:%d  in:%d min:%d max:%d ,out:%d min:%d max:%d",
+                        selfLineCount,
+                        idInCount, idInMin, idInMax,
+                        idOutCount, idOutMin, idOutMax
+                ));
                 latch.countDown();
             } catch (Exception e) {
                 MLog.info(e);
