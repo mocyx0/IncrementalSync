@@ -36,7 +36,6 @@ public interface Constants {
 
     // 结果文件的命名
     String RESULT_FILE_NAME = "Result.rs";
-
     //
 
     int PRECACHE_DELAY = 10000;
@@ -50,8 +49,8 @@ public interface Constants {
     int REBUILDER_THREAD = 7;
     int PARSER_THREAD = 7;
 
-    int COLLECTOR_THREAD = 7;
+    int COLLECTOR_THREAD = 8;
 
 
-    boolean DO_LOG=false;
+    boolean DO_LOG = true;
 }
