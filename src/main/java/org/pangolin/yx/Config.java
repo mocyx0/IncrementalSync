@@ -133,9 +133,9 @@ public final class Config {
     public static final int PARSER_IN_QUEUE = 2;
     public static final int PARSER_OUT_QUEUE = 2;
     public static final int REBUILDER_IN_QUEUE = 128;
-    public static final int READ_POOL_SIZE = 12;
+    public static final int READ_POOL_SIZE = 9;
     public static final int LOG_BLOCK_QUEUE = 21;
-    public static final int READ_BUFFER_SIZE = 1024 * 1024 * 4;
+    public static final int READ_BUFFER_SIZE = (int) (1024 * 1024 * 2);
 
     public static final boolean OPTIMIZE = true;
     public static final int ALI_ID_MIN = 1000000;
