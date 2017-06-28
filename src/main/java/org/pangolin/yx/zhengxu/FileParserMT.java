@@ -297,7 +297,7 @@ public class FileParserMT implements FileParser {
                     }
                     if (activeId >= Config.ALI_ID_MAX || activeId <= Config.ALI_ID_MIN) {
                         accept = false;
-                        while (data[parsePos] != '\n') {
+                        while (unsafe.getByte(buffAddr + parsePos) != '\n') {
                             parsePos++;
                         }
                     }
@@ -326,7 +326,7 @@ public class FileParserMT implements FileParser {
                 }
             }
             */
-            //if (accept) {
+            // if (accept) {
             logBlock.ids[logPos] = id;
             logBlock.preIds[logPos] = preid;
             logBlock.opTypes[logPos] = op;
@@ -340,7 +340,7 @@ public class FileParserMT implements FileParser {
             } else {
                 logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
             }
-            // }
+            //  }
             if (preid != id && op == 'U') {
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
