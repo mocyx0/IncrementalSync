@@ -5,6 +5,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 
 import java.io.*;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
@@ -54,16 +55,55 @@ public class ResultWriter {
 
     private static ArrayList<byte[]> waitBuff = new ArrayList<>();
 
-    public synchronized static void clearWaitBuff() {
+    public synchronized static void clearWaitBuff() throws Exception {
+        Socket client = NetServer.getClientSocket();
+        for (byte[] preData : waitBuff) {
+            client.getOutputStream().write(preData);
+            //channel.writeAndFlush(byteBuf);
+        }
+        waitBuff.clear();
+
+        /*
         Channel channel = NetServerHandler.getClientChannel();
         for (byte[] preData : waitBuff) {
             ByteBuf byteBuf = Unpooled.wrappedBuffer(preData, 0, preData.length);
             channel.writeAndFlush(byteBuf);
         }
         waitBuff.clear();
+        */
+    }
+
+    public volatile static boolean writeDone = false;
+
+    public volatile static int writeCount = 0;
+
+    public synchronized static void close() throws Exception {
+        Socket client = NetServer.getClientSocket();
+        // MLog.info(String.format("write %d", writeCount));
+        if (client != null) {
+            try {
+                client.getOutputStream().flush();
+                client.close();
+            } catch (Exception e) {
+                MLog.info(e);
+            }
+        }
+        writeDone = true;
     }
 
     public synchronized static void writeBuffer(ByteBuffer buffer) throws Exception {
+        writeCount += buffer.limit();
+        byte[] data = new byte[buffer.limit()];
+        //MLog.info(String.format("write %d", buffer.limit()));
+        buffer.get(data);
+        Socket client = NetServer.getClientSocket();
+        if (client == null) {
+            waitBuff.add(data);
+        } else {
+            clearWaitBuff();
+            client.getOutputStream().write(data);
+            //client.getOutputStream().flush();
+        }
         /*
         if (Config.SINGLE) {
             if (raf == null) {
@@ -81,6 +121,8 @@ public class ResultWriter {
             }
         } else {
         */
+
+        /*
         byte[] data = new byte[buffer.limit()];
         buffer.get(data);
 
@@ -95,8 +137,8 @@ public class ResultWriter {
             }
             ByteBuf byteBuf = Unpooled.wrappedBuffer(data, 0, data.length);
             channel.writeAndFlush(byteBuf);
-
         }
+        */
     }
 
 

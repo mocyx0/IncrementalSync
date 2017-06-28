@@ -132,7 +132,7 @@ public class ZXServer implements WorkerServer {
                 }
                 latch.countDown();
             } catch (Exception e) {
-                MLog.info("{}" + e);
+                MLog.info(e);
                 System.exit(0);
             }
         }
@@ -159,9 +159,11 @@ public class ZXServer implements WorkerServer {
 
         //write end
         ByteBuffer buffer = ByteBuffer.allocate(16);
-        buffer.put((byte) 0);
+        buffer.putInt(0);
         buffer.flip();
         ResultWriter.writeBuffer(buffer);
+        ResultWriter.close();
+
     }
 
     //FileParser fileParser = new FileParserSimple();
@@ -197,12 +199,6 @@ public class ZXServer implements WorkerServer {
         //
         long t3 = System.currentTimeMillis();
         MLog.info(String.format("collect done cost %d", t3 - t2));
-        //直接读取
-        //startParser1();
-
-        ByteBuffer buffer = ByteBuffer.allocate(16);
-        buffer.putInt(0);
-        buffer.flip();
-        ResultWriter.writeBuffer(buffer);
+        System.exit(0);
     }
 }

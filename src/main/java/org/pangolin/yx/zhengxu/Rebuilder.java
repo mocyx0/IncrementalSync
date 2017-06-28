@@ -78,7 +78,7 @@ public class Rebuilder implements Runnable {
             //logger.info(String.format("rebuild handle log:%d", logCount));
             latch.countDown();
         } catch (Exception e) {
-            MLog.info(e.toString());
+            MLog.info(e);
             System.exit(0);
         }
     }

@@ -7,6 +7,13 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.timeout.IdleStateHandler;
+import org.pangolin.yx.zhengxu.ZXClient;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 
 /**
  * Created by yangxiao on 2017/6/7.
@@ -14,8 +21,47 @@ import io.netty.handler.timeout.IdleStateHandler;
 
 
 public class NetClient {
+    private static WorkerClient workerClient;
+    private static byte[] buff = new byte[64 * 1024];
 
     public static void start(String host) throws Exception {
+
+        int port = Config.SERVER_PORT;
+        Socket client = null;
+        while (true) {
+            try {
+                client = new Socket(host, port);
+                break;
+            } catch (IOException e) {
+                MLog.info(e.toString());
+                Thread.sleep(100);
+            }
+        }
+        workerClient = new ZXClient();
+        MLog.info("connected");
+        //client.getOutputStream().write("hello".getBytes());
+        InputStream is = client.getInputStream();
+        while (true) {
+            //ByteBuffer buff = ByteBuffer.allocate(60 * 1024);
+            try {
+                int len = is.read(buff);
+                //MLog.info(String.format("recv %d", len));
+                if (len == -1) {
+                    break;
+                } else {
+                    ByteBuffer buf = ByteBuffer.wrap(buff, 0, len);
+                    buf.position(len);
+                    buf.flip();
+                    workerClient.onData(buf, null);
+                }
+            } catch (Exception e) {
+                MLog.info(e);
+                break;
+            }
+        }
+        workerClient.onClosed();
+
+        /*
         EventLoopGroup workerGroup = new NioEventLoopGroup();
         try {
             Bootstrap b = new Bootstrap();
@@ -53,6 +99,7 @@ public class NetClient {
         } finally {
             workerGroup.shutdownGracefully();
         }
+        */
     }
 
 }

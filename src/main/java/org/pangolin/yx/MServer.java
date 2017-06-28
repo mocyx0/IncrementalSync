@@ -47,9 +47,12 @@ public final class MServer {
                     throw new Exception("wrong test mode");
                 }
                 MLog.info("send result to client");
+                while (true) {
+                    Thread.sleep(1000);
+                }
                 //System.exit(0);
             } catch (Exception e) {
-                MLog.info(e.toString());
+                MLog.info(e);
                 System.exit(0);
             } catch (Error e) {
                 MLog.info(e.toString());
@@ -92,10 +95,9 @@ public final class MServer {
                 MLog.info("参数错误");
             }
         } catch (Exception e) {
-            MLog.info(e.toString());
+            MLog.info(e);
             System.exit(0);
         } catch (Error e) {
-            MLog.info(e.toString());
             MLog.info(e.toString());
             throw e;
         }

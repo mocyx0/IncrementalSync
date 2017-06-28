@@ -28,7 +28,7 @@ public class MClient {
             initProperties();
             NetClient.start(args[0]);
         } catch (Exception e) {
-            MLog.info(e.toString());
+            MLog.info(e);
             System.exit(0);
         }
     }

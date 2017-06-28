@@ -9,6 +9,7 @@ import org.pangolin.yx.WorkerClient;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -99,7 +100,8 @@ public class NXClient implements WorkerClient {
     }
 
     @Override
-    public void onData(ByteBuf result, ChannelHandlerContext ctx) throws Exception {
+    public void onData(ByteBuffer result, Socket sock) throws Exception {
+        /*
         int readlLen = result.readableBytes();
         result.readBytes(buffer, writeOff, result.readableBytes());
         writeOff += readlLen;
@@ -108,5 +110,11 @@ public class NXClient implements WorkerClient {
             ctx.channel().close().sync();
             System.exit(0);
         }
+        */
+    }
+
+    @Override
+    public void onClosed() throws Exception {
+
     }
 }

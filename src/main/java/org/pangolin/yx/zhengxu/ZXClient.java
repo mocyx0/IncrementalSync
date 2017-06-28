@@ -9,6 +9,7 @@ import org.pangolin.yx.WorkerClient;
 
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.TreeMap;
@@ -37,14 +38,13 @@ public class ZXClient implements WorkerClient {
 
     private void dumpToFile() throws Exception {
         MLog.info(String.format("start dump recv size %d", writeOff));
-
         ByteBuffer bf = ByteBuffer.wrap(buffer);
         bf.position(writeOff);
-
         bf.flip();
         TreeMap<Integer, ArrayList<DumpBlock>> blocks = new TreeMap<>();
         while (true) {
             int index = bf.getInt();
+            //MLog.info(String.format("%d %d", index, bf.position()));
             if (index == 0) {
                 break;
             } else {
@@ -62,7 +62,9 @@ public class ZXClient implements WorkerClient {
                 if (bf.position() + size > bf.limit()) {
                     System.out.print(1);
                 }
+                //System.out.println(bf.position() + size);
                 bf.position(bf.position() + size);
+                //MLog.info(String.format("2 %d %d", index, bf.position()));
                 //logger.info(String.format("index %d ,seq %d , block size %d , new pos %d", index, seq, size, bf.position()));
             }
         }
@@ -101,16 +103,26 @@ public class ZXClient implements WorkerClient {
     }
 
     @Override
-    public void onData(ByteBuf result, ChannelHandlerContext ctx) throws Exception {
+    public void onData(ByteBuffer result, Socket sock) throws Exception {
         //logger.info("onData");
-        int readlLen = result.readableBytes();
-        result.readBytes(buffer, writeOff, result.readableBytes());
+        int readlLen = result.limit();
+        //MLog.info(String.format("read %d", readlLen));
+        result.get(buffer, writeOff, readlLen);
+        //result.readBytes(buffer, writeOff, result.readableBytes());
         writeOff += readlLen;
+        /*
         if (writeOff > 0 && buffer[writeOff - 1] == 0) {
             dumpToFile();
             //ctx.channel().close().sync();
             MLog.info(String.format("%d", System.currentTimeMillis()));
             System.exit(0);
         }
+        */
+    }
+
+    @Override
+    public void onClosed() throws Exception {
+        dumpToFile();
+        System.exit(0);
     }
 }

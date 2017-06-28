@@ -29,7 +29,7 @@ public class NetClientHandler extends ChannelInboundHandlerAdapter {
 
         ByteBuf result = (ByteBuf) msg;
         //logger.info(String.format("channelRead size:%d", result.readableBytes()));
-        workerClient.onData(result, ctx);
+//        workerClient.onData(result, ctx);
         result.release();
     }
 

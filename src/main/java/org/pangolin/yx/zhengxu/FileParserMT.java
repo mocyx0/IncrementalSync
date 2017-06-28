@@ -143,7 +143,7 @@ public class FileParserMT implements FileParser {
                 }
                 MLog.info("ReadThread done");
             } catch (Exception e) {
-                MLog.info("{}" + e);
+                MLog.info(e);
                 System.exit(0);
             }
         }
@@ -381,7 +381,7 @@ public class FileParserMT implements FileParser {
                 //MLog.info(String.format("ParseThread  line:%d ", selfLineCount));
                 latch.countDown();
             } catch (Exception e) {
-                MLog.info("{}" + e);
+                MLog.info(e);
                 System.exit(0);
             }
         }
