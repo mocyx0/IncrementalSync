@@ -463,7 +463,7 @@ public class DataStorageTwoLevel implements DataStorage {
         //int colDataPos = logPos * GlobalData.colCount;
         //提取列数据信息
         int colDataPos = logBlock.colDataInfo[logPos];
-        //int colDataPos = (int) unsafe.getLong(logBlock.colDataInfo + (logPos << 3));
+        //int colDataPos = (int) unsafe.getInt(logBlock.colDataInfo + (logPos << 2));
         int colDataLen = (int) (colDataPos & 0xff);
         colDataPos = colDataPos >> 8;
         long offLocal;

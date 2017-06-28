@@ -24,6 +24,7 @@ class LogBlock {
     public static final int MAX_LENGTH = 70000;
     long ids;
     int[] colDataInfo = new int[MAX_LENGTH];//高位3个字节位置: 低位1个字节:长度
+    //long colDataInfo;//高位3个字节位置: 低位1个字节:长度
     long preIds;
     //byte[] opTypes = new byte[MAX_LENGTH];
     long opTypes;
@@ -51,6 +52,7 @@ class LogBlock {
         preIds = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
         opTypes = ZXUtil.unsafe.allocateMemory(MAX_LENGTH);
         redoer = ZXUtil.unsafe.allocateMemory(MAX_LENGTH);
+        //colDataInfo = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 2);
         //colDataInfo = ZXUtil.unsafe.allocateMemory(MAX_LENGTH << 3);
     }
 
@@ -349,7 +351,7 @@ public class FileParserMT implements FileParser {
             logBlock.length++;
             byte colLen = (byte) (colDataPos - logColPos);
             logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
-            //unsafe.putLong(logBlock.colDataInfo + (logPos) << 3, logColPos << 8 | colLen);
+            //unsafe.putInt(logBlock.colDataInfo + (logPos) << 2, logColPos << 8 | colLen);
             if (op == 'D') {
                 //logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
                 unsafe.putByte(logBlock.redoer + logPos, (byte) ((preid) % Config.REBUILDER_THREAD));
