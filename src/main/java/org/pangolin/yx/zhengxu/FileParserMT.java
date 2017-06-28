@@ -165,8 +165,6 @@ public class FileParserMT implements FileParser {
         blockData.buffQueue.add(log);
     }
     */
-    public int idInCount = 0;
-    public int idOutCount = 0;
 
     private class ParseThread implements Runnable {
 
@@ -175,6 +173,7 @@ public class FileParserMT implements FileParser {
         BlockingQueue<FileBlock> queue;
         BlockingQueue<LogBlock> resultQueue;
         int rebuilderCount;
+
 
         ParseThread(CountDownLatch latch, BlockingQueue<FileBlock> queue, BlockingQueue<LogBlock> resultQueue) {
             this.latch = latch;
@@ -324,6 +323,9 @@ public class FileParserMT implements FileParser {
             }
 
             if (preid != id && op == 'U') {
+
+                //MLog.info(String.format("%d %d", preid, id));
+
                 if (id > Config.ALI_ID_MIN && id < Config.ALI_ID_MAX && preid <= Config.ALI_ID_MIN) {
                     //System.out.println(String.format("%d %d", preid, id));
                     idInCount++;
@@ -390,7 +392,7 @@ public class FileParserMT implements FileParser {
                     }
                 }
                 resultQueue.put(LogBlock.EMPTY);
-                MLog.info(String.format("ParseThread  line:%d  in:%d min:%d max:%d ,out:%d min:%d max:%d",
+                MLog.info(String.format("ParseThread  line:%d  in:%d min:%d max:%d ,out:%d min:%d max:%d ",
                         selfLineCount,
                         idInCount, idInMin, idInMax,
                         idOutCount, idOutMin, idOutMax
