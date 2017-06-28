@@ -272,13 +272,14 @@ public class FileParserMT implements FileParser {
             parsePos += 2;
             int logPos = logBlock.length;
 
-            boolean accept = true;
+            //boolean accept = true;
             colParseIndex = 0;
             while (data[parsePos] != '\n') {
                 if (colParseIndex == 0) {
                     parsePos += 7;
                     preid = parseLong(data);
                     id = parseLong(data);
+                    /*
                     long activeId = id;
                     if (op == 'D') {
                         activeId = preid;
@@ -289,6 +290,7 @@ public class FileParserMT implements FileParser {
                             parsePos++;
                         }
                     }
+                    */
 
                 } else {
                     int namePos = parsePos;
@@ -313,21 +315,21 @@ public class FileParserMT implements FileParser {
                 }
             }
             */
-            if (accept) {
-                logBlock.ids[logPos] = id;
-                logBlock.preIds[logPos] = preid;
-                logBlock.opTypes[logPos] = op;
-                //logBlock.seqs[logPos] = seqNumber++;
-                //logBlock.seqs[logPos] = 0;
-                logBlock.length++;
-                byte colLen = (byte) (colDataPos - logColPos);
-                logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
-                if (op == 'D') {
-                    logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
-                } else {
-                    logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
-                }
+            //if (accept) {
+            logBlock.ids[logPos] = id;
+            logBlock.preIds[logPos] = preid;
+            logBlock.opTypes[logPos] = op;
+            //logBlock.seqs[logPos] = seqNumber++;
+            //logBlock.seqs[logPos] = 0;
+            logBlock.length++;
+            byte colLen = (byte) (colDataPos - logColPos);
+            logBlock.colDataInfo[logPos] = logColPos << 8 | colLen;
+            if (op == 'D') {
+                logBlock.redoer[logPos] = (byte) ((preid) % Config.REBUILDER_THREAD);
+            } else {
+                logBlock.redoer[logPos] = (byte) ((id) % Config.REBUILDER_THREAD);
             }
+            // }
             if (preid != id && op == 'U') {
                 int xpos = logBlock.length;
                 logBlock.ids[xpos] = preid;
@@ -375,7 +377,6 @@ public class FileParserMT implements FileParser {
                             nextLineDirect(fileBlock.buffer, logBlock);
                             selfLineCount++;
                         }
-
                         ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         logBlock.ref.set(queueCount);
                         //TEST
