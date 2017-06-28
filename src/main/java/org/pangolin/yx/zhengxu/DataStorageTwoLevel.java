@@ -427,12 +427,33 @@ public class DataStorageTwoLevel implements DataStorage {
 
         long id = logBlock.ids[logPos];
         long preId = logBlock.preIds[logPos];
+        byte opType = logBlock.opTypes[logPos];
 
+        if (opType == 'D') {
+            if (preId >= Config.ALI_ID_MAX) {
+                return;
+            }
+            if (preId <= Config.ALI_ID_MIN) {
+                return;
+            }
+        } else {
+            if (id >= Config.ALI_ID_MAX) {
+                return;
+            }
+            if (id <= Config.ALI_ID_MIN) {
+                return;
+            }
+        }
+        /*
         if (id >= Config.ALI_ID_MAX || preId >= Config.ALI_ID_MAX) {
             return;
         }
+        if (id <= Config.ALI_ID_MIN || preId <= Config.ALI_ID_MIN) {
+            return;
+        }
+        */
 
-        byte opType = logBlock.opTypes[logPos];
+
         //long seq = logBlock.seqs[logPos];
         long[] colData = logBlock.colData;
         //int colDataPos = logPos * GlobalData.colCount;
