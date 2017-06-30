@@ -8,7 +8,11 @@ import sun.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -88,9 +92,10 @@ class LogBlockRebuilder {
 }
 
 class FileBlock {
-    ByteBuffer buffer;//这个buff会被重复使用
+    //ByteBuffer buffer;//这个buff会被重复使用
     int seq;
     int length;
+    MappedByteBuffer mmap;
 }
 
 public class FileParserMT implements FileParser {
@@ -123,6 +128,7 @@ public class FileParserMT implements FileParser {
         public void run() {
             try {
                 int seq = 0;
+                byte[] lineBuffer = new byte[256];
                 ArrayList<String> files = Util.logFiles(Config.DATA_HOME);
                 for (int i = 0; i < files.size(); i++) {
                     String path = files.get(i);
@@ -131,18 +137,31 @@ public class FileParserMT implements FileParser {
                     long pos = 0;
                     while (pos < fileLen) {
                         FileBlock fileBlock = new FileBlock();
-                        fileBlock.buffer = ReadBufferPoll.allocateReadBuff();
-                        fileBlock.length = raf.getChannel().read(fileBlock.buffer);
+                        //fileBlock.buffer = ReadBufferPoll.allocateReadBuff();
+                        //fileBlock.length = raf.getChannel().read(fileBlock.buffer);
+                        fileBlock.length = (int) Math.min(Config.READ_BUFFER_SIZE, fileLen - pos);
                         //find the last \n, so we have a full line
-                        int last = fileBlock.length;
-                        DirectBuffer directBuffer = (DirectBuffer) fileBlock.buffer;
-                        long add = directBuffer.address();
+                        // int last = fileBlock.length;
+                        raf.seek(pos + fileBlock.length);
+                        int count = raf.read(lineBuffer);
+                        for (int j = 0; j < count; j++) {
+                            fileBlock.length++;
+                            if (lineBuffer[j] == '\n') {
+                                break;
+                            }
+                        }
+                        //DirectBuffer directBuffer = (DirectBuffer) fileBlock.buffer;
+                        //long add = directBuffer.address();
+                        /*
                         while (ZXUtil.unsafe.getByte(add + last - 1) != '\n') {//fileBlock.buffer[last - 1] != '\n'
                             last--;
                         }
+                        */
                         //
-                        fileBlock.length = last;
+                        //fileBlock.length = last;
                         fileBlock.seq = seq;
+                        //mmap
+                        fileBlock.mmap = raf.getChannel().map(FileChannel.MapMode.READ_ONLY, pos, fileBlock.length);
                         pos += fileBlock.length;
                         raf.seek(pos);
                         fileBlockQueues.get(seq % fileBlockQueues.size()).put(fileBlock);
@@ -393,7 +412,7 @@ public class FileParserMT implements FileParser {
             System.out.println(sb.toString());
         }
 
-        DirectBuffer directBuffer;
+        //DirectBuffer directBuffer;
         LogBlock logBlock;
         long buffAddr;
 
@@ -401,9 +420,11 @@ public class FileParserMT implements FileParser {
         public void run() {
             try {
                 int selfLineCount = 0;
+                Field fieldPassword = Buffer.class.getDeclaredField("address");
+                fieldPassword.setAccessible(true);
                 while (true) {
                     FileBlock fileBlock = queue.take();
-                    if (fileBlock.buffer == null) {
+                    if (fileBlock.mmap == null) {
                         //put back the flag
                         queue.put(fileBlock);
                         break;
@@ -412,14 +433,17 @@ public class FileParserMT implements FileParser {
                         colDataPos = 0;
                         parsePos = 0;
                         seqNumber = (long) fileBlock.seq << 32;
+                        buffAddr = (long) fieldPassword.get((Buffer) fileBlock.mmap);
+
+                        /*
                         directBuffer = (DirectBuffer) fileBlock.buffer;
                         buffAddr = directBuffer.address();
-
+                        */
                         while (parsePos < fileBlock.length) {
                             nextLineDirect();
                             selfLineCount++;
                         }
-                        ReadBufferPoll.freeReadBuff(fileBlock.buffer);
+                        //ReadBufferPoll.freeReadBuff(fileBlock.buffer);
                         logBlock.ref.set(queueCount);
                         //TEST
                         resultQueue.put(logBlock);

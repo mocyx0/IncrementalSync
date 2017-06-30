@@ -83,9 +83,9 @@ public final class Config {
     // 工作主目录
     public static String TESTER_HOME = "C:/tmp/alimid/small";
     // 赛题数据
-    public static String DATA_HOME = "C:/tmp/alimid/bigSmall";
+    public static String DATA_HOME = "C:/tmp/alimid/big";
     // 结果文件目录
-    public static String RESULT_HOME = "C:/tmp/alimid/bigSmall";
+    public static String RESULT_HOME = "C:/tmp/alimid/big";
     public static String RESULT_NAME = "Result.rs";
     // teamCode
     public static String TEAMCODE = "yx";
@@ -134,7 +134,7 @@ public final class Config {
     public static final int PARSER_OUT_QUEUE = 2;
     public static final int REBUILDER_IN_QUEUE = 128;
     public static final int READ_POOL_SIZE = 9;
-    public static final int LOG_BLOCK_QUEUE = 21;
+    public static final int LOG_BLOCK_QUEUE = 50;
     public static final int READ_BUFFER_SIZE = (int) (1024 * 1024 * 2);
 
     public static final boolean OPTIMIZE = true;
