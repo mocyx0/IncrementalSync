@@ -3,6 +3,7 @@ package org.pangolin.yx.zhengxu;
 import org.pangolin.yx.Config;
 import org.pangolin.yx.MLog;
 import org.pangolin.yx.PlainHashingSimple;
+import sun.misc.Unsafe;
 
 import java.util.ArrayList;
 
@@ -22,13 +23,25 @@ class LogRecord {
 class TableInfo {
     byte[][] columnName;//包含pk
     byte[] pkName;
-
+    Unsafe unsafe;
     private PlainHashingSimple hashToIndex = new PlainHashingSimple(8);
+
+    TableInfo() {
+        unsafe = ZXUtil.unsafe;
+    }
 
     private long hash(byte[] data, int start, int len) {
         long hash = 0;
         for (int j = start; j < len + start; j++) {
             hash = 31 * hash + data[j];
+        }
+        return hash;
+    }
+
+    private long hash(long add, int start, int len) {
+        long hash = 0;
+        for (int j = start; j < len + start; j++) {
+            hash = 31 * hash + unsafe.getByte(add + j);
         }
         return hash;
     }
@@ -49,15 +62,58 @@ class TableInfo {
     // id first_name last_name sex score score2
     static final int[] indexTable = new int[]{0, 1, 0, 3, 4, 4, 5, 7, 8, 2, 1};
 
-    final int getColumnIndex(byte[] data, int off, int len) throws Exception {
-        //if (Config.OPTIMIZE) {
-        return indexTable[len];
-            /*
+    final int getColumnIndex(long add, int off, int len) throws Exception {
+        if (Config.OPTIMIZE) {
+            return indexTable[len];
         } else {
-            long hash = hash(data, off, len);
+            for (int i = 0; i < columnName.length; i++) {
+                byte[] name = columnName[i];
+                if (name.length == len) {
+                    boolean same = true;
+                    for (int j = 0; j < name.length; j++) {
+                        if (unsafe.getByte(add + off + j) != name[j]) {
+                            same = false;
+                            break;
+                        }
+                    }
+                    if (same) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+            /*
+            long hash = hash(add, off, len);
             return hashToIndex.get(hash);
+            */
         }
-        */
+    }
+
+    final int getColumnIndex(byte[] data, int off, int len) throws Exception {
+        if (Config.OPTIMIZE) {
+            return indexTable[len];
+        } else {
+            for (int i = 0; i < columnName.length; i++) {
+                byte[] name = columnName[i];
+                if (name.length == len) {
+                    boolean same = true;
+                    for (int j = 0; j < name.length; j++) {
+                        if (data[off + j] != name[j]) {
+                            same = false;
+                            break;
+                        }
+                    }
+                    if (same) {
+                        return i;
+                    }
+                }
+            }
+            return -1;
+            /*
+            long hash = hash(add, off, len);
+            return hashToIndex.get(hash);
+            */
+        }
     }
 
     boolean byteEqual(byte[] b1, byte[] b2) {

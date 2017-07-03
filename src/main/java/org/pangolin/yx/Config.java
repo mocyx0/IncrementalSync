@@ -137,7 +137,7 @@ public final class Config {
     public static final int LOG_BLOCK_QUEUE = 21;
     public static final int READ_BUFFER_SIZE = (int) (1024 * 1024 * 2);
 
-    public static final boolean OPTIMIZE = true;
+    public static final boolean OPTIMIZE = false;
     public static final int ALI_ID_MIN = 1000000;
     public static final int ALI_ID_MAX = 8000000;
 }

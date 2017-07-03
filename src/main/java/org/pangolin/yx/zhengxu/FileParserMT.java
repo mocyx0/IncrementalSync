@@ -104,9 +104,7 @@ public class FileParserMT implements FileParser {
     //这是每个parser输出的LogBlock
     ArrayList<BlockingQueue<LogBlock>> logBlocks = new ArrayList<>();
 
-
     private class ReadThread implements Runnable {
-
 
         @Override
         public void run() {
@@ -189,6 +187,16 @@ public class FileParserMT implements FileParser {
 
         long seqNumber = 0;
 
+        int nextTokenColon() {
+            int old = parsePos;
+            //while (data[parsePos] != delimit) {
+            while (unsafe.getByte(buffAddr + parsePos) != ':') {
+                parsePos++;
+            }
+            parsePos++;
+            return parsePos - old - 1;
+        }
+
         int nextToken() {
             int old = parsePos;
             //while (data[parsePos] != delimit) {
@@ -200,31 +208,30 @@ public class FileParserMT implements FileParser {
         }
 
         int nextColName() {
-            //if (Config.OPTIMIZE) {
-            int nameLen = 0;
-            byte b1 = unsafe.getByte(buffAddr + parsePos);
-            if (b1 == 'i') {
-                nameLen = 2;
-            } else if (b1 == 'f') {
-                nameLen = 10;
-            } else if (b1 == 'l') {
-                nameLen = 9;
-            } else if (b1 == 's') {
-                if (unsafe.getByte(buffAddr + parsePos + 3) == ':') {
-                    nameLen = 3;
-                } else if (unsafe.getByte(buffAddr + parsePos + 5) == ':') {
-                    nameLen = 5;
-                } else if (unsafe.getByte(buffAddr + parsePos + 6) == ':') {
-                    nameLen = 6;
+            if (Config.OPTIMIZE) {
+                int nameLen = 0;
+                byte b1 = unsafe.getByte(buffAddr + parsePos);
+                if (b1 == 'i') {
+                    nameLen = 2;
+                } else if (b1 == 'f') {
+                    nameLen = 10;
+                } else if (b1 == 'l') {
+                    nameLen = 9;
+                } else if (b1 == 's') {
+                    if (unsafe.getByte(buffAddr + parsePos + 3) == ':') {
+                        nameLen = 3;
+                    } else if (unsafe.getByte(buffAddr + parsePos + 5) == ':') {
+                        nameLen = 5;
+                    } else if (unsafe.getByte(buffAddr + parsePos + 6) == ':') {
+                        nameLen = 6;
+                    }
                 }
-            }
-            parsePos += nameLen + 1;
-            return nameLen;
-                /*
+                parsePos += nameLen + 1;
+                return nameLen;
             } else {
-                return nextToken(data, ':');
+
+                return nextTokenColon();
             }
-            */
         }
 
         private long nextColValue() {
@@ -275,8 +282,8 @@ public class FileParserMT implements FileParser {
                 nextToken();
                 nextToken();
                 nextToken();
-                nextToken();
-                nextToken();
+                nextToken();//scheme
+                nextToken();//table
             }
             //op = data[parsePos];
             op = unsafe.getByte(buffAddr + parsePos);
@@ -309,7 +316,7 @@ public class FileParserMT implements FileParser {
                     parsePos += 4;
                     nextToken();//old value
                     long colValue = nextColValue();//new value
-                    int colIndex = tableInfo.getColumnIndex(null, namePos, nameLen);
+                    int colIndex = tableInfo.getColumnIndex(buffAddr, namePos, nameLen);
                     logBlock.colData[colDataPos++] = ((long) colIndex << 56) | colValue;
                 }
                 colParseIndex++;

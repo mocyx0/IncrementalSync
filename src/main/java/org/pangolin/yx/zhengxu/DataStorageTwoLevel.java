@@ -339,14 +339,12 @@ public class DataStorageTwoLevel implements DataStorage {
     }
 
     public RecordData getRecord(long id, long seq) throws Exception {
-        return getRecordLevel1(id, seq);
-        /*
+        //return getRecordLevel1(id, seq);
         if (id / Config.REBUILDER_THREAD > FIRST_LEVEL_MAX) {
             return getRecordLevel2(id, seq);
         } else {
             return getRecordLevel1(id, seq);
         }
-        */
     }
 /*
     //seq=-1 表示不关心seq
@@ -429,6 +427,7 @@ public class DataStorageTwoLevel implements DataStorage {
         long preId = logBlock.preIds[logPos];
         byte opType = logBlock.opTypes[logPos];
 
+        /*
         if (opType == 'D') {
             if (preId >= Config.ALI_ID_MAX) {
                 return;
@@ -444,6 +443,7 @@ public class DataStorageTwoLevel implements DataStorage {
                 return;
             }
         }
+        */
         /*
         if (id >= Config.ALI_ID_MAX || preId >= Config.ALI_ID_MAX) {
             return;
@@ -461,58 +461,103 @@ public class DataStorageTwoLevel implements DataStorage {
         int colDataPos = logBlock.colDataInfo[logPos];
         int colDataLen = colDataPos & 0xff;
         colDataPos = colDataPos >> 8;
+
+
         long offLocal;
         if (opType == 'D') {
             offLocal = preId / Config.REBUILDER_THREAD;
         } else {
             offLocal = id / Config.REBUILDER_THREAD;
         }
-        int level1Index = (int) offLocal;
-        /*
-        if (opType == 'D') {
-            level1Index = (int) preId;
-        }
-        */
-        if (opType == 'U') {
-            if (preId != id) {
+
+
+        if (offLocal > FIRST_LEVEL_MAX) {
+            if (opType == 'U') {
+                if (preId != id) {
+                    int next = hashing.getOrDefault(id, 0);
+                    int newNode = allocateBlock();
+                    writeLongToLevel2(OFF_NEXT + newNode, next);
+                    writeLongToLevel2(OFF_SEQ + newNode, logBlock.seqs[logPos]);
+                    writeLongToLevel2(OFF_PREID + newNode, preId);
+                    writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos, colDataLen);
+                    hashing.put(id, newNode);
+                } else {
+                    int node = hashing.getOrDefault(id, 0);
+                    writeLogDataToLevel2(node + OFF_CELL, colData, colDataPos, colDataLen);
+                }
+            } else if (opType == 'I') {
+                int next = hashing.getOrDefault(id, 0);
+                int newNode = allocateBlock();
+                writeLongToLevel2(OFF_NEXT + newNode, next);
+                writeLongToLevel2(OFF_SEQ + newNode, logBlock.seqs[logPos]);
+                writeLongToLevel2(OFF_PREID + newNode, -1);
+                writeLogDataToLevel2(newNode + OFF_CELL, colData, colDataPos, colDataLen);
+                hashing.put(id, newNode);
+            } else if (opType == 'D') {
+                int node = hashing.getOrDefault(preId, 0);
+                if (node == 0) {
+                    throw new Exception("error");
+                } else {
+                    int next = (int) readLong(node + OFF_NEXT);
+                    if (next == 0) {
+                        hashing.remove(preId);
+                    } else {
+                        hashing.put(preId, next);
+                    }
+                }
+            } else if (opType == 'X') {
+                int node = hashing.get(id);
+                // writeByte(bytes, OFF_FLAG + node, (byte) 1);
+                writeLongToLevel2(OFF_FLAG + node, 1);
+            }
+        } else {
+            int level1Index = (int) offLocal;
+                /*
+            if (opType == 'D') {
+                level1Index = (int) preId;
+            }
+            */
+            if (opType == 'U') {
+                if (preId != id) {
+                    if (level1.flag[level1Index] != FLAG_EMPTY) {
+                        level1.next[level1Index] = copyDataToLevel2(level1Index);
+                    }
+                    level1.seq[level1Index] = logBlock.seqs[logPos];
+                    level1.preid[level1Index] = preId;
+                    level1.flag[level1Index] = FLAG_VALID;
+                    //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
+                    writeLogDataToLevel1(level1Index, colData, colDataPos, colDataLen);
+                } else {
+                    //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
+                    writeLogDataToLevel1(level1Index, colData, colDataPos, colDataLen);
+                }
+            } else if (opType == 'I') {
                 if (level1.flag[level1Index] != FLAG_EMPTY) {
                     level1.next[level1Index] = copyDataToLevel2(level1Index);
                 }
                 level1.seq[level1Index] = logBlock.seqs[logPos];
-                level1.preid[level1Index] = preId;
+                level1.preid[level1Index] = -1;
                 level1.flag[level1Index] = FLAG_VALID;
                 //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
                 writeLogDataToLevel1(level1Index, colData, colDataPos, colDataLen);
-            } else {
-                //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
-                writeLogDataToLevel1(level1Index, colData, colDataPos, colDataLen);
+            } else if (opType == 'D') {
+                if (level1.next[level1Index] != 0) {
+                    //read the pre node
+                    int next = level1.next[level1Index];
+                    level1.next[level1Index] = (int) readLong(next + OFF_NEXT);
+                    level1.seq[level1Index] = readLong(next + OFF_SEQ);
+                    level1.flag[level1Index] = (byte) readLong(next + OFF_FLAG);
+                    level1.preid[level1Index] = readLong(next + OFF_PREID);
+                    //level1.colData[level1Index] = readInt(bytes, next + OFF_NEXT);
+                    //readBytes(next, OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
+                    readLongs(next + OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
+                } else {
+                    level1.flag[level1Index] = FLAG_EMPTY;
+                    clearColData(level1Index);
+                }
+            } else if (opType == 'X') {
+                level1.flag[level1Index] = FLAG_X;
             }
-        } else if (opType == 'I') {
-            if (level1.flag[level1Index] != FLAG_EMPTY) {
-                level1.next[level1Index] = copyDataToLevel2(level1Index);
-            }
-            level1.seq[level1Index] = logBlock.seqs[logPos];
-            level1.preid[level1Index] = -1;
-            level1.flag[level1Index] = FLAG_VALID;
-            //writeDataToBytesRaw(level1.colData, level1Index * COL_BLOCK_SIZE, colData, colDataPos, data);
-            writeLogDataToLevel1(level1Index, colData, colDataPos, colDataLen);
-        } else if (opType == 'D') {
-            if (level1.next[level1Index] != 0) {
-                //read the pre node
-                int next = level1.next[level1Index];
-                level1.next[level1Index] = (int) readLong(next + OFF_NEXT);
-                level1.seq[level1Index] = readLong(next + OFF_SEQ);
-                level1.flag[level1Index] = (byte) readLong(next + OFF_FLAG);
-                level1.preid[level1Index] = readLong(next + OFF_PREID);
-                //level1.colData[level1Index] = readInt(bytes, next + OFF_NEXT);
-                //readBytes(next, OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
-                readLongs(next + OFF_CELL, level1.colData, level1Index * COL_BLOCK_SIZE, COL_BLOCK_SIZE);
-            } else {
-                level1.flag[level1Index] = FLAG_EMPTY;
-                clearColData(level1Index);
-            }
-        } else if (opType == 'X') {
-            level1.flag[level1Index] = FLAG_X;
         }
     }
 
