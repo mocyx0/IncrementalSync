@@ -164,7 +164,6 @@ public class ZXServer implements WorkerServer {
         buffer.flip();
         ResultWriter.writeBuffer(buffer);
         ResultWriter.close();
-
     }
 
     //FileParser fileParser = new FileParserSimple();

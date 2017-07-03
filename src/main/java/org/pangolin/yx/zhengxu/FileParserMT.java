@@ -337,7 +337,7 @@ public class FileParserMT implements FileParser {
             logBlock.ids[logPos] = id;
             logBlock.preIds[logPos] = preid;
             logBlock.opTypes[logPos] = op;
-            //logBlock.seqs[logPos] = seqNumber++;
+            logBlock.seqs[logPos] = seqNumber++;
             //logBlock.seqs[logPos] = 0;
             logBlock.length++;
             byte colLen = (byte) (colDataPos - logColPos);
